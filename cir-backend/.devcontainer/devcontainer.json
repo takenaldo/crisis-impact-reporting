@@ -1,0 +1,14 @@
+{
+  "name": "CIR Backend",
+  "dockerComposeFile": ["../docker-compose.yml"],
+  "service": "cir-backend",
+  "runServices": ["cir-backend"],
+  "workspaceFolder": "/cir-backend",
+  "forwardPorts": [8000],
+  "customizations": {
+    "vscode": {
+      "settings": {},
+      "extensions": ["ms-python.python", "ms-python.vscode-pylance"]
+    }
+  }
+}
