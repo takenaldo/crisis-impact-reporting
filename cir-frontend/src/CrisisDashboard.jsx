@@ -4,7 +4,7 @@ import React, { useState, useMemo } from "react";
 const now = new Date();
 const hoursAgo = (h) => new Date(now - h * 3600 * 1000).toISOString();
 
-const CRISIS_DATA = [
+export const CRISIS_DATA = [
   {
     id: 1,
     type: "earthquake",
@@ -439,34 +439,34 @@ export default function CrisisDashboard() {
 
   const regions = useMemo(
     () => ["all", ...new Set(CRISIS_DATA.map((c) => c.region))],
-    []
+    [],
   );
   const types = useMemo(
     () => ["all", ...new Set(CRISIS_DATA.map((c) => c.type))],
-    []
+    [],
   );
 
   const filtered = useMemo(
     () =>
       CRISIS_DATA.filter((c) => filterType === "all" || c.type === filterType)
         .filter(
-          (c) => filterSeverity === "all" || c.severity === filterSeverity
+          (c) => filterSeverity === "all" || c.severity === filterSeverity,
         )
         .filter((c) => filterRegion === "all" || c.region === filterRegion)
         .filter(
           (c) =>
             !search ||
             c.title.toLowerCase().includes(search.toLowerCase()) ||
-            c.location.toLowerCase().includes(search.toLowerCase())
+            c.location.toLowerCase().includes(search.toLowerCase()),
         )
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)),
-    [filterType, filterSeverity, filterRegion, search]
+    [filterType, filterSeverity, filterRegion, search],
   );
 
   const totalCasualties = CRISIS_DATA.reduce((s, c) => s + c.casualties, 0);
   const totalDisplaced = CRISIS_DATA.reduce((s, c) => s + c.displaced, 0);
   const criticalCount = CRISIS_DATA.filter(
-    (c) => c.severity === "critical"
+    (c) => c.severity === "critical",
   ).length;
 
   const handleSelect = (crisis) => {
