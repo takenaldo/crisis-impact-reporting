@@ -24,7 +24,7 @@ class Photo(models.Model):
         return self.image.name if self.image else self.description
 
 
-class Location(models.Model):
+class InfrastructureLocation(models.Model):
     infrastructure_latitude = models.FloatField(blank=True, null=True)
     infrastructure_longitude = models.FloatField(blank=True, null=True)
     infrastructure_location_description = models.CharField(max_length=255, blank=True, null=True, help_text="Free text description of the infrastructure location")
@@ -54,7 +54,22 @@ class Location(models.Model):
 
     def __str__(self):
         return self.infrastructure_location_name or "Location"
-    
+        
+
+class Location(models.Model):
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
+    description = models.CharField(max_length=255, blank=True, null=True, help_text="Free text description of the location")
+    name = models.CharField(max_length=255, blank=True, null=True, help_text="Name of the location (e.g., 'Main Street Bridge', 'Downtown Intersection', etc.)")
+
+    country = models.CharField(max_length=255, blank=True, null=True)
+    state_province = models.CharField(max_length=255, blank=True, null=True)
+    city = models.CharField(max_length=255, blank=True, null=True)
+    street_address = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return self.country + " - " + self.state_province + " - " + self.city + " - " + self.street_address if self.country and self.state_province and self.city and self.street_address else self.name or self.description or "Location"
+
 
 class Crisis(models.Model):
     """
@@ -68,6 +83,8 @@ class Crisis(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    location = models.ForeignKey(Location, on_delete=models.SET_NULL, blank=True, null=True)
 
 
     def __str__(self):
@@ -108,7 +125,7 @@ class ImpactReport(models.Model):
                                         help_text="Indicates if the infrastructure is accessible or not.")
 
 
-    location = models.ForeignKey(Location, on_delete=models.CASCADE, blank=True, null=True)
+    location = models.ForeignKey(InfrastructureLocation, on_delete=models.CASCADE, blank=True, null=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
