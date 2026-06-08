@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Crisis, ImpactReport, Location, InfrastructureLocation, Photo
+from .models import Crisis, CrisisQuestion, CrisisQuestionAnswer,ImpactReport, Location, InfrastructureLocation, NatureOfCrisisQuestionAnswer, Photo, NatureOfCrisisQuestion
 
 
 
@@ -19,10 +19,21 @@ class CrisisSerializer(serializers.ModelSerializer):
     location = LocationSerializer(read_only=True)
     location_id = serializers.PrimaryKeyRelatedField(queryset=Location.objects.all(), source='location', write_only=True)
 
+    number_of_reports = serializers.SerializerMethodField()
+
     class Meta:
         model = Crisis
         fields = '__all__'
+        
+    def get_number_of_reports(self, obj):
+        return ImpactReport.objects.filter(crisis=obj).count()
 
+
+
+class CrisesSerializerMinimalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Crisis
+        fields = ['id', 'name']
 
 class PhotoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -32,8 +43,8 @@ class PhotoSerializer(serializers.ModelSerializer):
 
 class ImpactReportSerializer(serializers.ModelSerializer):
     
-    crisis = CrisisSerializer(read_only=True)
-    crisis_id = serializers.PrimaryKeyRelatedField(queryset=Crisis.objects.all(), source='crisis', write_only=True)
+    crisis = CrisesSerializerMinimalSerializer(read_only=True)
+    crisis_id = serializers.PrimaryKeyRelatedField(queryset=Crisis.objects.all(), source='crisis', write_only=True, required=False)
     
     location = InfrastructureLocationSerializer(read_only=True)
     location_id = serializers.PrimaryKeyRelatedField(queryset=InfrastructureLocation.objects.all(), source='location', write_only=True)
@@ -52,3 +63,43 @@ class ImpactReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = ImpactReport
         fields = '__all__'
+
+
+class CrisisQuestionSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = CrisisQuestion
+        fields = '__all__'
+        
+
+class CrisisQuestionAnswerSerializer(serializers.ModelSerializer):
+    
+    question = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = CrisisQuestionAnswer
+        fields = '__all__'
+        
+        
+    def get_question(self, obj):
+        return obj.question.text
+        
+        
+class NatureOfCrisisQuestionSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = NatureOfCrisisQuestion
+        fields = '__all__' 
+        
+
+class NatureOfCrisisQuestionAnswerSerializer(serializers.ModelSerializer):
+    
+    question = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = NatureOfCrisisQuestionAnswer
+        fields = '__all__'
+        
+        
+    def get_question(self, obj):
+        return obj.question.text

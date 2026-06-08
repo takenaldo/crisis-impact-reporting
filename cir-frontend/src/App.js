@@ -4,20 +4,41 @@ import '@mantine/dates/styles.css';
 
 import CrisisDashboard2 from './/CrisisDashboard2';
 import { createBrowserRouter, RouterProvider } from 'react-router';
+import { Notifications } from '@mantine/notifications';
 import { MantineProvider } from '@mantine/core';
 import ImpactReportForm from './ImpactReportForm';
+import CrisisDetailPage from './CrisisDetailPage';
 
+import './i18n';
+
+import '@mantine/core/styles.css';
+import '@mantine/notifications/styles.css';
 
 function App() {
 
   const router = createBrowserRouter([
     { path: '/', element: <CrisisDashboard2 /> },
     { path: '/add-report/:id?/:name?', element: <ImpactReportForm /> },
+    { path: '/crisis/:id?', element: <CrisisDetailPage /> },
+
 
   ]);
 
+
+
   return (
     <MantineProvider withGlobalStyles withNormalizeCSS>
+
+
+      <Notifications
+        styles={{
+          notification: {
+            height: 'auto',
+            alignItems: 'flex-start'
+          }
+        }}
+      />
+
       <RouterProvider router={router} />
     </MantineProvider>
   );
