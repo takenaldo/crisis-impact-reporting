@@ -1,114 +1,26 @@
 import React, { useState, useMemo, useEffect } from "react";
 
-import { api } from "./utils";
-import { Link } from "react-router-dom";
+import {
+  api,
+  CRISIS_CONFIG,
+  formatNumber,
+  SeverityBadge,
+  timeAgo,
+  TypeBadge,
+} from "./utils";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import MapComponent from "./MapComponent";
+import { Badge, Group, SimpleGrid, Text } from "@mantine/core";
+import { IconPlus } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
+import { Select } from "@mantine/core";
+
 // ─── Sample Data ──────────────────────────────────────────────────────────────
 const now = new Date();
 const hoursAgo = (h) => new Date(now - h * 3600 * 1000).toISOString();
 
-// ─── Config ───────────────────────────────────────────────────────────────────
-const CRISIS_CONFIG = {
-  earthquake: {
-    emoji: "🏚️",
-    color: "#e67e22",
-    bg: "#fdf2e6",
-    label: "Earthquake",
-  },
-  flood: { emoji: "🌊", color: "#2980b9", bg: "#ebf5fb", label: "Flood" },
-  war: { emoji: "💥", color: "#c0392b", bg: "#fdedec", label: "War/Conflict" },
-  conflict: {
-    emoji: "⚔️",
-    color: "#c0392b",
-    bg: "#fdedec",
-    label: "War/Conflict",
-  },
-  tsunami: { emoji: "🌊", color: "#1a5276", bg: "#d6eaf8", label: "Tsunami" },
-  wildfire: { emoji: "🔥", color: "#e74c3c", bg: "#fdedec", label: "Wildfire" },
-  cyclone: { emoji: "🌀", color: "#7d3c98", bg: "#f5eef8", label: "Cyclone" },
-  volcano: { emoji: "🌋", color: "#d35400", bg: "#fef5e7", label: "Volcano" },
-  drought: { emoji: "☀️", color: "#b7950b", bg: "#fef9e7", label: "Drought" },
-  landslide: {
-    emoji: "⛰️",
-    color: "#6e2f0e",
-    bg: "#f9ecde",
-    label: "Landslide",
-  },
-};
-
-const SEVERITY_CONFIG = {
-  critical: { label: "Critical", color: "#c0392b", bg: "#fadbd8" },
-  high: { label: "High", color: "#e67e22", bg: "#fdebd0" },
-  medium: { label: "Medium", color: "#f0b400", bg: "#fef9e7" },
-  low: { label: "Low", color: "#27ae60", bg: "#e9f7ef" },
-};
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function timeAgo(isoString) {
-  const diff = Math.floor((Date.now() - new Date(isoString)) / 60000);
-  if (diff < 60) return `${diff}m ago`;
-  if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
-  return `${Math.floor(diff / 1440)}d ago`;
-}
-
-function formatNumber(n) {
-  if (n >= 1000000) return (n / 1000000).toFixed(1) + "M";
-  if (n >= 1000) return (n / 1000).toFixed(1) + "K";
-  return n.toLocaleString();
-}
-
-// ─── Components ───────────────────────────────────────────────────────────────
-
-function SeverityBadge({ severity }) {
-  const cfg = SEVERITY_CONFIG[severity] || SEVERITY_CONFIG.medium;
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        padding: "2px 10px",
-        borderRadius: 12,
-        fontSize: 11,
-        fontWeight: 700,
-        letterSpacing: 0.5,
-        color: cfg.color,
-        background: cfg.bg,
-        border: `1px solid ${cfg.color}40`,
-        textTransform: "uppercase",
-      }}
-    >
-      {cfg.label}
-    </span>
-  );
-}
-
-function TypeBadge({ type }) {
-  const cfg = CRISIS_CONFIG[type] || {
-    emoji: "⚠️",
-    color: "#555",
-    bg: "#f0f0f0",
-    label: type,
-  };
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 4,
-        padding: "3px 10px",
-        borderRadius: 12,
-        fontSize: 12,
-        fontWeight: 600,
-        color: cfg.color,
-        background: cfg.bg,
-        border: `1px solid ${cfg.color}30`,
-      }}
-    >
-      {cfg.emoji} {cfg.label}
-    </span>
-  );
-}
-
 function CrisisCard({ crisis, isSelected, onClick }) {
+  const navigate = useNavigate();
   const cfg = CRISIS_CONFIG[crisis.type] || {
     emoji: "⚠️",
     color: "#555",
@@ -117,7 +29,6 @@ function CrisisCard({ crisis, isSelected, onClick }) {
 
   return (
     <div
-      // onClick={() => onClick(crisis)}
       style={{
         background: isSelected ? cfg.bg : "#fff",
         border: `1.5px solid ${isSelected ? cfg.color : "#e8e8e8"}`,
@@ -129,18 +40,15 @@ function CrisisCard({ crisis, isSelected, onClick }) {
           ? `0 4px 16px ${cfg.color}30`
           : "0 1px 4px rgba(0,0,0,0.05)",
       }}
+      onClick={() => {
+        navigate("/crisis/" + crisis.id + "/", { state: { crisis } });
+      }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: 8,
-        }}
-      >
-        <TypeBadge type={crisis.type} />
+      <Group gap={10} justify="flex-end">
+        <TypeBadge type={crisis.nature_of_crisis} />
         <SeverityBadge severity={crisis.severity} />
-      </div>
+      </Group>
+
       <div
         style={{
           fontWeight: 700,
@@ -181,12 +89,33 @@ function CrisisCard({ crisis, isSelected, onClick }) {
         {/* Source: {crisis.source} */}
       </div>
 
-      <a
-        href={`/add-report/${crisis.id}/${crisis.name}`}
-        style={{ marginTop: 10, fontSize: 12 }}
-      >
-        Add Report
-      </a>
+      <Group justify="space-between">
+        <div
+          style={{
+            fontSize: 12,
+            color: "#777",
+            lineHeight: 1.5,
+            marginBottom: 8,
+          }}
+        >
+          {crisis.number_of_reports}{" "}
+          {crisis.number_of_reports > 1 ? "reports" : "report"}
+        </div>
+
+        <Badge leftSection={<IconPlus size={16} />}>
+          <a
+            href={`/add-report/${crisis.id}/${crisis.name}`}
+            style={{
+              marginTop: 10,
+              fontSize: 12,
+              color: "white",
+              textDecoration: "none",
+            }}
+          >
+            Add Report
+          </a>
+        </Badge>
+      </Group>
     </div>
   );
 }
@@ -194,7 +123,10 @@ function CrisisCard({ crisis, isSelected, onClick }) {
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function CrisisDashboard2() {
+  const navigate = useNavigate();
   const [crisesList, setCrisesList] = useState([]);
+
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     const fetchCrises = async () => {
@@ -210,6 +142,10 @@ export default function CrisisDashboard2() {
     fetchCrises();
   }, []);
 
+  const changeLanguage = (lang) => {
+    i18n.changeLanguage(lang);
+  };
+
   return (
     <div
       style={{
@@ -218,6 +154,7 @@ export default function CrisisDashboard2() {
         fontFamily: "'Inter', 'Segoe UI', sans-serif",
       }}
     >
+      {t("hello")}
       <style>{`
         @keyframes pulse {
           0%, 100% { box-shadow: 0 0 6px rgba(192,57,43,0.6); transform: translate(-50%,-50%) scale(1); }
@@ -257,7 +194,7 @@ export default function CrisisDashboard2() {
                 letterSpacing: -0.5,
               }}
             >
-              Global Crisis Impact reporting center
+              Global Crisis Impact reporting portal
             </h1>
             <p style={{ color: "#a0aec0", margin: "4px 0 0", fontSize: 13 }}>
               Real-time crisis reporting
@@ -291,12 +228,38 @@ export default function CrisisDashboard2() {
             <div style={{ color: "#718096", fontSize: 12 }}>
               Updated: {new Date().toLocaleTimeString()}
             </div>
+            <div>
+              <Select
+                value={i18n.language}
+                onChange={changeLanguage}
+                size="xs"
+                data={[
+                  { value: "en", label: "English" },
+                  { value: "es", label: "Espanol" },
+                  { value: "fr", label: "Français" },
+                  { value: "ch", label: "中文" },
+                  { value: "ar", label: "العربية" },
+                  { value: "ru", label: "Русский" },
+                  { value: "am", label: "Amharic" },
+                ]}
+                w={100}
+                style={{
+                  marginTop: 20,
+                  background: "rgba(255,255,255,0.1)",
+                  color: "#a0aec0",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  borderRadius: 20,
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
-      <a href={`/add-report`} style={{ marginTop: 10, fontSize: 12 }}>
-        Add New Crisis Report
-      </a>
+      <Group justify="flex-end" p={5}>
+        <a href={`/add-report`} style={{ marginTop: 10, fontSize: 12 }}>
+          Add New Crisis Report
+        </a>
+      </Group>
 
       <div style={{ maxWidth: 1400, margin: "0 auto", padding: "24px 32px" }}>
         {/* Stats Row */}
@@ -309,18 +272,22 @@ export default function CrisisDashboard2() {
           <div style={{ flex: "1 1 400px" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {crisesList.map((crisis) => (
-                <CrisisCard
+                <a
                   key={crisis.id}
-                  crisis={crisis}
-                  // isSelected={selectedCrisis?.id === crisis.id}
-                  // onClick={handleSelect}
-                />
+                  // href={"/crisis/" + crisis.id + "/"}
+                  style={{
+                    marginTop: 10,
+                    fontSize: 12,
+                    color: "white",
+                    textDecoration: "none",
+                  }}
+                >
+                  <CrisisCard key={crisis.id} crisis={crisis} />
+                </a>
               ))}
             </div>
           </div>
         </div>
-
-        {/* Footer */}
       </div>
     </div>
   );

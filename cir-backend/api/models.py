@@ -79,6 +79,14 @@ class Crisis(models.Model):
     description = models.TextField(max_length=255, blank=True, null=True)
     category = models.CharField(max_length=255, blank=True, null=True, choices=CrisisCategory.choices)
 
+    nature_of_crisis = models.CharField(max_length=255, blank=True, null=True,
+                                      help_text="e.g., earthquake, flood, hurricane, etc."
+                                      )
+    nature_of_crisis_category = models.CharField(max_length=255, blank=True, null=True,
+                                      choices=CrisisCategory.choices,
+                                      help_text="e.g., natural disaster, human-made crisis, etc.",)
+
+
     incident_datetime = models.DateTimeField(blank=True, null=True, help_text="Date and time when the incident occurred. If unknown, this can be left blank.")
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -133,7 +141,7 @@ class ImpactReport(models.Model):
     damage_datetime = models.DateTimeField(blank=True, null=True, help_text="Date and time when the incident occurred. If unknown, this can be left blank.")
 
     def __str__(self):
-        return (self.crisis.name if self.crisis else "") + " - Impact Report " + str(self.id)
+        return (self.crisis.name if self.crisis else "") + " - Impact Report " + str(self.infrastructure_name) + str(self.infrastructure_type)
 
 
 class Question(models.Model):
@@ -152,7 +160,7 @@ class Question(models.Model):
     
 
 class NatureOfCrisisQuestion(Question):
-    nature_of_crisis = models.CharField(max_length=255, blank=True, null=True,
+    nature_of_crisis = models.CharField( max_length=255, blank=True, null=True,
                                       help_text="The nature of the crisis (e.g., earthquake, flood, hurricane, etc.) that the question is related to.")
     
     
@@ -171,6 +179,9 @@ class CrisisQuestion(Question):
 class CrisisQuestionAnswer(models.Model):
     question = models.ForeignKey(CrisisQuestion, on_delete=models.CASCADE)
     answer = models.CharField(max_length=255, blank=True, null=True, help_text="The answer provided for the question in relation to the specific impact report. For multiple choice questions, this should be one of the options provided in the Question's choice_options field.")
+    impact_report = models.ForeignKey(ImpactReport, on_delete=models.CASCADE)
+    
+    
     
     def __str__(self):
         return f"Answer to '{self.question.text}': '{self.answer}'"
