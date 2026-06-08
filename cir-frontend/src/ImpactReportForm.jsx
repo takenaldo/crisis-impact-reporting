@@ -15,19 +15,41 @@ import {
   Notification,
   Group,
   Text,
+  Autocomplete,
+  Box,
 } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import MapComponent from "./MapComponent";
 import { IconApi } from "@tabler/icons-react";
 
-import { api } from "./utils"; // Adjust the path as needed
+import { api, dataURLtoFile } from "./utils"; // Adjust the path as needed
 import { useNavigate, useParams } from "react-router-dom";
+import { CameraInput } from "./CameraInput";
+import { MediaCaptureInput } from "./MediaCaptureInput";
+import { useEffect, useState } from "react";
+
+import { notifications } from "@mantine/notifications";
 
 // Mocking the Django constants from your .constants file
 const CRISIS_CATEGORIES = [
   { value: "NATURAL", label: "Natural Disaster" },
   { value: "HUMAN", label: "Human-Made Crisis" },
+];
+
+const NATURE_OF_CRISIS_OPTIONS = [
+  { value: "FLOOD", label: "Flood" },
+  { value: "EARTHQUAKE", label: "Earthquake" },
+  { value: "HURRICANE", label: "Hurricane" },
+  { value: "WILDFIRE", label: "Wildfire" },
+  { value: "LANDSLIDE", label: "Landslide" },
+  { value: "TSUNAMI", label: "Tsunami" },
+  { value: "DROUGHT", label: "Drought" },
+  { value: "OTHER_NATURAL", label: "Other Natural Disaster" },
+  { value: "CONFLICT", label: "Conflict/War" },
+  { value: "TECH_FAILURE", label: "Technological Failure" },
+  { value: "INDUSTRIAL_ACCIDENT", label: "Industrial Accident" },
+  { value: "OTHER_HUMAN", label: "Other Human-Made Crisis" },
 ];
 
 const DAMAGE_SEVERITIES = [
@@ -39,13 +61,20 @@ const DAMAGE_SEVERITIES = [
 
 export default function ImpactReportForm() {
   const { id, name } = useParams();
+  const navigate = useNavigate();
+
+  const [crisisQuestions, setCrisisQuestions] = useState([]);
+  const [answers, setAnswers] = useState([]);
+
+  const [nocQuestions, setNocQuestions] = useState([]);
+  const [nocAnswers, setNocAnswers] = useState([]);
 
   const form = useForm({
     initialValues: {
       // Impact Report Base
-      crisis_id: id || "",
+      crisis_id: id || null,
       description: "",
-      natureOfCrisis: "",
+      natureOfCrisis: null,
       natureOfCrisisCategory: "",
       damageSeverity: "",
       damageDatetime: null,
@@ -69,19 +98,53 @@ export default function ImpactReportForm() {
       street_address: "",
       // Photos (Maps to ManyToMany Photo model)
       photos: [],
+      photoDescription: [],
+
+      answers: [],
+      noc_answers: [],
     },
   });
+
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      if (id !== null) {
+        try {
+          const response = await api.get(
+            "crises/" + id + "/get_questions_for_crisis/",
+          );
+          setCrisisQuestions(response.data);
+        } catch (error) {
+        } finally {
+        }
+      }
+    };
+
+    fetchQuestions();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchNatureOfCrisisQuestions = async () => {
+      if (form.values.natureOfCrisis !== null) {
+        try {
+          const response = await api.get(
+            "nature-of-crisis-questions/get_nature_of_crisis_questions/?nature_of_crisis=" +
+              form.values.natureOfCrisis,
+          );
+          setNocQuestions(response.data);
+        } catch (error) {
+        } finally {
+        }
+      }
+    };
+
+    fetchNatureOfCrisisQuestions();
+  }, [form.values.natureOfCrisis]);
 
   // 2. Handle form submission
   const handleSubmit = async (values) => {
     const formData = new FormData();
 
-    // Append each selected file to the FormData object
-    values.photos.forEach((file) => {
-      formData.append("photos", file); // 'photos' is the field name your backend expects
-    });
-
-    formData.append("crisis_id", values.crisis);
+    if (values.crisis_id) formData.append("crisis_id", values.crisis_id);
 
     formData.append("description", values.description);
     formData.append("natureOfCrisis", values.natureOfCrisis);
@@ -114,23 +177,40 @@ export default function ImpactReportForm() {
     formData.append("state_province", values.state_province);
     formData.append("country", values.country);
 
+    formData.append("answers", JSON.stringify(answers));
+    formData.append("noc_answers", JSON.stringify(nocAnswers));
+
+    // values.photos.forEach((photo) => {
+    //   formData.append("photos", photo.file); // Add [] if your backend requires array notation
+    // });
+
+    values.photos.forEach((photoObj) => {
+      formData.append("photos", photoObj.file);
+      // formData.append("photoDescription", JSON.photoObj.description);
+    });
+
+    // const d = values.photos.map((photoObj) => photoObj.description);
+    formData.append(
+      "photoDescription",
+      JSON.stringify(values.photos.map((photoObj) => photoObj.description)),
+    );
+
+    // values.photoDescription.forEach((description) => {
+    // });
+
     try {
       // 3. Send to your API
       const response = await api.post("/impact-reports/", formData);
 
-      if (response.ok) {
-        alert("Upload successful!");
+      form.reset(); // Clear the form on success
 
-        form.reset(); // Clear the form on success
-        // navigate("/"); // Redirect to homepage or another page as needed
-
-        Notification.show({
-          title: "Report Submitted",
-          message: "Your impact report has been successfully submitted.",
-          color: "green",
-          icon: <IconApi />,
-        });
-      }
+      notifications.show({
+        title: "Report Submitted",
+        message: "Your impact report has been successfully submitted.",
+        color: "green",
+        icon: <IconApi />,
+      });
+      navigate("/"); // Redirect to homepage or another page as needed
     } catch (error) {
       console.error("Upload failed:", error);
     }
@@ -155,23 +235,30 @@ export default function ImpactReportForm() {
                 </Text>
               </Group>
             )}
-            {/* SECTION 2: Infrastructure & Damage */}
-            <Fieldset legend="Infrastructure & Damage" radius="md">
-              <Stack gap="md">
-                <FileInput
-                  label="Photos"
-                  placeholder="Upload images of the damage"
-                  multiple
-                  accept="image/png,image/jpeg,image/heic"
-                  {...form.getInputProps("photos")}
-                />
 
-                <Textarea
-                  label="General Description"
-                  placeholder="Describe the overall situation..."
-                  autosize
-                  minRows={2}
-                  {...form.getInputProps("description")}
+            <Fieldset legend="Photos" radius="md">
+              <Stack gap="md">
+                <MediaCaptureInput form={form} fieldName="photos" />
+              </Stack>
+            </Fieldset>
+
+            <Fieldset legend="Infrastructure" radius="md">
+              <Stack gap="md">
+                <Autocomplete
+                  label="Infrastructure Type"
+                  placeholder="Select or type infrastructure type"
+                  data={[
+                    "Residential Infrastructure (Houses and apartments)",
+                    "Commercial Infrastructure (Markets, malls, shops, hotels, banks, industries, etc.)",
+                    "Government Building (Administrative buildings, courthouses, police stations, fire stations, etc.)",
+                    "Utility Infrastructure (Water pumps, power plants, waste treatment plants, etc.)",
+                    "Transport and Communication Infrastructure (Roads, cell towers, bridges, railway station, bus station, etc.)",
+                    "Community Infrastructure (Schools, hospitals, community halls, public toilets, etc.)",
+                    "Public spaces/Recreation Infrastructure (stadiums, playgrounds, religious buildings, etc.)",
+                    "Other, please specify",
+                    "Other",
+                  ]}
+                  {...form.getInputProps("infrastructureType")}
                 />
 
                 <TextInput
@@ -179,18 +266,16 @@ export default function ImpactReportForm() {
                   placeholder="e.g., Main Street Bridge"
                   {...form.getInputProps("infrastructureName")}
                 />
-                <TextInput
-                  label="Infrastructure Type"
-                  placeholder="e.g., bridge, road, building"
-                  {...form.getInputProps("infrastructureType")}
-                />
-
+              </Stack>
+            </Fieldset>
+            <Fieldset legend="Damage" radius="md">
+              <Stack gap="md">
                 <Radio.Group
                   label="Damage Severity"
                   required
                   {...form.getInputProps("damageSeverity")}
                 >
-                  <Stack gap="xs" mt="sm">
+                  <Group gap="xs" mt="sm">
                     {DAMAGE_SEVERITIES.map((severity) => (
                       <Radio
                         key={severity.value}
@@ -198,21 +283,37 @@ export default function ImpactReportForm() {
                         label={severity.label}
                       />
                     ))}
-                  </Stack>
+                  </Group>
                 </Radio.Group>
 
                 {/* Checkboxes grouped for easy tapping on mobile */}
                 <Stack gap="xs" mt="sm">
-                  <Checkbox
-                    label="Infrastructure is accessible"
-                    {...form.getInputProps("accessibility", {
-                      type: "checkbox",
-                    })}
+                  <Select
+                    label="Nature of Crisis"
+                    placeholder="Select the nature of the crisis"
+                    data={NATURE_OF_CRISIS_OPTIONS}
+                    {...form.getInputProps("natureOfCrisis")}
                   />
-                  <Checkbox
-                    label="Debris is present at the site"
-                    {...form.getInputProps("debris", { type: "checkbox" })}
+
+                  <Textarea
+                    label="General Description"
+                    placeholder="Describe the overall situation..."
+                    autosize
+                    minRows={2}
+                    {...form.getInputProps("description")}
                   />
+                  <Group>
+                    <Checkbox
+                      label="Debris is present at the site"
+                      {...form.getInputProps("debris", { type: "checkbox" })}
+                    />
+                    <Checkbox
+                      label="Infrastructure is accessible"
+                      {...form.getInputProps("accessibility", {
+                        type: "checkbox",
+                      })}
+                    />
+                  </Group>
                 </Stack>
               </Stack>
             </Fieldset>
@@ -220,60 +321,198 @@ export default function ImpactReportForm() {
             {/* SECTION 3: Location */}
             <Fieldset legend="Location Details" radius="md">
               <Stack gap="md">
-                <TextInput
-                  label="Country"
-                  placeholder="e.g., United States"
-                  {...form.getInputProps("country")}
-                />
-                <TextInput
-                  label="State/Province"
-                  placeholder="e.g., California"
-                  {...form.getInputProps("state_province")}
-                />
-
-                <TextInput
-                  label="Street Address"
-                  placeholder="123 Main St"
-                  {...form.getInputProps("street_address")}
-                />
-                <TextInput
-                  label="City"
-                  placeholder="City Name"
-                  {...form.getInputProps("city")}
-                />
-
                 <MapComponent form={form} />
 
-                {/* SimpleGrid allows side-by-side inputs on slightly larger screens, 
-                    but falls back to 1 column on small phones */}
-                {/* <SimpleGrid cols={{ base: 1, xs: 2 }}>
+                <Text size="sm" c="dimmed">
+                  Or You can also provide a more specific address if available:
+                </Text>
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                   <TextInput
-                    label="Latitude"
-                    placeholder="e.g., 9.0320"
-                    type="number"
-                    {...form.getInputProps("latitude")}
+                    label="Country"
+                    placeholder="e.g., United States"
+                    {...form.getInputProps("country")}
                   />
                   <TextInput
-                    label="Longitude"
-                    placeholder="e.g., 38.7482"
-                    type="number"
-                    {...form.getInputProps("longitude")}
+                    label="State/Province"
+                    placeholder="e.g., California"
+                    {...form.getInputProps("state_province")}
                   />
-                </SimpleGrid> */}
+                  <TextInput
+                    label="City"
+                    placeholder="City Name"
+                    {...form.getInputProps("city")}
+                  />
+                  <TextInput
+                    label="Street Address"
+                    placeholder="123 Main St"
+                    {...form.getInputProps("street_address")}
+                  />
+                </SimpleGrid>
               </Stack>
             </Fieldset>
 
-            {/* SECTION 4: Media */}
-            {/* <Fieldset legend="Media Upload" radius="md">
-              <FileInput
-                label="Photos"
-                placeholder="Upload images of the damage"
-                multiple
-                accept="image/png,image/jpeg,image/heic"
-                {...form.getInputProps("photos")}
-              />
-            </Fieldset> */}
+            {crisisQuestions.length > 0 && (
+              <Fieldset legend="Questions" radius="md">
+                {crisisQuestions?.map((question) => (
+                  <Stack gap={0}>
+                    <Text>{question.text}</Text>
 
+                    {question.is_multiple_choice ? (
+                      <Radio.Group
+                        label=""
+                        required
+                        onChange={(e) => {
+                          console.log(question.id);
+
+                          let arr = [];
+                          if (answers.length === 0) {
+                            const answer = {
+                              question_id: question.id,
+                              answer: e,
+                            };
+                            arr.push(answer);
+                          }
+
+                          for (let index = 0; index < answers.length; index++) {
+                            const element = answers[index];
+                            if (element["question_id"] === question.id) {
+                              element["answer"] = e;
+                              arr[index] = element;
+                            }
+                          }
+
+                          setAnswers(arr);
+                        }}
+                      >
+                        <Group gap="xs" mt="sm">
+                          {Object.entries(question.choice_options).map(
+                            ([choice, choiceFullAnswer]) => (
+                              <Radio
+                                key={choice}
+                                value={choiceFullAnswer}
+                                label={choice + ")   " + choiceFullAnswer}
+                              ></Radio>
+                            ),
+                          )}
+                        </Group>
+                      </Radio.Group>
+                    ) : (
+                      <TextInput
+                        onChange={(e) => {
+                          console.log(question.id);
+
+                          let arr = [];
+                          if (answers.length === 0) {
+                            const answer = {
+                              question_id: question.id,
+                              answer: e.target.value,
+                            };
+                            arr.push(answer);
+                          }
+
+                          for (let index = 0; index < answers.length; index++) {
+                            const element = answers[index];
+                            if (element["question_id"] === question.id) {
+                              element["answer"] = e.target.value;
+                              arr[index] = element;
+                            }
+                          }
+
+                          setAnswers(arr);
+                        }}
+                      ></TextInput>
+                    )}
+                  </Stack>
+                ))}
+              </Fieldset>
+            )}
+
+            {nocQuestions.length > 0 && (
+              <Fieldset
+                legend={"Questions Related to " + form.values.natureOfCrisis}
+                radius="md"
+              >
+                {nocQuestions?.map((question) => (
+                  <Stack gap={0}>
+                    <Text>{question.text}</Text>
+
+                    {question.is_multiple_choice ? (
+                      <Radio.Group
+                        label=""
+                        required
+                        onChange={(e) => {
+                          console.log(question.id);
+
+                          let arr = [];
+                          if (nocAnswers.length === 0) {
+                            const answer = {
+                              question_id: question.id,
+                              answer: e,
+                            };
+                            arr.push(answer);
+                          }
+
+                          for (
+                            let index = 0;
+                            index < nocAnswers.length;
+                            index++
+                          ) {
+                            const element = nocAnswers[index];
+                            if (element["question_id"] === question.id) {
+                              element["answer"] = e;
+                              arr[index] = element;
+                            }
+                          }
+
+                          setNocAnswers(arr);
+                        }}
+                      >
+                        <Group gap="xs" mt="sm">
+                          {Object.entries(question.choice_options).map(
+                            ([choice, choiceFullAnswer]) => (
+                              <Radio
+                                key={choice}
+                                value={choiceFullAnswer}
+                                label={choice + ")   " + choiceFullAnswer}
+                              ></Radio>
+                            ),
+                          )}
+                        </Group>
+                      </Radio.Group>
+                    ) : (
+                      <TextInput
+                        onChange={(e) => {
+                          console.log(question.id);
+
+                          let arr = [];
+                          if (nocAnswers.length === 0) {
+                            const answer = {
+                              question_id: question.id,
+                              answer: e.target.value,
+                            };
+                            arr.push(answer);
+                          }
+
+                          for (
+                            let index = 0;
+                            index < nocAnswers.length;
+                            index++
+                          ) {
+                            const element = nocAnswers[index];
+                            if (element["question_id"] === question.id) {
+                              element["answer"] = e.target.value;
+                              arr[index] = element;
+                            }
+                          }
+
+                          setNocAnswers(arr);
+                        }}
+                      ></TextInput>
+                    )}
+                  </Stack>
+                ))}
+              </Fieldset>
+            )}
             {/* Submit Button */}
             <Button type="submit" fullWidth size="lg" mt="md" color="red">
               Submit Report
