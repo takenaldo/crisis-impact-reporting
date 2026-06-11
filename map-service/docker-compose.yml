@@ -1,0 +1,204 @@
+# ─────────────────────────────────────────────
+# UNDP DAMAGE REPORTING — MAP SERVICE
+# ─────────────────────────────────────────────
+# Services:
+#   planetiler-{country} — one-time tile generators (run and exit)
+#   martin               — tile server (runs permanently)
+#   db                   — PostGIS (runs permanently)
+#   spatial_api          — FastAPI spatial service (runs permanently)
+#
+# HOW TO USE:
+#   Step 1 — Generate tiles (one time only, already done):
+#     docker compose --profile setup run --rm planetiler-ethiopia
+#     docker compose --profile setup run --rm planetiler-kenya
+#     ... etc
+#
+#   Step 2 — Start all services:
+#     docker compose up martin db spatial_api
+# ─────────────────────────────────────────────
+
+services:
+
+  # ─────────────────────────────────────────────
+  # PLANETILER — one service per country
+  # Profile: setup — only runs when explicitly called
+  # Already completed — kept here for reference
+  # and for adding new countries later
+  # ─────────────────────────────────────────────
+  planetiler-ethiopia:
+    image: ghcr.io/onthegomap/planetiler:latest
+    profiles: [setup]
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx4g"
+    volumes:
+      - tile-data:/data
+    command:
+      - "--osm-path=/data/pbf/ethiopia-latest.osm.pbf"
+      - "--output=/data/tiles/ethiopia.mbtiles"
+      - "--bounds=32.85,3.25,48.05,15.05"
+      - "--minzoom=10"
+      - "--maxzoom=16"
+      - "--download"
+
+  planetiler-kenya:
+    image: ghcr.io/onthegomap/planetiler:latest
+    profiles: [setup]
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx4g"
+    volumes:
+      - tile-data:/data
+    command:
+      - "--osm-path=/data/pbf/kenya-latest.osm.pbf"
+      - "--output=/data/tiles/kenya.mbtiles"
+      - "--bounds=33.75,-4.85,42.05,5.15"
+      - "--minzoom=10"
+      - "--maxzoom=16"
+      - "--download"
+
+  planetiler-somalia:
+    image: ghcr.io/onthegomap/planetiler:latest
+    profiles: [setup]
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx4g"
+    volumes:
+      - tile-data:/data
+    command:
+      - "--osm-path=/data/pbf/somalia-latest.osm.pbf"
+      - "--output=/data/tiles/somalia.mbtiles"
+      - "--bounds=40.75,-1.85,51.55,12.15"
+      - "--minzoom=10"
+      - "--maxzoom=16"
+      - "--download"
+
+  planetiler-sudan:
+    image: ghcr.io/onthegomap/planetiler:latest
+    profiles: [setup]
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx4g"
+    volumes:
+      - tile-data:/data
+    command:
+      - "--osm-path=/data/pbf/sudan-latest.osm.pbf"
+      - "--output=/data/tiles/sudan.mbtiles"
+      - "--bounds=21.65,8.55,38.75,22.35"
+      - "--minzoom=10"
+      - "--maxzoom=16"
+      - "--download"
+
+  planetiler-south-sudan:
+    image: ghcr.io/onthegomap/planetiler:latest
+    profiles: [setup]
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx4g"
+    volumes:
+      - tile-data:/data
+    command:
+      - "--osm-path=/data/pbf/south-sudan-latest.osm.pbf"
+      - "--output=/data/tiles/south-sudan.mbtiles"
+      - "--bounds=23.95,3.35,36.05,12.35"
+      - "--minzoom=10"
+      - "--maxzoom=16"
+      - "--download"
+
+  planetiler-djibouti:
+    image: ghcr.io/onthegomap/planetiler:latest
+    profiles: [setup]
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx4g"
+    volumes:
+      - tile-data:/data
+    command:
+      - "--osm-path=/data/pbf/djibouti-latest.osm.pbf"
+      - "--output=/data/tiles/djibouti.mbtiles"
+      - "--bounds=41.55,10.75,43.55,12.85"
+      - "--minzoom=10"
+      - "--maxzoom=16"
+      - "--download"
+
+  planetiler-eritrea:
+    image: ghcr.io/onthegomap/planetiler:latest
+    profiles: [setup]
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx4g"
+    volumes:
+      - tile-data:/data
+    command:
+      - "--osm-path=/data/pbf/eritrea-latest.osm.pbf"
+      - "--output=/data/tiles/eritrea.mbtiles"
+      - "--bounds=36.25,12.25,43.25,18.15"
+      - "--minzoom=10"
+      - "--maxzoom=16"
+      - "--download"
+
+  # ─────────────────────────────────────────────
+  # MARTIN — TILE SERVER
+  # Serves base map tiles from .mbtiles files
+  # and building/zone tiles from PostGIS
+  # ─────────────────────────────────────────────
+  martin:
+    image: ghcr.io/maplibre/martin:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - tile-data:/data
+      - ./config/martin.yaml:/config/martin.yaml
+    command: ["--config", "/config/martin.yaml"]
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/undp_damage_db
+    depends_on:
+      - db
+
+  # ─────────────────────────────────────────────
+  # POSTGIS
+  # Shared database for Martin and spatial_api
+  # ─────────────────────────────────────────────
+  db:
+    image: postgis/postgis:15-3.3
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: undp_damage_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgis-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # ─────────────────────────────────────────────
+  # SPATIAL API — FastAPI service
+  # Handles:
+  #   - bbox calculation → returns tile server URLs
+  #   - building footprint queries
+  #   - zone boundary queries
+  #   - report location storage (called by cir-backend)
+  #   - crisis event management
+  # Runs on port 8001
+  # ─────────────────────────────────────────────
+  spatial_api:
+    build:
+      context: ./spatial_api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8009:8009"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/undp_damage_db
+      - MARTIN_URL=http://martin:3000
+      - DEFAULT_BBOX_RADIUS_KM=7.5
+    depends_on:
+      - db
+      - martin
+    volumes:
+      - ./spatial_api:/app
+
+volumes:
+  tile-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data
+
+  postgis-data:
+    driver: local

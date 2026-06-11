@@ -1,0 +1,22 @@
+venv
+
+
+
+# Large data files — must be generated locally
+# See README.md for setup instructions
+pbf/
+tiles/
+sources/
+tmp/
+
+# Planetiler generated statistics file
+tile_weights.tsv.gz
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Docker
+*.log
