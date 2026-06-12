@@ -9,8 +9,12 @@ const spatialApi = axios.create({
 });
 
 function rewriteMartin(value) {
+  // Rewrite Docker-internal Martin URLs to absolute proxy URLs using the browser's
+  // own origin. Absolute URLs are required for MapLibre tile sources to work
+  // correctly on all devices (desktop and mobile over LAN).
+  const proxy = `${window.location.origin}/martin-tiles`;
   if (typeof value === 'string') {
-    return value.replace(/martin:3000/g, 'localhost:3000');
+    return value.replace(/https?:\/\/martin:3000/g, proxy);
   }
   if (Array.isArray(value)) {
     return value.map(rewriteMartin);

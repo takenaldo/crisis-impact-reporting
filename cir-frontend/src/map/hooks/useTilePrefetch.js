@@ -12,7 +12,7 @@ function latLngToTile(lat, lng, zoom) {
 }
 
 function rewriteUrl(url) {
-  return url.replace(/martin:3000/g, 'localhost:3000');
+  return url.replace(/https?:\/\/martin:3000/g, `${window.location.origin}/martin-tiles`);
 }
 
 const ZOOM_MIN = 10;
