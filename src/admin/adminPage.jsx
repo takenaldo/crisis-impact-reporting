@@ -54,29 +54,18 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
+const theme = createTheme({
+  primaryColor: "teal",
+  fontFamily: "Inter, system-ui, sans-serif",
+});
+
 export function DashboardPage() {
-  const dateOptions = [
-    { 1: "Today" },
-    { 2: "Yesterday" },
-    { 7: "Last 7 days" },
-    { 30: "Last 30 days" },
-    { 365: "This year" },
-  ];
-  const formattedData = dateOptions.map((item) => {
-    const [key, text] = Object.entries(item)[0];
-    return {
-      value: String(key),
-      label: text,
-    };
-  });
   const [progress, setProgress] = useState({ high: 0, medium: 0, low: 0 });
-  const [crisesReportList, setCrisesReportList] = useState([]);
-  const [selectedDateRange, setSelectedDateRange] = useState(
-    formattedData[2].value
-  );
+
   // Animate the ring chart
   useEffect(() => {
     const timer = setTimeout(() => {
+      setProgress({ high: 58, medium: 27, low: 15 });
       setProgress({ high: 58, medium: 27, low: 15 });
     }, 300);
 
@@ -117,26 +106,21 @@ export function DashboardPage() {
                 Crisis Impact Overview
               </Title>
             </Group>
+
             <Group gap="lg">
-              <Select
-                placeholder={"Select date range"}
-                defaultValue={formattedData[2].value} // Default to "Last 7 days"
-                data={formattedData}
-                onChange={(value) => {
-                  setSelectedDateRange(value);
-                  console.log("Selected date range:", value);
-                }}
-                rightSection={<IconChevronDown size={14} />}
+              {/* <TextInput
+                placeholder="Search reports, locations, teams..."
+                leftSection={<IconSearch size={18} />}
+                w={360}
                 radius="md"
-                w={130}
-              />
-              {/* <Button leftSection={<IconDownload size={18} />} radius="md">
+              /> */}
+              {/*            
+              <Button leftSection={<IconDownload size={18} />} radius="md">
                 Export
               </Button> */}
               <Button variant="subtle" radius="md" p={8}>
                 <IconBell size={22} />
               </Button>
-
               <Group gap={10}>
                 <div
                   style={{
@@ -169,7 +153,90 @@ export function DashboardPage() {
 
         <Container size="xl" py={28}>
           {/* Top Metrics Cards */}
-          <HeaderCardPage selectedDateRange={selectedDateRange} />
+          <Flex gap={20} mb={40}>
+            {[
+              {
+                title: "Total Reports",
+                value: "1,284",
+                change: "+12.4%",
+                sparkColor: "#67e8f9",
+              },
+              {
+                title: "High-Impact Incidents",
+                value: "86",
+                change: "+4.2%",
+                sparkColor: "#fb923c",
+              },
+              {
+                title: "Medium-Impact Incidents",
+                value: "742",
+                change: "+8.1%",
+                sparkColor: "#67e8f9",
+              },
+              {
+                title: "Low-Impact Incidents",
+                value: "340",
+                change: "-18%",
+                sparkColor: "#fca5a5",
+              },
+            ].map((m, i) => (
+              <Card
+                key={i}
+                shadow="sm"
+                radius="md"
+                p="lg"
+                style={{
+                  flex: 1,
+                  minWidth: 260,
+                  background: "white",
+                  border: "1px solid #f1f5f9",
+                }}
+              >
+                <Text size="sm" c="dimmed" fw={500} mb={6}>
+                  {m.title}
+                </Text>
+                <Group align="flex-end" mb={12}>
+                  <Text size={36} fw={700} lh={1}>
+                    {m.value}
+                  </Text>
+                </Group>
+
+                <div
+                  style={{
+                    height: 48,
+                    background: `linear-gradient(90deg, ${m.sparkColor}10, ${m.sparkColor}40)`,
+                    borderRadius: "6px",
+                    position: "relative",
+                    overflow: "hidden",
+                    marginBottom: "8px",
+                  }}
+                >
+                  <svg
+                    width="100%"
+                    height="100%"
+                    style={{ position: "absolute", bottom: 0 }}
+                  >
+                    <polyline
+                      points="10,38 35,25 65,32 95,18 125,28 155,15 185,22 215,12"
+                      fill="none"
+                      stroke={m.sparkColor}
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+
+                <Badge
+                  color={m.change.startsWith("+") ? "green" : "red"}
+                  variant="light"
+                  radius="sm"
+                >
+                  {m.change}
+                </Badge>
+              </Card>
+            ))}
+          </Flex>
 
           <Flex gap={24}>
             {/* Interactive Crisis Map */}
