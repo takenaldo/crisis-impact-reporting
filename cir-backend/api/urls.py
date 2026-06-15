@@ -4,6 +4,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from .views import CrisisViewSet, ImpactReportViewSet, NatureOfCrisisQuestionViewSet
+from .map_views import map_bbox
 
 router = DefaultRouter()
 
@@ -14,4 +15,5 @@ router.register(r'nature-of-crisis-questions', NatureOfCrisisQuestionViewSet, ba
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('map/bbox/', map_bbox, name='map-bbox'),
 ]

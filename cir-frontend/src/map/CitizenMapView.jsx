@@ -3,19 +3,13 @@ import {
   ActionIcon,
   Alert,
   Box,
-  Group,
   LoadingOverlay,
-  Paper,
-  Progress,
-  Stack,
   Text,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { IconAlertCircle, IconCurrentLocation, IconMapPin } from '@tabler/icons-react';
 import AnnotationToolbar from './AnnotationToolbar';
 import MapBase from './MapBase';
 import useMapBbox from './hooks/useMapBbox';
-import useTilePrefetch from './hooks/useTilePrefetch';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -34,12 +28,8 @@ const DAMAGE_COLORS = {
 };
 
 export default function CitizenMapView() {
-  const { bbox, tileSources, buildingFootprintsUrl, loading, error, gpsAvailable, userLocation } =
-    useMapBbox();
-  const { progress, isComplete, startPrefetch } = useTilePrefetch(bbox, tileSources);
+  const { bbox, loading, error, gpsAvailable, userLocation } = useMapBbox();
 
-  // Stable center derived from bbox — useMemo prevents re-creating the array on
-  // every progress tick, which would trigger MapBase's flyTo on every re-render
   const mapCenter = useMemo(() => {
     if (userLocation) return [userLocation.longitude, userLocation.latitude];
     if (bbox) return [(bbox.min_lng + bbox.max_lng) / 2, (bbox.min_lat + bbox.max_lat) / 2];
@@ -58,34 +48,10 @@ export default function CitizenMapView() {
   const [mapInstance, setMapInstance] = useState(null);
   const [isReportMode] = useState(true);
   const [annotations, setAnnotations] = useState(null); // eslint-disable-line no-unused-vars
-  const prefetchStarted = useRef(false);
-  const notifiedRef = useRef(false);
   const recenterFnRef = useRef(null);
-
-  // Kick off prefetch once spatial data is ready — only once
-  useEffect(() => {
-    if (bbox && tileSources && !prefetchStarted.current) {
-      prefetchStarted.current = true;
-      startPrefetch();
-    }
-  }, [bbox, tileSources, startPrefetch]);
-
-  // Show "offline-ready" notification when prefetch finishes
-  useEffect(() => {
-    if (isComplete && !notifiedRef.current) {
-      notifiedRef.current = true;
-      notifications.show({
-        title: 'Map ready for offline use',
-        message: 'All map tiles have been saved to your device.',
-        color: 'green',
-        autoClose: 4000,
-      });
-    }
-  }, [isComplete]);
 
   const handleMapReady = (map) => {
     setMapInstance(map);
-    // Add impact report markers as a GeoJSON circle layer
     map.addSource('impact-reports', {
       type: 'geojson',
       data: {
@@ -93,10 +59,7 @@ export default function CitizenMapView() {
         features: MOCK_REPORTS.map((r) => ({
           type: 'Feature',
           geometry: { type: 'Point', coordinates: [r.longitude, r.latitude] },
-          properties: {
-            id: r.id,
-            damage_level: r.damage_level,
-          },
+          properties: { id: r.id, damage_level: r.damage_level },
         })),
       },
     });
@@ -125,7 +88,7 @@ export default function CitizenMapView() {
     let coords = null;
     const geom = feature.geometry;
     if (geom?.type === 'Polygon' && geom.coordinates?.[0]?.[0]) {
-      coords = geom.coordinates[0][0]; // first ring, first vertex [lng, lat]
+      coords = geom.coordinates[0][0];
     } else if (geom?.type === 'MultiPolygon' && geom.coordinates?.[0]?.[0]?.[0]) {
       coords = geom.coordinates[0][0][0];
     } else if (geom?.type === 'Point') {
@@ -133,8 +96,6 @@ export default function CitizenMapView() {
     }
     setSelectedBuilding({ id: buildingId, coords, properties: feature.properties });
   };
-
-  const showProgress = bbox && !isComplete;
 
   return (
     <Box
@@ -175,50 +136,23 @@ export default function CitizenMapView() {
         )}
       </Box>
 
-      {/* ── Spatial API error alert ─────────────────────────────────────── */}
+      {/* ── API error alert ─────────────────────────────────────────────── */}
       {error && (
         <Alert
           icon={<IconAlertCircle size={16} />}
           color="orange"
-          title="Spatial API unavailable"
+          title="API unavailable"
           radius={0}
           style={{ flexShrink: 0 }}
         >
-          Could not reach the spatial API: {error}. Map is running in basic mode.
+          Could not reach the API: {error}. Map is running in basic mode.
         </Alert>
-      )}
-
-      {/* ── Tile prefetch progress bar ─────────────────────────────────── */}
-      {showProgress && (
-        <Box
-          px="md"
-          py={6}
-          style={{
-            flexShrink: 0,
-            background: '#f0f2f5',
-            borderBottom: '1px solid #e2e8f0',
-          }}
-        >
-          <Group justify="space-between" mb={4}>
-            <Text size="xs" c="dimmed">
-              Caching tiles for offline use…
-            </Text>
-            <Text size="xs" fw={600} c="blue">
-              {progress}%
-            </Text>
-          </Group>
-          <Progress value={progress} size="sm" color="blue" />
-        </Box>
       )}
 
       {/* ── Map ────────────────────────────────────────────────────────── */}
       <Box style={{ position: 'relative', flex: 1, minHeight: 0 }}>
         {loading ? (
-          <LoadingOverlay
-            visible
-            zIndex={10}
-            overlayProps={{ blur: 2 }}
-          />
+          <LoadingOverlay visible zIndex={10} overlayProps={{ blur: 2 }} />
         ) : !gpsAvailable && !bbox ? (
           <MapContainer
             center={[20, 20]}
@@ -237,8 +171,6 @@ export default function CitizenMapView() {
               center={mapCenter}
               zoom={16}
               maxBounds={maxBounds}
-              tileSources={tileSources}
-              buildingFootprintsUrl={buildingFootprintsUrl}
               onBuildingClick={handleBuildingClick}
               onMapReady={handleMapReady}
               onRecenter={(fn) => { recenterFnRef.current = fn; }}
@@ -277,34 +209,29 @@ export default function CitizenMapView() {
 
       {/* ── Selected building panel ─────────────────────────────────────── */}
       {selectedBuilding && (
-        <Paper
-          shadow="md"
-          radius={0}
-          p="md"
+        <Box
           style={{
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
             zIndex: 500,
+            background: '#fff',
             borderTop: '2px solid #e2e8f0',
+            padding: 16,
           }}
         >
-          <Group justify="space-between" align="flex-start">
-            <Stack gap={2}>
-              <Text fw={700} size="sm">
-                Selected Building
-              </Text>
-              <Text size="xs" c="dimmed">
-                ID: {selectedBuilding.id ?? 'Unknown'}
-              </Text>
+          <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Box>
+              <Text fw={700} size="sm">Selected Building</Text>
+              <Text size="xs" c="dimmed">ID: {selectedBuilding.id ?? 'Unknown'}</Text>
               {selectedBuilding.coords && (
                 <Text size="xs" c="dimmed">
                   Lng: {Number(selectedBuilding.coords[0]).toFixed(6)}, Lat:{' '}
                   {Number(selectedBuilding.coords[1]).toFixed(6)}
                 </Text>
               )}
-            </Stack>
+            </Box>
             <Text
               size="xs"
               c="blue"
@@ -314,8 +241,8 @@ export default function CitizenMapView() {
             >
               ✕ Close
             </Text>
-          </Group>
-        </Paper>
+          </Box>
+        </Box>
       )}
     </Box>
   );
