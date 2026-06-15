@@ -37,12 +37,12 @@ const theme = createTheme({
 });
 
 export function DashboardPage ()  {
-  const [progress, setProgress] = useState({ verified: 0, pending: 0, review: 0 });
+  const [progress, setProgress] = useState({ high: 0, medium: 0, low: 0 });
 
   // Animate the ring chart
   useEffect(() => {
     const timer = setTimeout(() => {
-      setProgress({ verified: 58, pending: 27, review: 15 });
+      setProgress({ high: 58, medium: 27, low: 15 });
     }, 300);
 
     return () => clearTimeout(timer);
@@ -55,23 +55,21 @@ export function DashboardPage ()  {
         <header style={{ background: 'white', borderBottom: '1px solid #e2e8f0', padding: '12px 28px' }}>
           <Group justify="space-between" align="center">
             <Group align="center">
-              <Text fw={700} size="xl" c="#0f766e">UNDP / Africa</Text>
+              <Text fw={700} size="xl" c="#0f766e">UNDP</Text>
               <Title order={3} style={{ marginLeft: 20 }}>Crisis Impact Overview</Title>
             </Group>
 
-            <Group gap="md">
-              <TextInput
+            <Group gap="lg">
+              {/* <TextInput
                 placeholder="Search reports, locations, teams..."
                 leftSection={<IconSearch size={18} />}
                 w={360}
                 radius="md"
-              />
-              <Button variant="light" leftSection={<span>🇰🇪</span>} radius="md">
-                Last 7 days
-              </Button>
+              /> */}
+{/*            
               <Button leftSection={<IconDownload size={18} />} radius="md">
                 Export
-              </Button>
+              </Button> */}
               <Button variant="subtle" radius="md" p={8}>
                 <IconBell size={22} />
               </Button>
@@ -97,8 +95,8 @@ export function DashboardPage ()  {
             {[
               { title: 'Total Reports', value: '1,284', change: '+12.4%', sparkColor: '#67e8f9' },
               { title: 'High-Impact Incidents', value: '86', change: '+4.2%', sparkColor: '#fb923c' },
-              { title: 'Verified Reports', value: '742', change: '+8.1%', sparkColor: '#67e8f9' },
-              { title: 'Avg. Response Time', value: '2.4h', change: '-18%', sparkColor: '#fca5a5' },
+             { title: 'Medium-Impact Incidents', value: '742', change: '+8.1%', sparkColor: '#67e8f9' },
+               { title: 'Low-Impact Incidents', value: '340', change: '-18%', sparkColor: '#fca5a5' },
             ].map((m, i) => (
               <Card 
                 key={i} 
@@ -108,8 +106,7 @@ export function DashboardPage ()  {
                 style={{ flex: 1, minWidth: 260, background: 'white', border: '1px solid #f1f5f9' }}
               >
                 <Text size="sm" c="dimmed" fw={500} mb={6}>{m.title}</Text>
-                
-                <Group align="flex-end" mb={12}>
+                                <Group align="flex-end" mb={12}>
                   <Text size={36} fw={700} lh={1}>{m.value}</Text>
                 </Group>
 
@@ -211,7 +208,7 @@ export function DashboardPage ()  {
               <Group justify="space-between" mb="xl">
                 <div>
                   <Text fw={700} size="lg">Status Distribution</Text>
-                  <Text size="sm" c="dimmed">By verification stage</Text>
+                  <Text size="sm" c="dimmed">By Impact Level</Text>
                 </div>
                 <Button variant="light" radius="md">Details</Button>
               </Group>
@@ -223,9 +220,9 @@ export function DashboardPage ()  {
                   roundCaps
                   animationDuration={1200}   
                   sections={[
-                    { value: progress.verified, color: '#14b8a6' },
-                    { value: progress.pending, color: '#f59e0b' },
-                    { value: progress.review, color: '#475569' },
+                    { value: progress.high, color: '#ef4444' },
+                    { value: progress.medium, color: '#f59e0b' },
+                    { value: progress.low, color: '#14b8a6' },
                   ]}
                   label={
                     <div style={{ textAlign: 'center' }}>
@@ -238,9 +235,9 @@ export function DashboardPage ()  {
 
               <Stack gap="md" mt="md">
                 {[
-                  { label: 'Verified', percent: 58, color: '#14b8a6' },
-                  { label: 'Pending', percent: 27, color: '#f59e0b' },
-                  { label: 'Under Review', percent: 15, color: '#475569' },
+                  { label: 'High-Impact', percent: 58, color: '#ef4444' },
+                  { label: 'Medium-Impact', percent: 27, color: '#f59e0b' },
+                  { label: 'Low-Impact', percent: 15, color: '#14b8a6' },
                 ].map((item) => (
                   <Group key={item.label} justify="space-between">
                     <Group gap="sm">

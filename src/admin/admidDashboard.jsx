@@ -103,11 +103,11 @@ export function CrisisImpactDashboard() {
         {/* Refactored Logo Section */}
         <Box py="lg" px="sm" mb="md" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <Group align="center" gap="sm">
-            <Box bg="white" p={4} style={{ borderRadius: '8px', display: 'flex' }}>
+            <Box style={{ borderRadius: '8px', display: 'flex' }}>
               <Image
                 src="https://www.atachcommunity.com/fileadmin/_processed_/a/e/csm_undp_logo_landscape_854813103b.png"
                 alt="UNDP Logo"
-                w={40}
+                w={50}
                 h={40}
                 fit="fit"
               />
@@ -117,7 +117,7 @@ export function CrisisImpactDashboard() {
                 Crisis Impact
               </Title>
               <Text size="xs" opacity={0.6} style={{ color: 'white', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                Reporting Tool
+                Reporting 
               </Text>
             </Stack>
           </Group>
