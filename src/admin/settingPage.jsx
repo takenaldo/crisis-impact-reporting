@@ -1,23 +1,17 @@
-
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
- 
   Title,
   Text,
-
   Stack,
-
   Button,
   Grid,
   Card,
   Badge,
-
-
   Switch,
   Select,
   Box,
-  Container
-} from '@mantine/core';
+  Container,
+} from "@mantine/core";
 import {
   IconLayoutDashboard,
   IconMap,
@@ -31,14 +25,13 @@ import {
   IconTrendingUp,
   IconTrendingDown,
   IconUserPlus,
-  IconMaximize,        // ← Added back
-} from '@tabler/icons-react';
+  IconMaximize, // ← Added back
+} from "@tabler/icons-react";
 
-import { COLORS } from '../utils';
+import { COLORS } from "../utils";
 
 export function SettingsPage() {
   return (
-
     <Box bg={COLORS.lightBackground} minHeight="100vh" py="md" px="lg">
       <Container size="xl">
         <Card radius="lg" withBorder p="xl">
@@ -46,7 +39,8 @@ export function SettingsPage() {
             System Configuration & Parameters
           </Title>
           <Text size="xs" color={COLORS.textSecondary} mb="xl">
-            Alter structural parameters, automated calculation metrics, and security authentication filters.
+            Alter structural parameters, automated calculation metrics, and
+            security authentication filters.
           </Text>
 
           <Stack gap="md" style={{ maxWidth: 500 }}>
@@ -68,7 +62,11 @@ export function SettingsPage() {
             <Select
               label="Default Mapping Base Layer Provider Engine"
               placeholder="Select Map Base"
-              data={['OpenStreetMap Framework', 'Mapbox Vector Engine', 'Satellite Pipeline Engine']}
+              data={[
+                "OpenStreetMap Framework",
+                "Mapbox Vector Engine",
+                "Satellite Pipeline Engine",
+              ]}
               defaultValue="OpenStreetMap Framework"
               mt="xs"
             />
