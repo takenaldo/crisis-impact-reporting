@@ -11,9 +11,10 @@ import {
   Textarea,
   UnstyledButton,
   FileButton,
+  Card,
 } from "@mantine/core";
 import Webcam from "react-webcam";
-import { IconCamera, IconUpload } from "@tabler/icons-react";
+import { IconCamera, IconUpload, IconX } from "@tabler/icons-react";
 
 // Helper to convert base64 camera snaps into File objects
 function dataURLtoFile(dataurl, filename) {
@@ -30,34 +31,44 @@ function dataURLtoFile(dataurl, filename) {
 
 export const MediaCapturePreview = ({ form, photoObj, fieldName, index }) => {
   return (
-    <>
-      <Image src={photoObj.preview} radius="md" fit="cover" height={150} />
+    <Card
+      padding="0"
+      radius="md"
+      withBorder
+      h="100%"
+      pos="relative"
+      style={{ overflow: "hidden" }}
+    >
+      {/* Absolute delete button layered cleanly on top-right of image */}
       <ActionIcon
         color="red"
         variant="filled"
         radius="xl"
-        size="sm"
+        size="md"
         pos="absolute"
-        top={4}
-        right={4}
+        top={8}
+        right={8}
+        style={{ zIndex: 2 }}
         onClick={() => {
-          // FIX 1: Deleting from this single array automatically cleans up everything
           form.removeListItem(fieldName, index);
         }}
       >
-        ✕
+        <IconX size={16} />
       </ActionIcon>
-      <Group gap={0}>
+
+      <Image src={photoObj.preview} fit="cover" height={120} />
+
+      {/* Styled caption block beneath the image */}
+      <Box p="xs" bg="var(--mantine-color-body)">
         <Textarea
-          placeholder="Add a caption ..."
+          placeholder="Add a caption..."
           radius="xs"
           size="xs"
-          pos="absolute"
-          bottom={4}
-          left={4}
-          // FIX 2: Controlled input bound to the nested object state
+          variant="unstyled"
+          rows={2}
+          autosize
+          maxRows={3}
           value={photoObj.description || ""}
-          // FIX 3: Clean Mantine nested string-path state update
           onChange={(e) =>
             form.setFieldValue(
               `${fieldName}.${index}.description`,
@@ -66,15 +77,14 @@ export const MediaCapturePreview = ({ form, photoObj, fieldName, index }) => {
           }
           styles={{
             input: {
-              backgroundColor: "rgba(0, 0, 0, 0.5)", // Transparent gray
-              color: "white",
-              border: "none",
-              padding: "4px 8px",
+              padding: 0,
+              fontSize: "12px",
+              lineHeight: "1.4",
             },
           }}
         />
-      </Group>
-    </>
+      </Box>
+    </Card>
   );
 };
 
@@ -82,7 +92,6 @@ export function MediaCaptureInput({ form, fieldName = "photos" }) {
   const webcamRef = useRef(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
 
-  // Safely grab the current array and errors for this specific field
   const photos = form.values[fieldName] || [];
   const error = form.errors[fieldName];
 
@@ -90,9 +99,9 @@ export function MediaCaptureInput({ form, fieldName = "photos" }) {
   const capture = useCallback(() => {
     if (webcamRef.current) {
       const imageSrc = webcamRef.current.getScreenshot();
+      if (!imageSrc) return;
       const file = dataURLtoFile(imageSrc, `camera_snap_${Date.now()}.jpg`);
 
-      // FIX 4: Initialize item with an empty description field
       form.insertListItem(fieldName, {
         file,
         preview: imageSrc,
@@ -103,22 +112,20 @@ export function MediaCaptureInput({ form, fieldName = "photos" }) {
 
   // 2. Handle File Upload Appending
   const handleFileUpload = (newFiles) => {
-    // FIX 5: Initialize mapped upload files with an empty description field
     const mappedFiles = newFiles.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
       description: "",
     }));
 
-    // Merge existing photos with newly uploaded ones
     form.setFieldValue(fieldName, [...photos, ...mappedFiles]);
   };
 
   return (
-    <Stack spacing="sm">
-      {/* Input Controls */}
+    <Stack gap="sm">
+      {/* Space-Saving Compact Input Controls */}
       {!isCameraOpen && (
-        <SimpleGrid cols={2} spacing="md">
+        <SimpleGrid cols={2} spacing="xs">
           <FileButton
             onChange={handleFileUpload}
             multiple
@@ -127,20 +134,24 @@ export function MediaCaptureInput({ form, fieldName = "photos" }) {
             {(props) => (
               <UnstyledButton
                 {...props}
+                p="xs"
+                bg="var(--mantine-color-gray-0)"
+                bd="1px dashed var(--mantine-color-gray-4)"
                 style={{
-                  border: "2px dashed #e9ecef",
                   borderRadius: "8px",
-                  padding: "32px 16px",
                   display: "flex",
-                  flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  cursor: "pointer",
-                  backgroundColor: "#f8f9fa",
+                  gap: "8px",
+                  height: "44px",
                 }}
               >
-                <IconUpload size={32} color="#868e96" stroke={1.5} />
-                <Text size="sm" mt="xs" weight={500} color="dimmed">
+                <IconUpload
+                  size={18}
+                  color="var(--mantine-color-gray-7)"
+                  stroke={1.5}
+                />
+                <Text size="xs" fw={500} c="dimmed">
                   Upload Files
                 </Text>
               </UnstyledButton>
@@ -149,20 +160,24 @@ export function MediaCaptureInput({ form, fieldName = "photos" }) {
 
           <UnstyledButton
             onClick={() => setIsCameraOpen(true)}
+            p="xs"
+            bg="var(--mantine-color-gray-0)"
+            bd="1px dashed var(--mantine-color-gray-4)"
             style={{
-              border: "2px dashed #e9ecef",
               borderRadius: "8px",
-              padding: "32px 16px",
               display: "flex",
-              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              cursor: "pointer",
-              backgroundColor: "#f8f9fa",
+              gap: "8px",
+              height: "44px",
             }}
           >
-            <IconCamera size={32} color="#868e96" stroke={1.5} />
-            <Text size="sm" mt="xs" weight={500} color="dimmed">
+            <IconCamera
+              size={18}
+              color="var(--mantine-color-gray-7)"
+              stroke={1.5}
+            />
+            <Text size="xs" fw={500} c="dimmed">
               Open Camera
             </Text>
           </UnstyledButton>
@@ -171,39 +186,79 @@ export function MediaCaptureInput({ form, fieldName = "photos" }) {
 
       {/* Active Camera View */}
       {isCameraOpen && (
-        <Stack
-          align="center"
-          spacing="xs"
-          p="sm"
-          style={{ border: "1px dashed #ccc", borderRadius: 8 }}
-        >
-          <Webcam
-            audio={false}
-            ref={webcamRef}
-            screenshotFormat="image/jpeg"
-            videoConstraints={{ facingMode: "environment" }}
-            style={{ width: "100%", borderRadius: "8px" }}
-          />
-          <Group>
-            <Button variant="default" onClick={() => setIsCameraOpen(false)}>
-              Close Camera
-            </Button>
-            <Button color="blue" onClick={capture}>
-              Snap Photo
-            </Button>
-          </Group>
-        </Stack>
+        <Card withBorder padding={0} radius="md" pos="relative">
+          <Stack gap={0}>
+            {/* Red 'X' Close Button (Top Right) */}
+            <ActionIcon
+              color="red"
+              variant="filled"
+              radius="xl"
+              size="lg"
+              pos="absolute"
+              top={10}
+              right={10}
+              style={{ zIndex: 10 }}
+              onClick={() => setIsCameraOpen(false)}
+            >
+              <IconX size={20} />
+            </ActionIcon>
+
+            {/* Webcam View */}
+            <Box style={{ width: "100%", overflow: "hidden", lineHeight: 0 }}>
+              <Webcam
+                audio={false}
+                ref={webcamRef}
+                screenshotFormat="image/jpeg"
+                videoConstraints={{ facingMode: "environment" }}
+                style={{ width: "100%", height: "auto", display: "block" }}
+              />
+            </Box>
+
+            {/* Control Bar beneath the video feed */}
+            <Box
+              p="sm"
+              bg="#E6F4F1"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderTop: "1px solid var(--mantine-color-dark-7)",
+              }}
+            >
+              {/* Native UI Shutter Button with nested Camera Icon */}
+              <UnstyledButton
+                onClick={capture}
+                style={{
+                  width: "56px",
+                  height: "56px",
+                  borderRadius: "50%",
+                  backgroundColor: "white",
+                  border: "4px solid rgba(255, 255, 255, 0.4)",
+                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
+                  cursor: "pointer",
+                  transition: "transform 0.1s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                active={{ transform: "scale(0.92)" }}
+              >
+                <IconCamera size={24} color="#333333" stroke={2} />
+              </UnstyledButton>
+            </Box>
+          </Stack>
+        </Card>
       )}
 
       {/* Unified Preview Gallery */}
       {photos.length > 0 && (
-        <Box mt="xs">
-          <Text size="sm" weight={500} mb="xs">
+        <Box>
+          <Text size="xs" fw={600} mb="xs" c="dimmed">
             Attached Images ({photos.length})
           </Text>
-          <SimpleGrid cols={2} spacing="sm">
+          <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="xs">
             {photos.map((photoObj, index) => (
-              <Box key={index} pos="relative">
+              <Box key={index}>
                 <MediaCapturePreview
                   index={index}
                   photoObj={photoObj}
@@ -217,7 +272,7 @@ export function MediaCaptureInput({ form, fieldName = "photos" }) {
       )}
 
       {error && (
-        <Text color="red" size="sm">
+        <Text c="red" size="sm" fw={500}>
           {error}
         </Text>
       )}

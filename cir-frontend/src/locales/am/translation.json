@@ -1,3 +1,17 @@
 {
-    "hello": "ሰላም"
+    "hello": "ሰላም",
+    "participant_help_announcement": "የሚያቀርቡት ሪፖርት ምላሽ ለመስጠትና ማህበረሰቦችን ለመደገፍ ይረዳል፤",
+    "report_damage": "ጉዳትን ሪፖርት ያድርጉ",
+    "recent_reports": "የቅርብ ጊዜ ሪፖርቶች",
+    "view_all": "ሁሉንም ይመልከቱ",
+    "Home": "ዋና ገፅ",
+    "My Reports": "የእኔ ሪፖርቶች",
+    "Info": "መረጃዎች",
+    "Profile": "የግል መገለጫ",
+    "Crisis Impact": "የቀውስ ጉዳት",
+    "Reporting": "ሪፖርት",
+    "No Damage": "ጉዳት የለም",
+    "Partial": "በከፊል",
+    "Minimal": "አነስተኛ",
+    "Complete": "ሙሉ"
 }
