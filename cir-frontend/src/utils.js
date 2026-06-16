@@ -1,8 +1,8 @@
 import axios from "axios";
 
-export const api = axios.create({
-    baseURL: "http://localhost:8000/api/",
-});
+// export const api = axios.create({
+//     baseURL: "http://localhost:8000/api/",
+// });
 
 
 
@@ -129,3 +129,21 @@ export function TypeBadge({ type }) {
         </span>
     );
 }
+
+// Helper to color-code severity if applicable
+export function getSeverityColor(severity) {
+    if (!severity) return "gray";
+    // const s = severity.toLowerCase();
+
+    const colors = {
+        'No Damage': '--color-teal',
+        'Partial': '--color-navy',
+        'Minimal': '-color-amber',
+        'Complete': '--color-red-orange'
+    }
+    return colors[severity]
+
+    // if (s.includes("high") || s.includes("severe")) return "red";
+    // if (s.includes("medium") || s.includes("moderate")) return "orange";
+    // return "blue";
+};

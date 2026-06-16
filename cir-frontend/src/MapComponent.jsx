@@ -9,7 +9,44 @@ import {
   useMapEvents,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { IconLocation } from "@tabler/icons-react";
+import L from "leaflet"; // Import core Leaflet for icon definitions
+
+// --- CUSTOM SVG ICONS MATCHING THE IMAGE ---
+// We define the SVG as a string and encode it to use as a Data URI.
+
+// 1. TEAL PIN for current location
+const tealPinSvg = `data:image/svg+xml;utf8,${encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
+    <path fill="#1ABC9C" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+    <circle fill="white" cx="12" cy="9" r="2.5"/>
+  </svg>
+`)}`;
+
+// 2. DARK NAVY PIN for manual selection
+const navyPinSvg = `data:image/svg+xml;utf8,${encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
+    <path fill="#11335A" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+    <circle fill="white" cx="12" cy="9" r="2.5"/>
+  </svg>
+`)}`;
+
+// --- DEFINE LEAFLET ICON OBJECTS ---
+// These objects are used by the Map components to render the markers.
+
+const myLocationIcon = L.icon({
+  iconUrl: tealPinSvg, // The Data URI from above
+  iconSize: [36, 36], // The visual size
+  iconAnchor: [18, 36], // Points the bottom tip of the pin to the precise coordinate
+  popupAnchor: [0, -36], // Position of the popup relative to the pin tip
+});
+
+const selectedLocationIcon = L.icon({
+  iconUrl: navyPinSvg, // The Data URI from above
+  iconSize: [36, 36],
+  iconAnchor: [18, 36],
+  popupAnchor: [0, -36],
+});
+// ---------------------------------------------
 
 // 1. Child component to handle the user's geolocation
 const LocationMarker = () => {
@@ -17,7 +54,8 @@ const LocationMarker = () => {
   const map = useMap();
 
   useEffect(() => {
-    map.locate({ setView: true, maxZoom: 16 });
+    // Triggers the permission prompt and centers the map
+    map.locate({ setView: true, maxZoom: 18 });
 
     map.on("locationfound", (e) => {
       setPosition(e.latlng);
@@ -31,8 +69,9 @@ const LocationMarker = () => {
   if (position === null) return null;
 
   return (
-    <Marker position={position}>
-      <Popup>You are exactly here!</Popup>
+    // We now pass our custom icon object here
+    <Marker position={position} icon={myLocationIcon}>
+      <Popup defaultOpened>You are exactly here!</Popup>
     </Marker>
   );
 };
@@ -42,48 +81,39 @@ const LocationSelector = ({ onLocationSelect }) => {
 
   useMapEvents({
     click(e) {
-      // e.latlng contains the raw latitude and longitude
       setPosition(e.latlng);
-
-      // Pass the coordinates back to the parent component
       onLocationSelect(e.latlng);
     },
   });
 
-  // Render a marker if a position has been selected
   if (position === null) return null;
 
   return (
-    <Marker position={position}>
+    // We now pass our other custom icon object here
+    <Marker position={position} icon={selectedLocationIcon}>
       <Popup>Selected Location</Popup>
     </Marker>
   );
 };
 
-// 2. Main map component with Satellite View toggle
-const MapComponent = ({ form }) => {
-  const defaultPosition = [9.032, 38.7486];
+// 2. Main map component
+const MapComponent = ({ form, selectEnabled = true }) => {
+  const defaultPosition = [9.032, 38.7486]; // Fallback if location fails (e.g., Addis Ababa)
 
   const [selectedCoords, setSelectedCoords] = useState(null);
   const handleLocationSelect = (latlng) => {
     setSelectedCoords(latlng);
     form.setFieldValue("infrastructure_longitude", latlng.lat);
     form.setFieldValue("infrastructure_latitude", latlng.lng);
-
-    // You can now use these exact values for your API, form, or database
-    console.log("Extracted Latitude:", latlng.lat);
-    console.log("Extracted Longitude:", latlng.lng);
   };
 
   return (
     <MapContainer
       center={defaultPosition}
       zoom={13}
-      style={{ height: "500px", width: "100%" }}
+      style={{ height: "500px", width: "100%", zIndex: "1" }}
     >
-      {/* LayersControl creates the toggle menu on the map */}
       <LayersControl position="topright">
-        {/* BaseLayer 1: Standard OpenStreetMap (Set as default using 'checked') */}
         <LayersControl.BaseLayer name="Street View">
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -91,19 +121,20 @@ const MapComponent = ({ form }) => {
           />
         </LayersControl.BaseLayer>
 
-        {/* BaseLayer 2: Esri Satellite Imagery */}
         <LayersControl.BaseLayer checked name="Satellite View">
           <TileLayer
-            attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+            attribution="Tiles &copy; Esri &mdash; Source: Esri"
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           />
         </LayersControl.BaseLayer>
       </LayersControl>
 
-      {/* Our geolocation marker */}
       <LocationMarker />
 
-      <LocationSelector onLocationSelect={handleLocationSelect} />
+      {/* Renders the Dark Navy marker for clicked location */}
+      {selectEnabled && (
+        <LocationSelector onLocationSelect={handleLocationSelect} />
+      )}
     </MapContainer>
   );
 };

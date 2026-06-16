@@ -22,3 +22,20 @@ class CardinalDirection(models.TextChoices):
     SW = 'SW'
     W = 'W'
     NW = 'NW'
+    
+
+class ElectrictyDamageLevel(models.TextChoices):
+    NO_DAMAGE= 'no_damage'
+    MINOR = 'minor'
+    MODERATE = 'moderate'
+    SEVERE = 'severe'
+    DESTROYED = 'destroyed'
+    UNKNOWN = 'unknown'
+ 
+ 
+class HealthServicesRatingLevel(models.TextChoices):
+    FULLY = 'fully'
+    PARTIAL = 'partial'
+    LARGLY_DISRUPTED = 'largely_disrupted'
+    NOT_FUNCTIONING = 'not_functioning'
+    UNKNOWN = 'unknown'

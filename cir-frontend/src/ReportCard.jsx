@@ -18,26 +18,19 @@ import {
   IconUserFilled,
   IconMapPin,
   IconCalendar,
+  IconInfoCircle,
 } from "@tabler/icons-react";
 import { useState } from "react";
 import QuestionsTabView from "./QuestionsTabView";
+import { getSeverityColor } from "./utils";
 
-// Helper to color-code severity if applicable
-const getSeverityColor = (severity) => {
-  if (!severity) return "gray";
-  const s = severity.toLowerCase();
-  if (s.includes("high") || s.includes("severe")) return "red";
-  if (s.includes("medium") || s.includes("moderate")) return "orange";
-  return "blue";
-};
-
-const ReportCard = ({ report }) => {
+const ReportCardOld = ({ report }) => {
   const [showMore, setShowMore] = useState(false);
 
   // Cleanly extract the date
-  const reportDate = report.damage_datetime
-    ? String(report.damage_datetime).split("T")[0]
-    : "Unknown Date";
+  const reportDate = report?.damage_datetime
+    ? String(report?.damage_datetime).split("T")[0]
+    : "Unknown Date Time";
 
   const toggleShowMore = (e) => {
     e.preventDefault();
@@ -47,7 +40,7 @@ const ReportCard = ({ report }) => {
 
   return (
     <Card
-      key={report.id}
+      key={report?.id}
       shadow="sm"
       padding="lg"
       radius="md"
@@ -59,40 +52,44 @@ const ReportCard = ({ report }) => {
         <Group justify="space-between" align="flex-start">
           <Box>
             <Text size="lg" fw={700} c="dark.8">
-              {report.infrastructure_name}
+              {report?.infrastructure_name}
             </Text>
             <Text size="sm" c="dimmed" tt="uppercase" fw={600}>
-              {report.infrastructure_type}
+              {report?.infrastructure_type}
             </Text>
           </Box>
           <Badge
             variant="light"
-            color={getSeverityColor(report.damage_severity)}
+            color={getSeverityColor(report?.damage_severity)}
           >
-            {report.damage_severity || "Severity Unknown"}
+            {report?.damage_severity + " DAMAGE" || "Severity Unknown"}
           </Badge>
         </Group>
 
+        {true && (
+          <Group gap={1}>
+            <IconInfoCircle color="orange" size={16} />
+            <Text size="xs" c={"gray"}>
+              Immediate action needed
+            </Text>
+          </Group>
+        )}
+
         {/* Description */}
         <Text size="sm" c="dark.6" lh={1.5}>
-          {report.description}
+          {report?.description}
         </Text>
 
         {/* Tags / Metadata */}
         <Group gap="xs" mt="xs">
-          {report.nature_of_crisis && (
+          {report?.nature_of_crisis && (
             <Badge variant="outline" color="gray">
-              {report.nature_of_crisis}
+              {report?.nature_of_crisis}
             </Badge>
           )}
-          {report.debris && (
+          {report?.debris && (
             <Badge variant="outline" color="brown">
               Debris
-            </Badge>
-          )}
-          {report.accessibility && (
-            <Badge variant="outline" color="red">
-              Inaccessible
             </Badge>
           )}
         </Group>
@@ -102,8 +99,8 @@ const ReportCard = ({ report }) => {
           <Group gap={4}>
             <IconMapPin size={14} color="var(--mantine-color-dimmed)" />
             <Text size="xs" c="dimmed">
-              {report.location?.country}, {report.location?.state_province},{" "}
-              {report.location?.city}
+              {report?.location?.country}, {report?.location?.state_province},{" "}
+              {report?.location?.city}
             </Text>
           </Group>
           <Group gap={4}>
@@ -145,7 +142,7 @@ const ReportCard = ({ report }) => {
             <Tabs defaultValue="Photos" variant="outline" radius="md">
               <Tabs.List>
                 <Tabs.Tab value="Photos" fw={500}>
-                  Photos ({report.photos?.length || 0})
+                  Photos ({report?.photos?.length || 0})
                 </Tabs.Tab>
                 <Tabs.Tab value="Questions" fw={500}>
                   Questions
@@ -153,9 +150,9 @@ const ReportCard = ({ report }) => {
               </Tabs.List>
 
               <Tabs.Panel value="Photos" pt="md">
-                {report.photos?.length > 0 ? (
+                {report?.photos?.length > 0 ? (
                   <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-                    {report.photos.map((p, index) => (
+                    {report?.photos.map((p, index) => (
                       <Image
                         key={index}
                         src={`http://localhost:8000${p.image}`}
@@ -167,7 +164,7 @@ const ReportCard = ({ report }) => {
                   </SimpleGrid>
                 ) : (
                   <Text size="sm" c="dimmed" fs="italic" ta="center" py="xl">
-                    No photos available for this report.
+                    No photos available for this report?.
                   </Text>
                 )}
               </Tabs.Panel>
@@ -175,8 +172,8 @@ const ReportCard = ({ report }) => {
               <Tabs.Panel value="Questions" pt="md">
                 <ScrollArea h={350} type="auto" offsetScrollbars>
                   <QuestionsTabView
-                    impactReportId={report.id}
-                    natureOfCrisis={report.nature_of_crisis}
+                    impactReportId={report?.id}
+                    natureOfCrisis={report?.nature_of_crisis}
                   />
                 </ScrollArea>
               </Tabs.Panel>
@@ -188,4 +185,4 @@ const ReportCard = ({ report }) => {
   );
 };
 
-export default ReportCard;
+export default ReportCardOld;
