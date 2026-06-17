@@ -205,3 +205,6 @@ SIMPLE_JWT = {
     # Changes the key from {"detail": "..."} to {"error": "..."} if preferred
     'TOKEN_TYPE_CLAIM': 'token_type',
 }
+
+
+AUTH_USER_MODEL = 'api.CIRUser'

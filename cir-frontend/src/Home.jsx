@@ -8,25 +8,18 @@ import {
   Button,
   Stack,
   ThemeIcon,
-  Badge,
 } from "@mantine/core";
-import {
-  IconMapPinFilled,
-  IconX,
-  IconPlus,
-  IconMinus,
-  IconCurrentLocation,
-  IconArrowRight,
-  IconHome,
-} from "@tabler/icons-react";
+import { IconMapPinFilled, IconX, IconArrowRight } from "@tabler/icons-react";
 import ImpactReportForm from "./ImpactReportForm";
 import { useTranslation } from "react-i18next";
-import { getSeverityColor, timeAgo } from "./utils";
 import ReportDetailsDrawer from "./ReportDetailsDrawer";
 
 import { t } from "i18next";
 import CirMap from "./map/CirMap";
 import api from "./api";
+import ReportCard from "./ReportCard";
+import { Navigate, useNavigate } from "react-router-dom";
+import { getUserDetails } from "./utils";
 
 // Design System Colors
 const COLORS = {
@@ -38,7 +31,8 @@ const COLORS = {
   gray: "#868E96",
 };
 
-export default function Home() {
+export default function Home({ setActiveContent }) {
+  const navigate = useNavigate();
   const { t } = useTranslation();
 
   const [showReportForm, setShowReportForm] = useState(false);
@@ -51,7 +45,7 @@ export default function Home() {
     setUserLocation(location);
     if (!fromGPS) return;
     try {
-      const res = await api.post('map/bbox/', {
+      const res = await api.post("map/bbox/", {
         latitude: location.latitude,
         longitude: location.longitude,
       });
@@ -61,7 +55,10 @@ export default function Home() {
         Math.log2(((window.innerWidth || 400) * 360) / (256 * lngSpan))
       );
       setMapBounds({
-        maxBounds: [[min_lat, min_lng], [max_lat, max_lng]],
+        maxBounds: [
+          [min_lat, min_lng],
+          [max_lat, max_lng],
+        ],
         minZoom: Math.max(2, minZoom),
       });
     } catch {
@@ -70,32 +67,57 @@ export default function Home() {
   }, []); // setUserLocation, setMapBounds, and api are all stable references
 
   const [crisesList, setCrisesList] = useState([]);
-  const [unmappedReports, setUnamppedReports] = useState([]);
+  const [reports, setReports] = useState([]);
+
+  // useEffect(() => {
+  //   const fetchCrises = async () => {
+  //     try {
+  //       const response = await api.get("/crises/");
+  //       setCrisesList(response.data);
+  //       console.log("Fetched crises:", response.data);
+  //     } catch (error) {
+  //       console.error("Error fetching crises:", error);
+  //     }
+  //   };
+
+  //   const fetchUnmappedImppactReports = async () => {
+  //     //
+  //     try {
+  //       const response = await api.get(
+  //         "/impact-reports/get_unmapped_imapct_reports/",
+  //       );
+  //       setReports(response.data);
+  //     } catch (error) {
+  //       console.error("Error fetching reports:", error);
+  //     }
+  //   };
+  //   fetchCrises();
+  //   fetchUnmappedImppactReports();
+  // }, []);
 
   useEffect(() => {
-    const fetchCrises = async () => {
+    const fetchUserDetails = async () => {
       try {
-        const response = await api.get("/crises/");
-        setCrisesList(response.data);
-        console.log("Fetched crises:", response.data);
-      } catch (error) {
-        console.error("Error fetching crises:", error);
-      }
+        if (getUserDetails() !== null) {
+          const response = await api.get("impact-reports/get_user_reports/");
+
+          setReports(response.data);
+        } else {
+          const reportIDs = JSON.parse(
+            localStorage.getItem("report_ids") || "[]"
+          );
+          const response = await api.post(
+            "impact-reports/get_reports_by_stored_ids/",
+            {
+              report_ids: reportIDs,
+            }
+          );
+          setReports(response.data);
+        }
+      } catch (error) {}
     };
 
-    const fetchUnmappedImppactReports = async () => {
-      //
-      try {
-        const response = await api.get(
-          "/impact-reports/get_unmapped_imapct_reports/",
-        );
-        setUnamppedReports(response.data);
-      } catch (error) {
-        console.error("Error fetching reports:", error);
-      }
-    };
-    fetchCrises();
-    fetchUnmappedImppactReports();
+    fetchUserDetails();
   }, []);
 
   return (
@@ -182,14 +204,23 @@ export default function Home() {
           >
             {t("recent_reports")}
           </Text>
-          <Text fz="sm" fw={600} c={COLORS.teal} style={{ cursor: "pointer" }}>
+          <Text
+            fz="sm"
+            fw={600}
+            c={COLORS.teal}
+            style={{ cursor: "pointer" }}
+            onClick={() => {
+              console.log("lll");
+              // navigate("/my_reports");
+              setActiveContent("MY_REPORTS");
+            }}
+          >
             {t("view_all")}
           </Text>
         </Group>
 
         <Stack gap="sm">
-          {unmappedReports.map((report) => (
-            // <ReportCardOld key={report.id} crisis={report} />
+          {reports.slice(0, 3).map((report) => (
             <ReportCard
               key={report.id}
               title={
@@ -224,49 +255,5 @@ export default function Home() {
         report={selectedReport}
       />
     </Box>
-  );
-}
-
-// Helper Component for Report Cards
-function ReportCard({ title, report, onClick }) {
-  return (
-    <Paper
-      withBorder
-      radius="md"
-      p="sm"
-      style={{ borderColor: "#E9ECEF" }}
-      onClick={onClick}
-    >
-      <Group wrap="nowrap" align="center">
-        <ThemeIcon size={46} radius="xl" bg={COLORS.mint} c={COLORS.teal}>
-          <IconHome size={22} stroke={1.5} />
-        </ThemeIcon>
-
-        <Box style={{ flex: 1 }}>
-          <Text fz="sm" fw={600} c={COLORS.navy} lh={1.2} lineClamp={3}>
-            {(report?.infrastructure_name + " - " || "") +
-              report?.infrastructure_type}
-          </Text>
-          <Text fz="xs" c={COLORS.gray} mt={4}>
-            {report?.damage_datetime && timeAgo(report?.damage_datetime)}
-          </Text>
-        </Box>
-
-        <Badge
-          variant="light"
-          size="md"
-          radius="sm"
-          style={{
-            textTransform: "none",
-            fontWeight: 500,
-            backgroundColor: COLORS.mint,
-
-            color: "var(" + getSeverityColor(report?.damage_severity) + ")",
-          }}
-        >
-          {t(report?.damage_severity)}
-        </Badge>
-      </Group>
-    </Paper>
   );
 }

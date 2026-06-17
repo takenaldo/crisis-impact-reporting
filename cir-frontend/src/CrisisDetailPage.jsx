@@ -11,7 +11,7 @@ import {
   Tabs,
   Text,
 } from "@mantine/core";
-import ReportCard from "./ReportCard";
+import ReportCard from "./ReportCardOld";
 import CrisisCard from "./CrisisCard";
 import { MobileFormDrawer } from "./MobileFormDrawer";
 import api from "./api";

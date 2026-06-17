@@ -147,3 +147,14 @@ export function getSeverityColor(severity) {
     // if (s.includes("medium") || s.includes("moderate")) return "orange";
     // return "blue";
 };
+
+
+
+
+export function getUserDetails() {
+    try {
+        return JSON.parse(localStorage.getItem('user'))
+    } catch (error) {
+        return null;
+    }
+}

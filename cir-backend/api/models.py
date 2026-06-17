@@ -2,9 +2,15 @@ from datetime import datetime
 import os
 import uuid
 
+from django.contrib.auth import get_user_model
+
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 from .constants import CardinalDirection, CrisisCategory, DamageSeverity, HealthServicesRatingLevel, ElectrictyDamageLevel
+
+# User = get_user_model()
+
 
 def get_timestamp_path(instance, filename):
     ext = filename.split('.')[-1]
@@ -12,6 +18,8 @@ def get_timestamp_path(instance, filename):
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     filename = f"{timestamp}.{ext}"
     return os.path.join('', filename)
+
+
 
 
 class Photo(models.Model):
@@ -81,6 +89,18 @@ class Location(models.Model):
 
     def __str__(self):
         return self.country + " - " + self.state_province + " - " + self.city + " - " + self.street_address if self.country and self.state_province and self.city and self.street_address else self.name or self.description or "Location"
+
+
+
+
+class CIRUser(AbstractUser):
+    location = models.ForeignKey(Location, on_delete=models.RESTRICT, blank=True, null=True)
+    job_title = models.CharField(max_length=100)
+    organization = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return self.username
+
 
 
 class Crisis(models.Model):
@@ -184,6 +204,14 @@ class ImpactReport(models.Model):
     )
 
     pressing_need = models.TextField(default="")
+    
+    
+    reported_by = models.ForeignKey(
+        get_user_model(),
+        null=True,
+        blank=True,
+        on_delete=models.RESTRICT
+    )
 
     annotations = models.JSONField(
         blank=True, null=True,
@@ -209,6 +237,59 @@ class Question(models.Model):
 
     def __str__(self):
         return self.text
+    
+class QuestionGroup(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    
+    distance_threshold_in_km = models.FloatField()
+    
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+
+
+    impact_report = models.ForeignKey(ImpactReport, on_delete=models.CASCADE, default=None, null=True, blank=True)
+
+
+class Question2(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    question = models.CharField(max_length=255)
+
+    choice_options = models.JSONField(
+        blank=True, null=True, help_text="A JSON array of multiple choice options for the question, if applicable. For example: ['Option 1', 'Option 2', 'Option 3']. If the question is not multiple choice, this can be left blank.")
+
+    is_multiple_choice = models.BooleanField(
+        default=False, help_text="Indicates whether the question is a multiple choice question or not.")
+
+
+    question_group= models.ForeignKey(QuestionGroup, on_delete=models.SET_NULL, blank=True, null=True)
+
+
+    def __str__(self):
+        return self.question
+
+
+class Answer(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    question = models.ForeignKey(
+        Question2, on_delete=models.CASCADE, db_index=True)
+    answer = models.CharField(max_length=255, blank=True, null=True,
+                              help_text="The answer provided for the question in relation to the specific impact report. For multiple choice questions, this should be one of the options provided in the Question's choice_options field.")
+
+    reported_by = models.ForeignKey(
+        get_user_model(),
+        null=True,
+        blank=True,
+        on_delete=models.RESTRICT
+    )
+
+    
+    def __str__(self):
+        return f"Answer to '{self.question.question}': '{self.answer}'"
+
+
 
 
 class NatureOfCrisisQuestion(Question):

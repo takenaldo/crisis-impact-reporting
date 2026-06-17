@@ -282,6 +282,19 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
 
     try {
       const response = await api.post("/impact-reports/", formData);
+
+      const report = response.data;
+      if (report != null) {
+        try {
+          const reportIDs = JSON.parse(
+            localStorage.getItem("report_ids") || "[]",
+          );
+          reportIDs.push(report.id);
+          console.log(reportIDs);
+          localStorage.setItem("report_ids", JSON.stringify(reportIDs));
+        } catch (error) {}
+      }
+
       form.reset();
       notifications.show({
         title: "Report Submitted",
