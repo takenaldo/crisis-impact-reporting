@@ -20,19 +20,26 @@ import './colors.css'
 import CrisisReportingApp from './CrisisReportingApp';
 import LoginPage from './LoginPage';
 import CIRAuthChecker from './CIRAuthChecker';
+import { SplashScreen } from './SplashScreen';
 
 
 
 function App() {
 
   const router = createBrowserRouter([
-    // { path: '/', element: <CrisisDashboard /> },
-    { path: '/', element: <CrisisReportingApp /> },
-    // { path: '/home/', element: <CIRAuthChecker /> },
+    { path: '/', element: <SplashScreen /> },
+    { path: '/splash', element: <SplashScreen /> },
+
+    { path: '/home', element: <CrisisReportingApp /> },
+
 
     { path: '/add-report/:id?/:name?', element: <ImpactReportForm /> },
     { path: '/crisis/:id?', element: <CrisisDetailPage /> },
     { path: '/login/', element: <LoginPage /> },
+
+
+    { path: '/auth_check/', element: <CIRAuthChecker /> },
+
 
 
   ]);

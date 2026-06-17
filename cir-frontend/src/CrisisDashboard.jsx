@@ -13,7 +13,7 @@ import { Badge, Flex, Group, SimpleGrid, Stack, Text } from "@mantine/core";
 import { IconPlus } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Select } from "@mantine/core";
-import ReportCardOld from "./ReportCard";
+import ReportCardOld from "./ReportCardOld";
 import api from "./api";
 
 // ─── Sample Data ──────────────────────────────────────────────────────────────
