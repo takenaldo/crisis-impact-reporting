@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   Container,
   Grid,
@@ -18,6 +18,8 @@ import {
   Anchor,
   Stack,
 } from "@mantine/core";
+  Anchor, Stack
+} from '@mantine/core';
 import {
   IconSearch,
   IconCalendar,
@@ -29,13 +31,14 @@ import {
   IconClock,
   IconCircleCheck,
   IconDeviceMobile,
-  IconAlertTriangle,
-} from "@tabler/icons-react";
-import { api, timeAgo, COLORS } from "../utils";
-import { HeaderCardPage } from "./adminPage";
+  IconAlertTriangle
+} from '@tabler/icons-react';
+import { api, timeAgo, COLORS } from '../utils';
+import { HeaderCardPage } from './adminPage';
 // Design-matched UI Palette
 
 // Raw layout mock data exactly representing the image's row entries
+
 
 export function ReportsPage() {
   const [crisesReportList, setCrisesReportList] = useState([]);
@@ -66,6 +69,12 @@ export function ReportsPage() {
     }
 
     return (
+      <Badge
+        variant="filled"
+        bg={styles.bg}
+        c={styles.c}
+        radius="xl"
+        size="sm"
       <Badge
         variant="filled"
         bg={styles.bg}
@@ -104,6 +113,12 @@ export function ReportsPage() {
     }
 
     return (
+      <Badge
+        variant="filled"
+        bg={styles.bg}
+        c={styles.c}
+        radius="md"
+        size="sm"
       <Badge
         variant="filled"
         bg={styles.bg}
@@ -155,10 +170,16 @@ export function ReportsPage() {
             <Button
               variant="default"
               leftSection={<IconCalendar size={16} />}
+            <Button
+              variant="default"
+              leftSection={<IconCalendar size={16} />}
               radius="md"
             >
               Last 7 days
             </Button>
+            <Button
+              bg={COLORS.primaryTeal}
+              leftSection={<IconDownload size={16} />}
             <Button
               bg={COLORS.primaryTeal}
               leftSection={<IconDownload size={16} />}
@@ -170,7 +191,9 @@ export function ReportsPage() {
               <IconBell size={18} stroke={1.5} />
             </ActionIcon>
 
+
             <Divider orientation="vertical" />
+
 
             <Group gap="xs">
               <Avatar color="blue" radius="xl">
@@ -195,8 +218,14 @@ export function ReportsPage() {
   );
 }
 
+
+
+
+
+
 export function ReportDataTablePage() {
   const [crisesReportList, setCrisesReportList] = useState([]);
+
   useEffect(() => {
     const fetchCrises = async () => {
       try {
@@ -209,38 +238,31 @@ export function ReportDataTablePage() {
     };
 
     fetchCrises();
-  }, []);
-  return (
+  }, []); return (
+
     <Card padding="lg" radius="lg" shadow="xs">
       {/* Section Controls Toolbar Header */}
       <Group justify="space-between" mb="xl">
         <Box>
-          <Text fw={700} size="lg" c={COLORS.darkBlue}>
-            Recent Reports
-          </Text>
+          <Text fw={700} size="lg" c={COLORS.darkBlue}>Report Management</Text>
         </Box>
 
         <Group gap="xs">
           <Select
             placeholder="All severities"
-            data={["High", "Medium", "Low"]}
+            data={['High', 'Medium', 'Low']}
             w={140}
             radius="md"
             size="xs"
           />
           <Select
             placeholder="All regions"
-            data={[
-              "Nairobi, KE",
-              "Mogadishu, SO",
-              "Addis Ababa, ET",
-              "Juba, SS",
-              "Kampala, UG",
-            ]}
+            data={['Nairobi, KE', 'Mogadishu, SO', 'Addis Ababa, ET', 'Juba, SS', 'Kampala, UG']}
             w={130}
             radius="md"
             size="xs"
           />
+
         </Group>
       </Group>
       {/* Management Records Table */}
@@ -248,39 +270,15 @@ export function ReportDataTablePage() {
         <Table verticalSpacing="md" horizontalSpacing="md">
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>
-                <Text size="xs" c="dimmed" fw={700}>
-                  INFRASTRUCTURE NAME{" "}
-                </Text>{" "}
-              </Table.Th>
-              <Table.Th>
-                <Text size="xs" c="dimmed" fw={700}>
-                  {" "}
-                  NATURE OF CRISIS{" "}
-                </Text>{" "}
-              </Table.Th>
-              <Table.Th>
-                <Text size="xs" c="dimmed" fw={700}>
-                  LOCATION
-                </Text>
-              </Table.Th>
-              <Table.Th>
-                <Text size="xs" c="dimmed" fw={700}>
-                  SEVERITY
-                </Text>
-              </Table.Th>
-              <Table.Th ta="right">
-                <Text size="xs" c="dimmed" fw={700}>
-                  Updated
-                </Text>
-              </Table.Th>{" "}
-            </Table.Tr>
+              <Table.Th><Text size="xs" c="dimmed" fw={700}>INFRASTRUCTURE NAME </Text> </Table.Th>
+              <Table.Th><Text size="xs" c="dimmed" fw={700}> NATURE OF CRISIS  </Text> </Table.Th>
+              <Table.Th><Text size="xs" c="dimmed" fw={700}>LOCATION</Text></Table.Th>
+              <Table.Th><Text size="xs" c="dimmed" fw={700}>SEVERITY</Text></Table.Th>
+              <Table.Th ta="right"><Text size="xs" c="dimmed" fw={700}>Updated</Text></Table.Th> </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {crisesReportList.map((row) => (
-              <Table.Tr key={row.id}>
-                {" "}
-                {/* Report Info Column */}
+              <Table.Tr key={row.id}>  {/* Report Info Column */}
                 <Table.Td>
                   <Stack gap={2}>
                     <Text size="sm" fw={700} c={COLORS.darkBlue}>
@@ -308,31 +306,34 @@ export function ReportDataTablePage() {
                     <Text size="sm">{row.location.city}</Text>
                   </Group>
                 </Table.Td>
+
                 {/* Severity Badge Column */}
                 <Table.Td>{row.damage_severity}</Table.Td>
-                <Table.Td ta="right">
-                  {displayDate(row.damage_datetime)} {"at"}{" "}
-                  {displayTime(row.damage_datetime)}
-                </Table.Td>
+                <Table.Td ta="right">{displayDate(row.damage_datetime)} {"at"} {displayTime(row.damage_datetime)}</Table.Td>
+
+
               </Table.Tr>
             ))}
           </Table.Tbody>
         </Table>
       </Table.ScrollContainer>
     </Card>
+
   );
 }
 
-const displayDate = (rawDate) =>
-  new Date(rawDate).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }); // "June 16, 2026"
 
-const displayTime = (rawDate) =>
-  new Date(rawDate).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  }); // "08:02 AM"
+const displayDate = (rawDate) => new Date(rawDate).toLocaleDateString('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric'
+}); // "June 16, 2026"
+
+const displayTime = (rawDate) => new Date(rawDate).toLocaleTimeString('en-US', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: true
+}); // "08:02 AM"
+
+
+
