@@ -23,6 +23,7 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import MapComponent from "./MapComponent";
+import CirMap from "./map/CirMap";
 import {
   IconAlertTriangle,
   IconCheck,
@@ -38,6 +39,7 @@ import { notifications } from "@mantine/notifications";
 import { MobileFormDrawer } from "./MobileFormDrawer";
 import { DateTimePicker } from "@mantine/dates";
 import api from "./api";
+import { savePendingReport } from "./map/utils/pendingReports";
 
 const NATURE_OF_CRISIS_OPTIONS = [
   { value: "flood", label: "Flood" },
@@ -61,7 +63,7 @@ const DAMAGE_SEVERITIES = [
   { value: "Complete", label: "Complete" },
 ];
 
-export default function ImpactReportForm({ opened, onClose }) {
+export default function ImpactReportForm({ opened, onClose, userLocation }) {
   const { id, name } = useParams();
   const navigate = useNavigate();
 
@@ -75,6 +77,7 @@ export default function ImpactReportForm({ opened, onClose }) {
   const [showMappingRecommendation, setShowMappingRecommendation] =
     useState(false);
   const [reportID, setReportID] = useState(null);
+  const [mapBounds, setMapBounds] = useState({ maxBounds: null, minZoom: 2 });
 
   const form = useForm({
     initialValues: {
@@ -99,6 +102,7 @@ export default function ImpactReportForm({ opened, onClose }) {
       electricity_condition: "unknown",
       health_services_rating: "unknown",
       pressing_need: [],
+      annotations: null,
     },
 
     validate: {
@@ -108,6 +112,39 @@ export default function ImpactReportForm({ opened, onClose }) {
         !value ? "Infrastructure type is required" : null,
     },
   });
+
+  // Pre-fill lat/lng from GPS/dragged location so it reaches the form submission
+  useEffect(() => {
+    if (userLocation) {
+      form.setFieldValue("infrastructure_latitude",  userLocation.latitude);
+      form.setFieldValue("infrastructure_longitude", userLocation.longitude);
+    }
+  }, [userLocation]); // eslint-disable-line
+
+  // Fetch bbox whenever userLocation is known — always required in the form
+  useEffect(() => {
+    if (!userLocation) return;
+    const fetchBounds = async () => {
+      try {
+        const res = await api.post('map/bbox/', {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+        });
+        const { min_lng, min_lat, max_lng, max_lat } = res.data.bbox;
+        const lngSpan = max_lng - min_lng;
+        const minZoom = Math.ceil(
+          Math.log2(((window.innerWidth || 400) * 360) / (256 * lngSpan))
+        );
+        setMapBounds({
+          maxBounds: [[min_lat, min_lng], [max_lat, max_lng]],
+          minZoom: Math.max(2, minZoom),
+        });
+      } catch {
+        // bbox unavailable — map stays unconstrained
+      }
+    };
+    fetchBounds();
+  }, [userLocation]); // eslint-disable-line
 
   // Mapping steps to form keys to trigger validation rules seamlessly on step transitions
   const stepFieldMappings = [
@@ -156,6 +193,45 @@ export default function ImpactReportForm({ opened, onClose }) {
   const handleSubmit = async (values) => {
     console.log("Submitting:", values);
     setIsSubmitting(true);
+
+    // ── Offline path ────────────────────────────────────────────────────────
+    if (!navigator.onLine) {
+      try {
+        await savePendingReport({
+          fields: {
+            ...values,
+            damage_datetime: values.damage_datetime instanceof Date
+              ? values.damage_datetime.toISOString()
+              : values.damage_datetime,
+          },
+          photos: values.photos.map((p) => ({
+            blob: p.file,
+            description: p.description ?? '',
+            name: p.file?.name ?? 'photo.jpg',
+          })),
+        });
+        window.dispatchEvent(new CustomEvent('report-queued'));
+        notifications.show({
+          title: 'Saved offline',
+          message: 'Your report is queued and will be submitted automatically when you reconnect.',
+          color: '#F4A261',
+          icon: <IconCheck size={16} />,
+        });
+      } catch {
+        notifications.show({
+          title: 'Could not save offline',
+          message: 'Please check your storage settings and try again.',
+          color: '#E76F51',
+          icon: <IconAlertTriangle size={16} />,
+        });
+      }
+      setIsSubmitting(false);
+      setActive(0);
+      form.reset();
+      onClose();
+      return;
+    }
+
     const formData = new FormData();
     if (values.crisis_id) formData.append("crisis_id", values.crisis_id);
 
@@ -196,6 +272,7 @@ export default function ImpactReportForm({ opened, onClose }) {
     formData.append("electricity_condition", values.electricity_condition);
     formData.append("health_services_rating", values.health_services_rating);
     formData.append("pressing_need", values.pressing_need.join(", "));
+    formData.append("annotations", JSON.stringify(values.annotations ?? {}));
 
     values.photos.forEach((photoObj) => {
       formData.append("photos", photoObj.file);
@@ -245,8 +322,21 @@ export default function ImpactReportForm({ opened, onClose }) {
       description: "Geographic indicators",
       content: (
         <Stack gap="md">
-          <Box style={{ borderRadius: "8px", overflow: "hidden" }}>
-            <MapComponent form={form} />
+          <Box style={{ borderRadius: "8px", overflow: "hidden", height: 320 }}>
+            <CirMap
+              height="320px"
+              center={
+                userLocation
+                  ? [userLocation.latitude, userLocation.longitude]
+                  : [9.032, 38.7486]
+              }
+              zoom={userLocation ? 15 : 2}
+              showAnnotationTools
+              userLocation={userLocation}
+              onAnnotationChange={(a) => form.setFieldValue("annotations", a)}
+              maxBounds={mapBounds.maxBounds}
+              minZoom={mapBounds.minZoom}
+            />
           </Box>
           <Divider
             label="Or provide address metrics"

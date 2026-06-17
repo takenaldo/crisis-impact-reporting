@@ -9,8 +9,6 @@ import { Notifications } from '@mantine/notifications';
 import { MantineProvider } from '@mantine/core';
 import ImpactReportForm from './ImpactReportForm';
 import CrisisDetailPage from './CrisisDetailPage';
-import CitizenMapView from './map/CitizenMapView';
-
 import './i18n';
 
 import '@mantine/core/styles.css';
@@ -35,7 +33,6 @@ function App() {
     { path: '/add-report/:id?/:name?', element: <ImpactReportForm /> },
     { path: '/crisis/:id?', element: <CrisisDetailPage /> },
     { path: '/login/', element: <LoginPage /> },
-    { path: '/map', element: <CitizenMapView /> },
   ]);
 
 

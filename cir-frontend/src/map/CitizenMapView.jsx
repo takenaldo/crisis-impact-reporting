@@ -23,7 +23,7 @@ export default function CitizenMapView() {
   const mapCenter = useMemo(() => {
     if (userLocation) return [userLocation.latitude, userLocation.longitude];
     if (bbox) return [(bbox.min_lat + bbox.max_lat) / 2, (bbox.min_lng + bbox.max_lng) / 2];
-    return [10, 20]; // world center — no specific place assumed
+    return [10, 20]; // world center no specific place assumed
   }, [userLocation, bbox]);
 
   // Leaflet maxBounds format: [[minLat, minLng], [maxLat, maxLng]]
@@ -79,7 +79,7 @@ export default function CitizenMapView() {
         )}
         {!loading && !gpsAvailable && (
           <Text c="#f39c12" size="xs" ml="auto">
-            ● GPS unavailable — pan to your location
+            ● GPS unavailable pan to your location
           </Text>
         )}
       </Box>

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  MapContainer, TileLayer, LayersControl, ZoomControl,
+  MapContainer, LayersControl, ZoomControl,
   useMap, useMapEvents, Marker, Popup, CircleMarker,
 } from 'react-leaflet';
+import { createTileLayerComponent } from '@react-leaflet/core';
 import L from 'leaflet';
+import { cacheTile, getCachedTile } from './utils/tileCache';
 import { ActionIcon, Box, Paper, Stack, Text, Tooltip } from '@mantine/core';
 import {
   IconCircle, IconCurrentLocation, IconMapPin,
@@ -21,6 +23,59 @@ L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIconRetina,
   shadowUrl: markerShadowPng,
 });
+
+// ── CachedTileLayer: Leaflet TileLayer with IndexedDB read-through cache ──────
+const CachingLayer = L.TileLayer.extend({
+  createTile(coords, done) {
+    const img = document.createElement('img');
+    img.alt = '';
+    img.setAttribute('role', 'presentation');
+
+    const url = this.getTileUrl(coords);
+
+    getCachedTile(url)
+      .then((cached) => {
+        if (cached) {
+          const objUrl = URL.createObjectURL(new Blob([cached], { type: 'image/png' }));
+          img.onload  = () => { URL.revokeObjectURL(objUrl); done(null, img); };
+          img.onerror = (e) => { URL.revokeObjectURL(objUrl); done(e, img); };
+          img.src = objUrl;
+        } else {
+          fetch(url)
+            .then((res) => {
+              if (!res.ok) throw new Error(res.statusText);
+              return res.arrayBuffer();
+            })
+            .then((buf) => {
+              cacheTile(url, buf).catch(() => {}); // fire-and-forget
+              const objUrl = URL.createObjectURL(new Blob([buf], { type: 'image/png' }));
+              img.onload  = () => { URL.revokeObjectURL(objUrl); done(null, img); };
+              img.onerror = (e) => { URL.revokeObjectURL(objUrl); done(e, img); };
+              img.src = objUrl;
+            })
+            .catch((err) => done(err, img));
+        }
+      })
+      .catch(() => {
+        // IndexedDB unavailable — fall back to direct URL
+        img.onload  = () => done(null, img);
+        img.onerror = (e) => done(e, img);
+        img.src = url;
+      });
+
+    return img;
+  },
+});
+
+const CachedTileLayer = createTileLayerComponent(
+  ({ url, ...options }, context) => ({
+    instance: new CachingLayer(url, options),
+    context,
+  }),
+  (instance, props, prevProps) => {
+    if (props.url !== prevProps.url) instance.setUrl(props.url);
+  },
+);
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const COLORS = {
@@ -52,23 +107,26 @@ function ensureStyles() {
       0%   { transform:translate(-50%,-50%) scale(0.5); opacity:0.8; }
       100% { transform:translate(-50%,-50%) scale(2.5); opacity:0; }
     }
-    .cir-pos-wrap  { position:relative; width:36px; height:36px; }
-    .cir-pos-dot   {
-      position:absolute; top:50%; left:50%;
+    .cir-pin-wrap  { position:relative; width:36px; height:50px; }
+    .cir-teal-ring {
+      position:absolute; top:13px; left:18px;
+      width:34px; height:34px; border-radius:50%;
       transform:translate(-50%,-50%);
-      width:14px; height:14px; background:${COLORS.position};
-      border:3px solid #fff; border-radius:50%;
-      box-shadow:0 2px 6px rgba(0,0,0,.3);
-    }
-    .cir-pulse-ring {
-      position:absolute; top:50%; left:50%;
-      width:30px; height:30px; border-radius:50%;
-      border:2.5px solid ${COLORS.position};
+      border:2.5px solid #1ABC9C;
       animation:cir-pulse 2s ease-out infinite;
     }
-    .cir-pulse-ring:nth-child(2){ animation-delay:1s; }
+    .cir-teal-ring:nth-child(2){ animation-delay:1s; }
     @keyframes cir-dash { to { stroke-dashoffset:-16; } }
     .cir-dir-animated { stroke-dasharray:6 4; animation:cir-dash .4s linear infinite; }
+    .cir-here-popup .leaflet-popup-content-wrapper {
+      background:#0f172a; color:#f1f5f9;
+      border-radius:10px; padding:10px 14px;
+      box-shadow:0 4px 16px rgba(0,0,0,.45);
+      font-size:13px; font-weight:600; white-space:nowrap;
+    }
+    .cir-here-popup .leaflet-popup-tip { background:#0f172a; }
+    .cir-here-popup .leaflet-popup-close-button { color:#94a3b8 !important; font-size:16px !important; top:6px !important; right:8px !important; }
+    .cir-here-popup .leaflet-popup-content { margin:0; }
   `;
   document.head.appendChild(s);
 }
@@ -97,6 +155,24 @@ function bearingDegrees(from, to) {
   return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
 }
 
+function destinationPoint(lat, lng, bearing, distanceMeters) {
+  const R = 6371000;
+  const bearRad = (bearing * Math.PI) / 180;
+  const lat1 = (lat * Math.PI) / 180;
+  const lon1 = (lng * Math.PI) / 180;
+  const d = distanceMeters / R;
+  const lat2 = Math.asin(
+    Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(bearRad)
+  );
+  const lon2 =
+    lon1 +
+    Math.atan2(
+      Math.sin(bearRad) * Math.sin(d) * Math.cos(lat1),
+      Math.cos(d) - Math.sin(lat1) * Math.sin(lat2),
+    );
+  return [(lat2 * 180) / Math.PI, (lon2 * 180) / Math.PI];
+}
+
 function arrowHeadIcon(bearing) {
   return L.divIcon({
     className: '',
@@ -109,33 +185,36 @@ function arrowHeadIcon(bearing) {
   });
 }
 
-function positionIcon() {
+const TEAL_PIN_HTML =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" style="position:absolute;top:0;left:0">' +
+  '<path fill="#1ABC9C" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>' +
+  '<circle fill="white" cx="12" cy="9" r="2.5"/></svg>';
+
+function tealPulsingIcon() {
   return L.divIcon({
     className: '',
-    html: `<div class="cir-pos-wrap">
-             <div class="cir-pulse-ring"></div>
-             <div class="cir-pulse-ring"></div>
-             <div class="cir-pos-dot"></div>
+    html: `<div class="cir-pin-wrap">
+             <div class="cir-teal-ring"></div>
+             <div class="cir-teal-ring"></div>
+             ${TEAL_PIN_HTML}
            </div>`,
-    iconSize:   [36, 36],
-    iconAnchor: [18, 18],
+    iconSize:   [36, 50],
+    iconAnchor: [18, 50],
+    popupAnchor:[0, -50],
   });
 }
 
-const TEAL_PIN_SVG = `data:image/svg+xml;utf8,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">' +
-  '<path fill="#1ABC9C" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>' +
-  '<circle fill="white" cx="12" cy="9" r="2.5"/></svg>'
-)}`;
-
-const NAVY_PIN_SVG = `data:image/svg+xml;utf8,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">' +
-  '<path fill="#11335A" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>' +
-  '<circle fill="white" cx="12" cy="9" r="2.5"/></svg>'
-)}`;
-
-const tealPinIcon = L.icon({ iconUrl: TEAL_PIN_SVG, iconSize: [36, 36], iconAnchor: [18, 36], popupAnchor: [0, -36] });
-const navyPinIcon = L.icon({ iconUrl: NAVY_PIN_SVG, iconSize: [36, 36], iconAnchor: [18, 36], popupAnchor: [0, -36] });
+function navyPinIcon() {
+  return L.divIcon({
+    className: '',
+    html: '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" style="display:block">' +
+          '<path fill="#11335A" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>' +
+          '<circle fill="white" cx="12" cy="9" r="2.5"/></svg>',
+    iconSize:    [36, 36],
+    iconAnchor:  [18, 36],
+    popupAnchor: [0, -36],
+  });
+}
 
 // ── MapController: syncs reactive props to the Leaflet map ─────────────────
 function MapController({ center, zoom, maxBounds, minZoom, onMapReady, onRecenter }) {
@@ -153,11 +232,25 @@ function MapController({ center, zoom, maxBounds, minZoom, onMapReady, onRecente
   }, [center, zoom, map]);
 
   useEffect(() => {
-    if (maxBounds) map.setMaxBounds(maxBounds);
-  }, [maxBounds, map]);
+    if (!maxBounds) return;
+    // Defer if a flyTo is in progress  setMaxBounds calls panInsideBounds synchronously
+    // which cancels the animation and lands the map at the wrong position.
+    if (map.getZoom() < (minZoom ?? 2)) {
+      map.once('moveend', () => map.setMaxBounds(maxBounds));
+    } else {
+      map.setMaxBounds(maxBounds);
+    }
+  }, [maxBounds, map, minZoom]);
 
   useEffect(() => {
-    map.setMinZoom(minZoom ?? 2);
+    const target = minZoom ?? 2;
+    // When current zoom < target, setMinZoom calls setZoom(target) internally,
+    // which cancels any in-progress flyTo animation. Defer until moveend.
+    if (map.getZoom() < target) {
+      map.once('moveend', () => map.setMinZoom(target));
+    } else {
+      map.setMinZoom(target);
+    }
   }, [minZoom, map]);
 
   useEffect(() => {
@@ -168,25 +261,80 @@ function MapController({ center, zoom, maxBounds, minZoom, onMapReady, onRecente
   return null;
 }
 
-// ── AutoLocate: GPS on mount, shows teal pin + drives center ──────────────
+const YOU_ARE_HERE = '📍 You are here';
+
+// ── AutoLocate: GPS on mount; falls back to draggable pin if GPS unavailable ─
 function AutoLocate({ onLocated }) {
   const map = useMap();
   const [gpsPin, setGpsPin] = useState(null);
+  const [draggable, setDraggable] = useState(false);
+  const markerRef = useRef(null);
+
   useEffect(() => {
     const onFound = (e) => {
       map.flyTo(e.latlng, 15, { duration: 1 });
       setGpsPin([e.latlng.lat, e.latlng.lng]);
-      if (onLocated) onLocated({ latitude: e.latlng.lat, longitude: e.latlng.lng });
+      setDraggable(false);
+      if (onLocated) onLocated({ latitude: e.latlng.lat, longitude: e.latlng.lng }, true);
+    };
+    const onError = () => {
+      // GPS unavailable place draggable pin at current map center so user
+      // can zoom/pan and drag it to their location manually.
+      const c = map.getCenter();
+      setGpsPin([c.lat, c.lng]);
+      setDraggable(true);
+      if (onLocated) onLocated({ latitude: c.lat, longitude: c.lng }, false);
     };
     map.on('locationfound', onFound);
+    map.on('locationerror', onError);
     map.locate({ setView: false });
-    return () => map.off('locationfound', onFound);
+    return () => { map.off('locationfound', onFound); map.off('locationerror', onError); };
   }, [map, onLocated]);
-  return gpsPin ? (
-    <Marker position={gpsPin} icon={tealPinIcon}>
-      <Popup>You are here</Popup>
+
+  // Auto-open "You are here" popup only after GPS fix (not on drag fallback)
+  useEffect(() => {
+    if (gpsPin && !draggable && markerRef.current) markerRef.current.openPopup();
+  }, [gpsPin, draggable]);
+
+  if (!gpsPin) return null;
+
+  return (
+    <Marker
+      ref={markerRef}
+      position={gpsPin}
+      icon={tealPulsingIcon()}
+      draggable={draggable}
+      eventHandlers={draggable ? {
+        dragend(e) {
+          const pos = e.target.getLatLng();
+          if (onLocated) onLocated({ latitude: pos.lat, longitude: pos.lng }, false);
+        },
+      } : {}}
+    >
+      <Popup className="cir-here-popup">
+        {draggable ? '📍 Drag to your location' : YOU_ARE_HERE}
+      </Popup>
     </Marker>
-  ) : null;
+  );
+}
+
+// ── UserLocationMarker: pulsing teal pin at the known user location ────────
+function UserLocationMarker({ userLocation }) {
+  const markerRef = useRef(null);
+  useEffect(() => {
+    if (markerRef.current) markerRef.current.openPopup();
+  }, []);
+
+  if (!userLocation) return null;
+  return (
+    <Marker
+      ref={markerRef}
+      position={[userLocation.latitude, userLocation.longitude]}
+      icon={tealPulsingIcon()}
+    >
+      <Popup className="cir-here-popup">{YOU_ARE_HERE}</Popup>
+    </Marker>
+  );
 }
 
 // ── LocationPicker: tap to pin with navy icon, writes into Mantine form ───
@@ -203,7 +351,7 @@ function LocationPicker({ form, onPinChanged }) {
       if (onPinChanged) onPinChanged({ lat, lng });
     },
   });
-  return pin ? <Marker position={pin} icon={navyPinIcon} /> : null;
+  return pin ? <Marker position={pin} icon={navyPinIcon()} /> : null;
 }
 
 // ── ReportMarkers: colored circles for damage reports ─────────────────────
@@ -471,7 +619,7 @@ function AnnotationLayer({
     // Ensure position marker exists
     if (!lr.current.posMarker) {
       lr.current.posMarker = L.marker(origin, {
-        icon: positionIcon(), draggable: true, zIndexOffset: 200,
+        icon: tealPulsingIcon(), draggable: true, zIndexOffset: 200,
       }).addTo(map);
     }
     lr.current.posMarker.setLatLng(origin);
@@ -506,18 +654,100 @@ function AnnotationLayer({
     if (!userLocation || lr.current.posMarker) return;
     lr.current.posMarker = L.marker(
       [userLocation.latitude, userLocation.longitude],
-      { icon: positionIcon(), draggable: false, zIndexOffset: 200 }
-    ).addTo(map);
+      { icon: tealPulsingIcon(), draggable: false, zIndexOffset: 200 }
+    ).addTo(map)
+     .bindPopup('You are here', { className: 'cir-here-popup', autoClose: false })
+     .openPopup();
     return () => { drop('posMarker'); };
   }, [userLocation]); // eslint-disable-line
 
   return null;
 }
 
-// ── CirMap — the unified public component ──────────────────────────────────
+// ── AnnotationDisplay: renders saved annotations as read-only Leaflet layers ──
+function AnnotationDisplay({ annotations, userLocation }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!annotations) return;
+    const layers = [];
+    const { incident_polygon, effect_radius, incident_point, direction_bearing, corrected_position } = annotations;
+
+    if (incident_polygon?.geometry?.coordinates?.[0]) {
+      const latlngs = incident_polygon.geometry.coordinates[0].map(([lng, lat]) => [lat, lng]);
+      layers.push(
+        L.polygon(latlngs, {
+          color: COLORS.polygon, fillColor: COLORS.polygon,
+          fillOpacity: 0.25, weight: 2.5, interactive: false,
+        }).addTo(map),
+      );
+    }
+
+    if (effect_radius?.center && effect_radius?.radius_meters) {
+      layers.push(
+        L.circle(effect_radius.center, {
+          radius: effect_radius.radius_meters,
+          color: COLORS.radius, fillColor: COLORS.radius,
+          fillOpacity: 0.18, weight: 2.5, interactive: false,
+        }).addTo(map),
+      );
+    }
+
+    if (incident_point?.geometry?.coordinates) {
+      const [lng, lat] = incident_point.geometry.coordinates;
+      layers.push(
+        L.circleMarker([lat, lng], {
+          radius: 10, color: '#fff', weight: 3,
+          fillColor: COLORS.point, fillOpacity: 1, interactive: false,
+        }).addTo(map),
+      );
+    }
+
+    if (direction_bearing != null) {
+      const origin = corrected_position
+        ? [corrected_position.latitude, corrected_position.longitude]
+        : userLocation
+        ? [userLocation.latitude, userLocation.longitude]
+        : null;
+      if (origin) {
+        const dest = destinationPoint(origin[0], origin[1], direction_bearing, 500);
+        layers.push(
+          L.polyline([origin, dest], {
+            color: COLORS.direction, weight: 3, dashArray: '6 4', interactive: false,
+          }).addTo(map),
+        );
+        layers.push(
+          L.marker(dest, { icon: arrowHeadIcon(direction_bearing), interactive: false, zIndexOffset: 100 }).addTo(map),
+        );
+      }
+    }
+
+    if (corrected_position) {
+      layers.push(
+        L.marker(
+          [corrected_position.latitude, corrected_position.longitude],
+          { icon: tealPulsingIcon(), zIndexOffset: 200, interactive: false },
+        ).addTo(map).bindPopup('Reported position', { className: 'cir-here-popup' }),
+      );
+    }
+
+    return () => layers.forEach((l) => map.removeLayer(l));
+  }, [annotations, userLocation, map]);
+
+  return null;
+}
+
+// ── MapRefCapture: stores the Leaflet map instance in a ref ───────────────
+function MapRefCapture({ mapRef }) {
+  const map = useMap();
+  useEffect(() => { mapRef.current = map; }, [map, mapRef]);
+  return null;
+}
+
+// ── CirMap  the unified public component ──────────────────────────────────
 export default function CirMap({
   // Map setup
-  center,                  // [lat, lng] — required
+  center,                  // [lat, lng]  required
   zoom = 13,
   height = '100%',
   minZoom = 2,
@@ -540,6 +770,9 @@ export default function CirMap({
   userLocation,            // {latitude, longitude}
   onAnnotationChange,
 
+  // Read-only annotation display (for details view)
+  annotations,             // saved annotations object to render as static layers
+
   // Recenter callback
   onMapReady,
   onRecenter,
@@ -559,14 +792,15 @@ export default function CirMap({
   } = tools;
 
   const clearLayersFnRef = useRef(null);
+  const mapRef = useRef(null);
   const [locatedUser, setLocatedUser] = useState(userLocation ?? null);
 
   // Merge external userLocation prop with GPS-discovered location
   const effectiveUserLocation = userLocation ?? locatedUser;
 
-  const handleLocated = useCallback((loc) => {
+  const handleLocated = useCallback((loc, fromGPS) => {
     setLocatedUser(loc);
-    if (onLocated) onLocated(loc);
+    if (onLocated) onLocated(loc, fromGPS);
   }, [onLocated]);
 
   // Notify parent of annotation changes
@@ -583,7 +817,7 @@ export default function CirMap({
     { tool: TOOLS.POLYGON,   icon: <IconPolygon size={18} />,         label: 'Incident Area',   color: COLORS.polygon,   tip: 'Click vertices, double-click to close' },
     { tool: TOOLS.RADIUS,    icon: <IconCircle size={18} />,          label: 'Effect Radius',   color: COLORS.radius,    tip: 'Click center, then click edge' },
     { tool: TOOLS.POINT,     icon: <IconMapPin size={18} />,          label: 'Incident Point',  color: COLORS.point,     tip: 'Click to place exact location' },
-    { tool: TOOLS.DIRECTION, icon: <IconNavigation size={18} />,      label: 'Direction',       color: COLORS.direction, tip: 'Click toward the incident' },
+    // { tool: TOOLS.DIRECTION, icon: <IconNavigation size={18} />,      label: 'Direction',       color: COLORS.direction, tip: 'Click toward the incident' },
     { tool: TOOLS.POSITION,  icon: <IconCurrentLocation size={18} />, label: 'Adjust Position', color: COLORS.position,  tip: 'Drag your position marker' },
   ];
 
@@ -601,14 +835,14 @@ export default function CirMap({
         <ZoomControl position="topright" />
         <LayersControl position="topright">
           <LayersControl.BaseLayer checked name="Street View">
-            <TileLayer
+            <CachedTileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               maxZoom={19}
             />
           </LayersControl.BaseLayer>
           <LayersControl.BaseLayer name="Satellite View">
-            <TileLayer
+            <CachedTileLayer
               attribution="Tiles &copy; Esri"
               url={ESRI_SATELLITE}
               maxZoom={19}
@@ -617,6 +851,7 @@ export default function CirMap({
           </LayersControl.BaseLayer>
         </LayersControl>
 
+        <MapRefCapture mapRef={mapRef} />
         <MapController
           center={center}
           zoom={zoom}
@@ -628,9 +863,15 @@ export default function CirMap({
 
         {autoLocate && <AutoLocate onLocated={handleLocated} />}
 
+        {!autoLocate && !showAnnotationTools && <UserLocationMarker userLocation={effectiveUserLocation} />}
+
         {locationPicker && selectEnabled && <LocationPicker form={form} />}
 
         {reports && <ReportMarkers reports={reports} />}
+
+        {annotations && !showAnnotationTools && (
+          <AnnotationDisplay annotations={annotations} userLocation={effectiveUserLocation} />
+        )}
 
         {showAnnotationTools && (
           <AnnotationLayer
@@ -649,7 +890,7 @@ export default function CirMap({
         )}
       </MapContainer>
 
-      {/* Annotation toolbar — rendered outside MapContainer, overlays map */}
+      {/* Annotation toolbar  rendered outside MapContainer, overlays map */}
       {showAnnotationTools && (
         <Box style={{ position: 'absolute', top: 16, left: 16, zIndex: 1000, pointerEvents: 'none' }}>
           <Paper
@@ -704,23 +945,37 @@ export default function CirMap({
             </Stack>
           </Paper>
 
-          {activeTool !== TOOLS.NONE && (
-            <Paper
-              shadow="sm" radius="md" p="xs" mt={8}
-              style={{
-                pointerEvents: 'auto',
-                background: 'rgba(15, 23, 42, 0.92)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                maxWidth: 180,
-              }}
-            >
-              <Text size="xs" c="white">
-                {toolButtons.find((t) => t.tool === activeTool)?.tip}
-              </Text>
-            </Paper>
-          )}
         </Box>
+      )}
+
+      {/* Recenter button  bottom-right, visible whenever user location is known */}
+      {effectiveUserLocation && (
+        <Tooltip label="Back to my location" position="left" withArrow>
+          <ActionIcon
+            size="lg"
+            radius="xl"
+            style={{
+              position: 'absolute',
+              bottom: 30,
+              right: 10,
+              zIndex: 1000,
+              backgroundColor: '#fff',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+              color: '#009C9A',
+            }}
+            onClick={() => {
+              if (mapRef.current) {
+                mapRef.current.flyTo(
+                  [effectiveUserLocation.latitude, effectiveUserLocation.longitude],
+                  mapRef.current.getZoom(),
+                  { duration: 0.8 },
+                );
+              }
+            }}
+          >
+            <IconCurrentLocation size={20} />
+          </ActionIcon>
+        </Tooltip>
       )}
     </div>
   );
