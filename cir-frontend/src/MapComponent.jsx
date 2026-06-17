@@ -2,7 +2,7 @@ import CirMap from './map/CirMap';
 
 const DEFAULT_CENTER = [9.032, 38.7486]; // Addis Ababa [lat, lng]
 
-export default function MapComponent({ form }) {
+export default function MapComponent({ form, selectEnabled = true }) {
   return (
     <div
       style={{
@@ -26,6 +26,7 @@ export default function MapComponent({ form }) {
           zoom={13}
           height="100%"
           locationPicker
+          selectEnabled={selectEnabled}
           form={form}
           autoLocate
         />

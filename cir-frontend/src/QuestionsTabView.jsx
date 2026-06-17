@@ -10,12 +10,12 @@ import {
   Box,
 } from "@mantine/core";
 import { useEffect, useState } from "react";
-import { api } from "./utils";
+import api from "./api";
 
-const QuestionsTabView = ({ impactReportId, natureOfCrisis }) => {
+const QuestionsTabView = ({ report, impactReportId, natureOfCrisis }) => {
   const [questions, setQuestions] = useState([]);
   const [nocQuestions, setNocQuestions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -41,9 +41,9 @@ const QuestionsTabView = ({ impactReportId, natureOfCrisis }) => {
       }
     };
 
-    if (impactReportId) {
-      fetchAllQuestions();
-    }
+    // if (impactReportId) {
+    //   fetchAllQuestions();
+    // }
   }, [impactReportId]);
 
   // Helper function to render a consistently styled Q&A card
@@ -71,24 +71,6 @@ const QuestionsTabView = ({ impactReportId, natureOfCrisis }) => {
     </Paper>
   );
 
-  if (loading) {
-    return (
-      <Stack gap="md">
-        <Skeleton height={80} radius="md" />
-        <Skeleton height={80} radius="md" />
-        <Skeleton height={80} radius="md" />
-      </Stack>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert title="Error" color="red" radius="md">
-        {error}
-      </Alert>
-    );
-  }
-
   return (
     <Stack gap="xl">
       {/* General Questions Section */}
@@ -96,7 +78,34 @@ const QuestionsTabView = ({ impactReportId, natureOfCrisis }) => {
         <Text size="lg" fw={700} mb="md">
           General Impact Questions
         </Text>
-        {questions.length > 0 ? (
+        <Stack gap={"sm"}>
+          {renderQACard(
+            {
+              question:
+                "Current condition of local electricity infrastructure:",
+              answer: report?.electricity_condition,
+            },
+            1,
+          )}
+          {renderQACard(
+            {
+              question:
+                "Operational capability of health services since event execution:",
+              answer: report?.health_services_rating,
+            },
+            2,
+          )}
+          {renderQACard(
+            {
+              question:
+                "Immediate pressing needs within target sector: (Select all that apply)",
+              answer: report?.pressing_need,
+            },
+            3,
+          )}
+        </Stack>
+
+        {/* {questions.length > 0 ? (
           <Stack gap="sm">
             {questions.map((q, index) => renderQACard(q, index))}
           </Stack>
@@ -104,12 +113,11 @@ const QuestionsTabView = ({ impactReportId, natureOfCrisis }) => {
           <Text size="sm" c="dimmed" fs="italic">
             No general questions found.
           </Text>
-        )}
+        )} */}
       </Box>
-
       {/* Nature of Crisis Questions Section */}
       <Box>
-        <Group mb="sm" justify="space-between">
+        {/* <Group mb="sm" justify="space-between">
           <Text size="lg" fw={700}>
             Crisis Specific Questions
           </Text>
@@ -118,10 +126,10 @@ const QuestionsTabView = ({ impactReportId, natureOfCrisis }) => {
               {natureOfCrisis}
             </Badge>
           )}
-        </Group>
+        </Group> */}
 
         <Divider mb="md" variant="dashed" />
-
+        {/* 
         {nocQuestions.length > 0 ? (
           <Stack gap="sm">
             {nocQuestions.map((q, index) => renderQACard(q, index))}
@@ -130,7 +138,7 @@ const QuestionsTabView = ({ impactReportId, natureOfCrisis }) => {
           <Text size="sm" c="dimmed" fs="italic">
             No crisis-specific questions found.
           </Text>
-        )}
+        )} */}
       </Box>
     </Stack>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   MapContainer, TileLayer, LayersControl, ZoomControl,
-  useMap, useMapEvents, Marker, CircleMarker,
+  useMap, useMapEvents, Marker, Popup, CircleMarker,
 } from 'react-leaflet';
 import L from 'leaflet';
 import { ActionIcon, Box, Paper, Stack, Text, Tooltip } from '@mantine/core';
@@ -122,6 +122,21 @@ function positionIcon() {
   });
 }
 
+const TEAL_PIN_SVG = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">' +
+  '<path fill="#1ABC9C" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>' +
+  '<circle fill="white" cx="12" cy="9" r="2.5"/></svg>'
+)}`;
+
+const NAVY_PIN_SVG = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">' +
+  '<path fill="#11335A" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>' +
+  '<circle fill="white" cx="12" cy="9" r="2.5"/></svg>'
+)}`;
+
+const tealPinIcon = L.icon({ iconUrl: TEAL_PIN_SVG, iconSize: [36, 36], iconAnchor: [18, 36], popupAnchor: [0, -36] });
+const navyPinIcon = L.icon({ iconUrl: NAVY_PIN_SVG, iconSize: [36, 36], iconAnchor: [18, 36], popupAnchor: [0, -36] });
+
 // ── MapController: syncs reactive props to the Leaflet map ─────────────────
 function MapController({ center, zoom, maxBounds, minZoom, onMapReady, onRecenter }) {
   const map = useMap();
@@ -153,22 +168,28 @@ function MapController({ center, zoom, maxBounds, minZoom, onMapReady, onRecente
   return null;
 }
 
-// ── AutoLocate: GPS on mount, drives center + userLocation ─────────────────
+// ── AutoLocate: GPS on mount, shows teal pin + drives center ──────────────
 function AutoLocate({ onLocated }) {
   const map = useMap();
+  const [gpsPin, setGpsPin] = useState(null);
   useEffect(() => {
     const onFound = (e) => {
       map.flyTo(e.latlng, 15, { duration: 1 });
+      setGpsPin([e.latlng.lat, e.latlng.lng]);
       if (onLocated) onLocated({ latitude: e.latlng.lat, longitude: e.latlng.lng });
     };
     map.on('locationfound', onFound);
     map.locate({ setView: false });
     return () => map.off('locationfound', onFound);
   }, [map, onLocated]);
-  return null;
+  return gpsPin ? (
+    <Marker position={gpsPin} icon={tealPinIcon}>
+      <Popup>You are here</Popup>
+    </Marker>
+  ) : null;
 }
 
-// ── LocationPicker: tap to pin, writes into Mantine form ──────────────────
+// ── LocationPicker: tap to pin with navy icon, writes into Mantine form ───
 function LocationPicker({ form, onPinChanged }) {
   const [pin, setPin] = useState(null);
   useMapEvents({
@@ -182,7 +203,7 @@ function LocationPicker({ form, onPinChanged }) {
       if (onPinChanged) onPinChanged({ lat, lng });
     },
   });
-  return pin ? <Marker position={pin} /> : null;
+  return pin ? <Marker position={pin} icon={navyPinIcon} /> : null;
 }
 
 // ── ReportMarkers: colored circles for damage reports ─────────────────────
@@ -504,6 +525,7 @@ export default function CirMap({
 
   // Form location picker
   locationPicker = false,
+  selectEnabled = true,    // set false to disable click-to-pin
   form,                    // Mantine form object
 
   // GPS auto-locate on mount
@@ -606,7 +628,7 @@ export default function CirMap({
 
         {autoLocate && <AutoLocate onLocated={handleLocated} />}
 
-        {locationPicker && <LocationPicker form={form} />}
+        {locationPicker && selectEnabled && <LocationPicker form={form} />}
 
         {reports && <ReportMarkers reports={reports} />}
 

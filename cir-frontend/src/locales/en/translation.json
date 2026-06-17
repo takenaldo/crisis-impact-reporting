@@ -1,3 +1,17 @@
 {
-    "hello": "hello"
+    "hello": "hello",
+    "participant_help_announcement": "Your reports help inform response and support communities.",
+    "report_damage": "Report Damage",
+    "recent_reports": "Recent Reports",
+    "view_all": "View all",
+    "Home": "Home",
+    "My Reports": "My Reports",
+    "Info": "Info",
+    "Profile": "Profile",
+    "Crisis Impact": "Crisis Impact",
+    "Reporting": "Reporting",
+    "No Damage": "No Damage",
+    "Partial": "Partial",
+    "Minimal": "Minimal",
+    "Complete": "Complete"
 }

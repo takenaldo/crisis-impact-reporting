@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 
 import {
-  api,
   CRISIS_CONFIG,
   formatNumber,
   SeverityBadge,
@@ -10,10 +9,12 @@ import {
 } from "./utils";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import MapComponent from "./MapComponent";
-import { Badge, Group, SimpleGrid, Text } from "@mantine/core";
+import { Badge, Flex, Group, SimpleGrid, Stack, Text } from "@mantine/core";
 import { IconPlus } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Select } from "@mantine/core";
+import ReportCardOld from "./ReportCard";
+import api from "./api";
 
 // ─── Sample Data ──────────────────────────────────────────────────────────────
 const now = new Date();
@@ -122,9 +123,11 @@ function CrisisCard({ crisis, isSelected, onClick }) {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
-export default function CrisisDashboard2() {
+export default function CrisisDashboard() {
   const navigate = useNavigate();
   const [crisesList, setCrisesList] = useState([]);
+
+  const [unmappedReports, setUnamppedReports] = useState([]);
 
   const { t, i18n } = useTranslation();
 
@@ -139,7 +142,19 @@ export default function CrisisDashboard2() {
       }
     };
 
+    const fetchUnmappedImppactReports = async () => {
+      //
+      try {
+        const response = await api.get(
+          "/impact-reports/get_unmapped_imapct_reports/",
+        );
+        setUnamppedReports(response.data);
+      } catch (error) {
+        console.error("Error fetching reports:", error);
+      }
+    };
     fetchCrises();
+    fetchUnmappedImppactReports();
   }, []);
 
   const changeLanguage = (lang) => {
@@ -154,17 +169,6 @@ export default function CrisisDashboard2() {
         fontFamily: "'Inter', 'Segoe UI', sans-serif",
       }}
     >
-      {t("hello")}
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { box-shadow: 0 0 6px rgba(192,57,43,0.6); transform: translate(-50%,-50%) scale(1); }
-          50% { box-shadow: 0 0 18px rgba(192,57,43,0.9); transform: translate(-50%,-50%) scale(1.35); }
-        }
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
-      `}</style>
-
-      {/* Header */}
       <div
         style={{
           background:
@@ -173,122 +177,75 @@ export default function CrisisDashboard2() {
           boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
         }}
       >
-        <div
-          style={{
-            maxWidth: 1400,
-            margin: "0 auto",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 12,
-          }}
-        >
-          <div>
-            <h1
-              style={{
-                color: "#fff",
-                margin: 0,
-                fontSize: 24,
-                fontWeight: 800,
-                letterSpacing: -0.5,
-              }}
-            >
-              Global Crisis Impact reporting portal
-            </h1>
+        <div>
+          <h1
+            style={{
+              color: "#fff",
+              margin: 0,
+              fontSize: 24,
+              fontWeight: 800,
+              letterSpacing: -0.5,
+            }}
+          >
+            Global Crisis Impact reporting portal
+          </h1>
+          <Group justify="space-between">
             <p style={{ color: "#a0aec0", margin: "4px 0 0", fontSize: 13 }}>
               Real-time crisis reporting
             </p>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                background: "rgba(255,255,255,0.1)",
-                borderRadius: 20,
-                padding: "6px 14px",
-              }}
-            >
-              <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background: "#2ecc71",
-                  display: "inline-block",
-                  animation: "pulse 2s infinite",
-                }}
-              />
-              <span style={{ color: "#a0aec0", fontSize: 12 }}>
-                Live Updates
-              </span>
-            </div>
-            <div style={{ color: "#718096", fontSize: 12 }}>
-              Updated: {new Date().toLocaleTimeString()}
-            </div>
-            <div>
-              <Select
-                value={i18n.language}
-                onChange={changeLanguage}
-                size="xs"
-                data={[
-                  { value: "en", label: "English" },
-                  { value: "es", label: "Espanol" },
-                  { value: "fr", label: "Français" },
-                  { value: "ch", label: "中文" },
-                  { value: "ar", label: "العربية" },
-                  { value: "ru", label: "Русский" },
-                  { value: "am", label: "Amharic" },
-                ]}
-                w={100}
-                style={{
+            <Select
+              value={i18n.language}
+              onChange={changeLanguage}
+              size="xs"
+              radius="xl"
+              w={120}
+              placeholder="Select language"
+              data={[
+                { value: "en", label: "English" },
+                { value: "es", label: "Español" },
+                { value: "fr", label: "Français" },
+                { value: "ch", label: "中文" },
+                { value: "ar", label: "العربية" },
+                { value: "ru", label: "Русский" },
+                { value: "am", label: "Amharic" },
+              ]}
+              styles={(theme) => ({
+                input: {
                   marginTop: 20,
-                  background: "rgba(255,255,255,0.1)",
-                  color: "#a0aec0",
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  color: theme.colors.gray[4],
                   border: "1px solid rgba(255,255,255,0.2)",
-                  borderRadius: 20,
-                }}
-              />
-            </div>
-          </div>
+                },
+              })}
+            />
+          </Group>
         </div>
       </div>
+      {/* </div> */}
       <Group justify="flex-end" p={5}>
         <a href={`/add-report`} style={{ marginTop: 10, fontSize: 12 }}>
           Add New Crisis Report
         </a>
       </Group>
 
-      <div style={{ maxWidth: 1400, margin: "0 auto", padding: "24px 32px" }}>
-        {/* Stats Row */}
-
-        {/* Filters & List */}
-        <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-          {/* Sidebar Filters */}
-
-          {/* Crisis Cards List */}
-          <div style={{ flex: "1 1 400px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {crisesList.map((crisis) => (
-                <a
-                  key={crisis.id}
-                  // href={"/crisis/" + crisis.id + "/"}
-                  style={{
-                    marginTop: 10,
-                    fontSize: 12,
-                    color: "white",
-                    textDecoration: "none",
-                  }}
-                >
-                  <CrisisCard key={crisis.id} crisis={crisis} />
-                </a>
-              ))}
-            </div>
+      <Stack p={10}>
+        <div style={{ flex: "1 1 400px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {crisesList.map((crisis) => (
+              <CrisisCard key={crisis.id} crisis={crisis} />
+            ))}
           </div>
         </div>
-      </div>
+
+        <Text>Unmapped Impact reports</Text>
+        <div style={{ flex: "1 1 400px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {unmappedReports.map((report) => (
+              <ReportCardOld key={report.id} crisis={report} />
+            ))}
+          </div>
+        </div>
+      </Stack>
     </div>
   );
 }
