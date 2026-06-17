@@ -185,6 +185,11 @@ class ImpactReport(models.Model):
 
     pressing_need = models.TextField(default="")
 
+    annotations = models.JSONField(
+        blank=True, null=True,
+        help_text="GeoJSON annotation data drawn on the map by the reporter (polygon, radius, point, direction, position)."
+    )
+
     def __str__(self):
         return (self.crisis.name if self.crisis else "") + " - Impact Report " + str(self.infrastructure_name) + str(self.infrastructure_type)
 
