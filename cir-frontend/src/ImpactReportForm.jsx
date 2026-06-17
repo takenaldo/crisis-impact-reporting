@@ -107,7 +107,7 @@ export default function ImpactReportForm() {
 
   useEffect(() => {
     const fetchQuestions = async () => {
-      if (id !== null) {
+      if (id !== null && /^\d+$/.test(id)) {
         try {
           const response = await api.get(
             "crises/" + id + "/get_questions_for_crisis/",
