@@ -14,6 +14,7 @@ from rest_framework import status
 class ImpactReportViewSet(viewsets.ModelViewSet):
     queryset = ImpactReport.objects.all()
     serializer_class = ImpactReportSerializer
+    lookup_value_regex = r'\d+'
 
 
 
@@ -107,6 +108,7 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
 class CrisisViewSet(viewsets.ModelViewSet):
     queryset = Crisis.objects.all()
     serializer_class = CrisisSerializer
+    lookup_value_regex = r'\d+'
     
     
     @action(detail=True, methods=["GET"], url_name="get_questions_for_crisis")

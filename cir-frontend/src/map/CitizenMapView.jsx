@@ -1,13 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
-import {
-  ActionIcon,
-  Box,
-  LoadingOverlay,
-  Text,
-} from '@mantine/core';
+import { ActionIcon, Box, LoadingOverlay, Text } from '@mantine/core';
 import { IconCurrentLocation, IconMapPin } from '@tabler/icons-react';
-import AnnotationToolbar from './AnnotationToolbar';
-import MapBase from './MapBase';
+import CirMap from './CirMap';
 import useMapBbox from './hooks/useMapBbox';
 
 const MOCK_REPORTS = [
@@ -18,72 +12,38 @@ const MOCK_REPORTS = [
   { id: 5, latitude: 11.587, longitude: 37.399, damage_level: 'minimal' },
 ];
 
-const DAMAGE_COLORS = {
-  minimal:  '#22c55e',
-  partial:  '#f97316',
-  complete: '#ef4444',
-};
-
 export default function CitizenMapView() {
   const { bbox, loading, gpsAvailable, userLocation } = useMapBbox();
+  const recenterFnRef = useRef(null);
+  const [annotations, setAnnotations] = useState(null); // eslint-disable-line no-unused-vars
 
-  // When GPS resolves: fly to user location at street level.
-  // When GPS is unavailable: start at world view so the user can pan to their area.
+  const hasLocation = Boolean(userLocation);
+
+  // Leaflet expects [lat, lng]; world center when GPS unavailable
   const mapCenter = useMemo(() => {
-    if (userLocation) return [userLocation.longitude, userLocation.latitude];
-    if (bbox) return [(bbox.min_lng + bbox.max_lng) / 2, (bbox.min_lat + bbox.max_lat) / 2];
-    return [20, 10]; // world center — no specific place assumed
+    if (userLocation) return [userLocation.latitude, userLocation.longitude];
+    if (bbox) return [(bbox.min_lat + bbox.max_lat) / 2, (bbox.min_lng + bbox.max_lng) / 2];
+    return [10, 20]; // world center — no specific place assumed
   }, [userLocation, bbox]);
 
-  const hasLocation = Boolean(bbox);
-
+  // Leaflet maxBounds format: [[minLat, minLng], [maxLat, maxLng]]
   const maxBounds = useMemo(() => {
     if (!bbox) return null;
     return [
-      [bbox.min_lng - 0.02, bbox.min_lat - 0.02],
-      [bbox.max_lng + 0.02, bbox.max_lat + 0.02],
+      [bbox.min_lat - 0.02, bbox.min_lng - 0.02],
+      [bbox.max_lat + 0.02, bbox.max_lng + 0.02],
     ];
   }, [bbox]);
 
-  const [selectedBuilding, setSelectedBuilding] = useState(null);
-  const [mapInstance, setMapInstance] = useState(null);
-  const [isReportMode] = useState(true);
-  const [annotations, setAnnotations] = useState(null); // eslint-disable-line no-unused-vars
-  const recenterFnRef = useRef(null);
-
-  const handleMapReady = (map) => {
-    setMapInstance(map);
-    map.addSource('impact-reports', {
-      type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: MOCK_REPORTS.map((r) => ({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [r.longitude, r.latitude] },
-          properties: { id: r.id, damage_level: r.damage_level },
-        })),
-      },
-    });
-
-    map.addLayer({
-      id: 'reports-circles',
-      type: 'circle',
-      source: 'impact-reports',
-      paint: {
-        'circle-radius': 9,
-        'circle-color': [
-          'match',
-          ['get', 'damage_level'],
-          'minimal',  DAMAGE_COLORS.minimal,
-          'partial',  DAMAGE_COLORS.partial,
-          'complete', DAMAGE_COLORS.complete,
-          '#aaaaaa',
-        ],
-        'circle-stroke-color': '#ffffff',
-        'circle-stroke-width': 2,
-      },
-    });
-  };
+  // Compute the minimum zoom where the viewport can't exceed the bbox.
+  // Formula: z = log2(viewportPx * 360 / (256 * lngSpan))
+  // Uses the lng span (narrower dimension on most phones held portrait).
+  const minZoom = useMemo(() => {
+    if (!bbox) return 2;
+    const lngSpan = bbox.max_lng - bbox.min_lng;
+    const viewportPx = window.innerWidth || 400;
+    return Math.ceil(Math.log2((viewportPx * 360) / (256 * lngSpan)));
+  }, [bbox]);
 
   return (
     <Box
@@ -96,7 +56,7 @@ export default function CitizenMapView() {
         fontFamily: "'Inter', 'Segoe UI', sans-serif",
       }}
     >
-      {/* ── Header ─────────────────────────────────────────────────────── */}
+      {/* Header */}
       <Box
         style={{
           flexShrink: 0,
@@ -124,20 +84,24 @@ export default function CitizenMapView() {
         )}
       </Box>
 
-      {/* ── Map ────────────────────────────────────────────────────────── */}
+      {/* Map */}
       <Box style={{ position: 'relative', flex: 1, minHeight: 0 }}>
         <LoadingOverlay visible={loading} zIndex={10} overlayProps={{ blur: 2 }} />
 
-        <MapBase
+        <CirMap
           center={mapCenter}
           zoom={hasLocation ? 16 : 2}
-          minZoom={hasLocation ? 10 : 2}
+          minZoom={minZoom}
           maxBounds={maxBounds}
-          onMapReady={handleMapReady}
+          height="100%"
+          reports={MOCK_REPORTS}
+          showAnnotationTools
+          userLocation={userLocation}
+          onAnnotationChange={setAnnotations}
           onRecenter={(fn) => { recenterFnRef.current = fn; }}
         />
 
-        {/* Hint overlay when GPS is unavailable — sits over the map */}
+        {/* Hint overlay when GPS is unavailable */}
         {!loading && !gpsAvailable && (
           <Box
             style={{
@@ -159,20 +123,11 @@ export default function CitizenMapView() {
           </Box>
         )}
 
-        {mapInstance && (
-          <AnnotationToolbar
-            mapInstance={mapInstance}
-            userLocation={userLocation}
-            onAnnotationChange={setAnnotations}
-            isVisible={isReportMode}
-          />
-        )}
-
         {hasLocation && (
           <Box
             style={{
               position: 'absolute',
-              bottom: selectedBuilding ? 110 : 20,
+              bottom: 20,
               right: 16,
               zIndex: 1000,
             }}
@@ -191,44 +146,6 @@ export default function CitizenMapView() {
           </Box>
         )}
       </Box>
-
-      {/* ── Selected building panel ─────────────────────────────────────── */}
-      {selectedBuilding && (
-        <Box
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 500,
-            background: '#fff',
-            borderTop: '2px solid #e2e8f0',
-            padding: 16,
-          }}
-        >
-          <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <Box>
-              <Text fw={700} size="sm">Selected Building</Text>
-              <Text size="xs" c="dimmed">ID: {selectedBuilding.id ?? 'Unknown'}</Text>
-              {selectedBuilding.coords && (
-                <Text size="xs" c="dimmed">
-                  Lng: {Number(selectedBuilding.coords[0]).toFixed(6)}, Lat:{' '}
-                  {Number(selectedBuilding.coords[1]).toFixed(6)}
-                </Text>
-              )}
-            </Box>
-            <Text
-              size="xs"
-              c="blue"
-              fw={500}
-              style={{ cursor: 'pointer' }}
-              onClick={() => setSelectedBuilding(null)}
-            >
-              ✕ Close
-            </Text>
-          </Box>
-        </Box>
-      )}
     </Box>
   );
 }

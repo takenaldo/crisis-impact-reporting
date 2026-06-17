@@ -1,26 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const RADIUS_KM = 7.5;
-
-function calculateBbox(lat, lng) {
-  const latOffset = RADIUS_KM / 111.0;
-  const lngOffset = RADIUS_KM / (111.0 * Math.cos((lat * Math.PI) / 180));
-  return {
-    min_lng: lng - lngOffset,
-    min_lat: lat - latOffset,
-    max_lng: lng + lngOffset,
-    max_lat: lat + latOffset,
-  };
-}
-
 const GPS_PERMISSION_DENIED = 1;
 
 export default function useMapBbox() {
   const [retryCount, setRetryCount] = useState(0);
-  const [bbox, setBbox] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [bbox, setBbox]               = useState(null);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState(null);
   const [gpsAvailable, setGpsAvailable] = useState(true);
-  const [gpsError, setGpsError] = useState(null);
+  const [gpsError, setGpsError]       = useState(null);
   const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
@@ -30,6 +18,7 @@ export default function useMapBbox() {
     setGpsError(null);
     setGpsAvailable(true);
     setBbox(null);
+    setError(null);
 
     if (!navigator.geolocation) {
       setGpsAvailable(false);
@@ -39,13 +28,26 @@ export default function useMapBbox() {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         if (cancelled) return;
         const { latitude, longitude } = position.coords;
         setGpsAvailable(true);
         setUserLocation({ latitude, longitude });
-        setBbox(calculateBbox(latitude, longitude));
-        setLoading(false);
+
+        try {
+          const res = await fetch('/api/map/bbox/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ latitude, longitude }),
+          });
+          if (!res.ok) throw new Error(`bbox API ${res.status}`);
+          const data = await res.json();
+          if (!cancelled) setBbox(data.bbox);
+        } catch (err) {
+          if (!cancelled) setError(err.message);
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
       },
       (err) => {
         if (cancelled) return;
@@ -67,5 +69,5 @@ export default function useMapBbox() {
 
   const retryGps = useCallback(() => setRetryCount((c) => c + 1), []);
 
-  return { bbox, loading, gpsAvailable, gpsError, retryGps, userLocation };
+  return { bbox, loading, error, gpsAvailable, gpsError, retryGps, userLocation };
 }
