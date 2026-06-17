@@ -1,5 +1,5 @@
-import { Center } from "@mantine/core";
+import QuestionsList from "./QuestionsList";
 
-const Information = () => <Center h={"100%"}>Information</Center>;
+const Information = () => <QuestionsList />;
 
 export default Information;

@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { MantineProvider, Group, Text, Paper, Box, Flex } from "@mantine/core";
+import {
+  MantineProvider,
+  Group,
+  Text,
+  Paper,
+  Box,
+  Flex,
+  Indicator,
+} from "@mantine/core";
 import {
   IconHome,
   IconFileDescription,
@@ -14,6 +22,7 @@ import Information from "./Information";
 import Profile from "./Profile";
 import Header from "./Header";
 import api from "./api";
+import { getUserDetails } from "./utils";
 
 // Design System Colors
 const COLORS = {
@@ -32,7 +41,7 @@ const theme = {
   primaryColor: "blue",
 };
 
-export default function CrisisReportingApp() {
+export default function CrisisReportingAppPublic() {
   const { t } = useTranslation();
   const [showReportForm, setShowReportForm] = useState(false);
 
@@ -50,7 +59,8 @@ export default function CrisisReportingApp() {
       try {
         const response = await api.get("user/get_user_details/");
         console.log(response.data);
-        localStorage.setItem("user", JSON.stringify(response.data));
+        if (response.data.get("id") !== null)
+          localStorage.setItem("user", JSON.stringify(response.data));
 
         console.log(localStorage.getItem("user").id);
       } catch (error) {}
@@ -84,7 +94,7 @@ export default function CrisisReportingApp() {
           shadow="sm"
           style={{
             borderTop: "1px solid #f0f0f0",
-            borderRadius: "24px 24px 0 0",
+            // borderRadius: "24px 24px 0 0",
             zIndex: 10,
           }}
           p="xs"
@@ -105,20 +115,24 @@ export default function CrisisReportingApp() {
               active={activeContent === "MY_REPORTS"}
               component={"MY_REPORTS"}
             />
+            {/* 
             <NavItem
               icon={<IconInfoCircle size={24} />}
               label={t("Info")}
               setActiveContent={setActiveContent}
               component={"INFORMATION"}
               active={activeContent === "INFORMATION"}
-            />
-            <NavItem
-              icon={<IconUser size={24} />}
-              label={t("Profile")}
-              setActiveContent={setActiveContent}
-              component={"PROFILE"}
-              active={activeContent === "PROFILE"}
-            />
+            /> */}
+
+            <Indicator color={COLORS.redOrange} size={10} offset={4} withBorder>
+              <NavItem
+                icon={<IconUser size={24} />}
+                label={t("Profile")}
+                setActiveContent={setActiveContent}
+                component={"PROFILE"}
+                active={activeContent === "PROFILE"}
+              />
+            </Indicator>
           </Group>
         </Paper>
       </Flex>
