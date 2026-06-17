@@ -37,6 +37,7 @@ User = get_user_model()
 class ImpactReportViewSet(viewsets.ModelViewSet):
     queryset = ImpactReport.objects.all()
     serializer_class = ImpactReportSerializer
+    lookup_value_regex = r'\d+'
 
 
 
@@ -79,9 +80,11 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
         except Exception as e:
             print(e)
 
+        annotations_raw = request.data.get('annotations', None)
+
         data = QueryDict(mutable=True)
         for key, values in request.data.lists():
-            if key != 'photos':
+            if key not in ('photos', 'annotations'):
                 data.setlist(key, values)
         
         data['location_id'] = infrastructure_location.id
@@ -93,6 +96,13 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
         ser = ImpactReportSerializer(data=data)
         ser.is_valid(raise_exception=True)
         ser.save()
+
+        if annotations_raw:
+            try:
+                ser.instance.annotations = json.loads(annotations_raw)
+                ser.instance.save(update_fields=['annotations'])
+            except (json.JSONDecodeError, TypeError):
+                pass
 
         answers = data.get('answers', None)
         if answers:
@@ -322,6 +332,7 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
 class CrisisViewSet(viewsets.ModelViewSet):
     queryset = Crisis.objects.all()
     serializer_class = CrisisSerializer
+    lookup_value_regex = r'\d+'
     
     
     @action(detail=True, methods=["GET"], url_name="get_questions_for_crisis")

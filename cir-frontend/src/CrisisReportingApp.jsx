@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useEffect, useCallback } from "react";
 import { MantineProvider, Group, Text, Paper, Box, Flex } from "@mantine/core";
 import {
   IconHome,
@@ -8,6 +8,9 @@ import {
 } from "@tabler/icons-react";
 import ImpactReportForm from "./ImpactReportForm";
 import { useTranslation } from "react-i18next";
+import { notifications } from "@mantine/notifications";
+import { getPendingCount } from "./map/utils/pendingReports";
+import { flushPendingReports } from "./reportSync";
 import Home from "./Home";
 import MyReports from "./MyReports";
 import Information from "./Information";
@@ -35,8 +38,32 @@ const theme = {
 export default function CrisisReportingApp() {
   const { t } = useTranslation();
   const [showReportForm, setShowReportForm] = useState(false);
-
   const [activeContent, setActiveContent] = useState("HOME");
+  const [pendingCount, setPendingCount] = useState(0);
+
+  const flush = useCallback(async () => {
+    if (!navigator.onLine) return;
+    const { submitted } = await flushPendingReports();
+    const remaining = await getPendingCount();
+    setPendingCount(remaining);
+    if (submitted > 0) {
+      notifications.show({
+        title: 'Reports submitted',
+        message: `${submitted} queued report${submitted > 1 ? 's' : ''} submitted successfully.`,
+        color: '#009C9A',
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    getPendingCount().then(setPendingCount);
+    flush();
+    window.addEventListener('online', flush);
+    window.addEventListener('report-queued', () => getPendingCount().then(setPendingCount));
+    return () => {
+      window.removeEventListener('online', flush);
+    };
+  }, [flush]);
 
   const NAV_COMP_MAPPING = {
     HOME: <Home setActiveContent={setActiveContent} />,
@@ -75,6 +102,21 @@ export default function CrisisReportingApp() {
         style={{ overflow: "hidden" }}
       >
         <Header />
+        {pendingCount > 0 && (
+          <Box px="md" pt="xs">
+            <Paper
+              p="xs"
+              radius="md"
+              style={{ background: '#FFF8E1', border: '1px solid #FFE082' }}
+            >
+              <Group gap="xs">
+                <Text size="xs" fw={600} c="#E65100">
+                  {pendingCount} report{pendingCount > 1 ? 's' : ''} pending upload — will submit when back online
+                </Text>
+              </Group>
+            </Paper>
+          </Box>
+        )}
 
         <Box style={{ flex: 1, overflowY: "auto" }} px="md" pb="md">
           {NAV_COMP_MAPPING[activeContent]}

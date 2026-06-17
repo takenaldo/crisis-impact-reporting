@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Group,
   Text,
@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next";
 import ReportDetailsDrawer from "./ReportDetailsDrawer";
 
 import { t } from "i18next";
-import MapComponent from "./MapComponent";
+import CirMap from "./map/CirMap";
 import api from "./api";
 import ReportCard from "./ReportCard";
 import { Navigate, useNavigate } from "react-router-dom";
@@ -36,8 +36,32 @@ export default function Home({ setActiveContent }) {
   const { t } = useTranslation();
 
   const [showReportForm, setShowReportForm] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [mapBounds, setMapBounds] = useState({ maxBounds: null, minZoom: 2 });
 
   const [selectedReport, setSelectedReport] = useState(null);
+
+  const handleLocated = useCallback(async (location, fromGPS) => {
+    setUserLocation(location);
+    if (!fromGPS) return;
+    try {
+      const res = await api.post('map/bbox/', {
+        latitude: location.latitude,
+        longitude: location.longitude,
+      });
+      const { min_lng, min_lat, max_lng, max_lat } = res.data.bbox;
+      const lngSpan = max_lng - min_lng;
+      const minZoom = Math.ceil(
+        Math.log2(((window.innerWidth || 400) * 360) / (256 * lngSpan))
+      );
+      setMapBounds({
+        maxBounds: [[min_lat, min_lng], [max_lat, max_lng]],
+        minZoom: Math.max(2, minZoom),
+      });
+    } catch {
+      // bbox fetch failed — map stays unconstrained
+    }
+  }, []); // setUserLocation, setMapBounds, and api are all stable references
 
   const [crisesList, setCrisesList] = useState([]);
   const [reports, setReports] = useState([]);
@@ -152,8 +176,17 @@ export default function Home({ setActiveContent }) {
             backgroundSize: "30px 30px",
           }}
         >
-          {/* <MapView /> */}
-          <MapComponent selectEnabled={false} />
+          {!showReportForm && !selectedReport && (
+            <CirMap
+              autoLocate
+              center={[9.032, 38.7486]}
+              zoom={2}
+              height="100%"
+              onLocated={handleLocated}
+              maxBounds={mapBounds.maxBounds}
+              minZoom={mapBounds.minZoom}
+            />
+          )}
         </Box>
       </Stack>
 
@@ -208,6 +241,7 @@ export default function Home({ setActiveContent }) {
       <ImpactReportForm
         opened={showReportForm}
         onClose={() => setShowReportForm(false)}
+        userLocation={userLocation}
       />
       {}
       <ReportDetailsDrawer

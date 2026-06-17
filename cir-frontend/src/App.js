@@ -9,11 +9,11 @@ import { Notifications } from '@mantine/notifications';
 import { MantineProvider } from '@mantine/core';
 import ImpactReportForm from './ImpactReportForm';
 import CrisisDetailPage from './CrisisDetailPage';
-
 import './i18n';
 
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
+import 'leaflet/dist/leaflet.css';
 
 import './colors.css'
 

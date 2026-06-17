@@ -33,7 +33,7 @@ import {
   IconExternalLink,
 } from "@tabler/icons-react";
 import { getSeverityColor, timeAgo } from "./utils";
-import MapView from "./MapView";
+import CirMap from "./map/CirMap";
 import { MyDrawer } from "./MyDrawer";
 
 export default function ReportDetailsDrawer({ opened, onClose, report }) {
@@ -430,7 +430,15 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
           setLocation([]);
         }}
       >
-        <MapView defaultPosition={location} />
+        {showMapView && location.length === 2 && (
+          <CirMap
+            center={location}
+            zoom={15}
+            height="500px"
+            annotations={report?.annotations}
+            userLocation={{ latitude: location[0], longitude: location[1] }}
+          />
+        )}
       </MyDrawer>
     </Drawer>
   );

@@ -213,6 +213,11 @@ class ImpactReport(models.Model):
         on_delete=models.RESTRICT
     )
 
+    annotations = models.JSONField(
+        blank=True, null=True,
+        help_text="GeoJSON annotation data drawn on the map by the reporter (polygon, radius, point, direction, position)."
+    )
+
     def __str__(self):
         return (self.crisis.name if self.crisis else "") + " - Impact Report " + str(self.infrastructure_name) + str(self.infrastructure_type)
 
