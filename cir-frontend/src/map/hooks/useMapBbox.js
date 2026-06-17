@@ -1,17 +1,24 @@
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 
-const api = axios.create({ baseURL: '' });
+const RADIUS_KM = 7.5;
 
-// GeolocationPositionError codes
+function calculateBbox(lat, lng) {
+  const latOffset = RADIUS_KM / 111.0;
+  const lngOffset = RADIUS_KM / (111.0 * Math.cos((lat * Math.PI) / 180));
+  return {
+    min_lng: lng - lngOffset,
+    min_lat: lat - latOffset,
+    max_lng: lng + lngOffset,
+    max_lat: lat + latOffset,
+  };
+}
+
 const GPS_PERMISSION_DENIED = 1;
 
 export default function useMapBbox() {
   const [retryCount, setRetryCount] = useState(0);
-
   const [bbox, setBbox] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [gpsAvailable, setGpsAvailable] = useState(true);
   const [gpsError, setGpsError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
@@ -20,27 +27,9 @@ export default function useMapBbox() {
     let cancelled = false;
 
     setLoading(true);
-    setError(null);
     setGpsError(null);
     setGpsAvailable(true);
     setBbox(null);
-
-    async function fetchBbox(latitude, longitude) {
-      try {
-        const { data } = await api.post('/api/map/bbox/', { latitude, longitude });
-        if (!cancelled) {
-          setBbox(data.bbox);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err.message);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
 
     if (!navigator.geolocation) {
       setGpsAvailable(false);
@@ -52,43 +41,31 @@ export default function useMapBbox() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         if (cancelled) return;
+        const { latitude, longitude } = position.coords;
         setGpsAvailable(true);
-        setUserLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-        fetchBbox(position.coords.latitude, position.coords.longitude);
+        setUserLocation({ latitude, longitude });
+        setBbox(calculateBbox(latitude, longitude));
+        setLoading(false);
       },
       (err) => {
         if (cancelled) return;
-        if (err.code === GPS_PERMISSION_DENIED) {
-          setGpsAvailable(false);
-          setGpsError('Location permission was denied. Please allow access and try again.');
-        } else {
-          setGpsAvailable(false);
-          setGpsError(
-            err.code === 3
-              ? 'Location request timed out. Check your device location settings and try again.'
-              : 'Could not determine your location. Try again or proceed without GPS.'
-          );
-        }
+        setGpsAvailable(false);
+        setGpsError(
+          err.code === GPS_PERMISSION_DENIED
+            ? 'Location permission was denied. Please allow access and try again.'
+            : err.code === 3
+            ? 'Location request timed out. Check your device location settings and try again.'
+            : 'Could not determine your location. Try again or proceed without GPS.'
+        );
         setLoading(false);
       },
-      {
-        timeout: 30000,
-        maximumAge: 0,
-        enableHighAccuracy: true,
-      }
+      { timeout: 30000, maximumAge: 0, enableHighAccuracy: true }
     );
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [retryCount]);
 
-  const retryGps = useCallback(() => {
-    setRetryCount((c) => c + 1);
-  }, []);
+  const retryGps = useCallback(() => setRetryCount((c) => c + 1), []);
 
-  return { bbox, loading, error, gpsAvailable, gpsError, retryGps, userLocation };
+  return { bbox, loading, gpsAvailable, gpsError, retryGps, userLocation };
 }

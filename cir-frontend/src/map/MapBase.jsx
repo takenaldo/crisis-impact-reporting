@@ -44,10 +44,10 @@ const SatelliteIcon = () => (
 );
 
 export default function MapBase({
-  center = [38.74, 9.03],
-  zoom = 16,
+  center = [20, 10],
+  zoom = 2,
+  minZoom = 2,
   maxBounds,
-  onBuildingClick,
   onMapReady,
   onRecenter,
   showLayerToggle = true,
@@ -67,7 +67,7 @@ export default function MapBase({
       style: OSM_STYLE,
       center,
       zoom,
-      minZoom: 10,
+      minZoom,
       maxZoom: 18,
     });
 
@@ -112,6 +112,11 @@ export default function MapBase({
       mapRef.current.once('load', setMax);
     }
   }, [maxBounds]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    mapRef.current.setMinZoom(minZoom);
+  }, [minZoom]);
 
   useEffect(() => {
     if (!mapRef.current || !center) return;
