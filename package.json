@@ -18,7 +18,7 @@
     "dayjs": "^1.11.21",
     "leaflet": "^1.9.4",
     "leaflet-routing-machine": "^3.2.12",
-    "lucide-react": "^1.18.0",
+    "lucide-react": "^1.20.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-leaflet": "^5.0.0",

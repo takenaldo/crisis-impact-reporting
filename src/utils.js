@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const api = axios.create({
-    baseURL: "http://localhost:8000/api/",
+  baseURL: "http://localhost:8000/api/",
 });
 
 export const CRISIS_CONFIG = {
@@ -33,7 +33,8 @@ export const CRISIS_CONFIG = {
 };
 
 export const SEVERITY_CONFIG = {
-  critical: { label: "Critical", color: "#c0392b", bg: "#fadbd8" }, Complete: { label: "Critical", color: "#c0392b", bg: "#fadbd8" },
+  critical: { label: "Critical", color: "#c0392b", bg: "#fadbd8" },
+  complete: { label: "Critical", color: "#c0392b", bg: "#fadbd8" },
   high: { label: "High", color: "#e67e22", bg: "#fdebd0" },
   medium: { label: "Medium", color: "#f0b400", bg: "#fef9e7" },
   low: { label: "Low", color: "#27ae60", bg: "#e9f7ef" },
@@ -46,3 +47,36 @@ export function timeAgo(isoString) {
   if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
   return `${Math.floor(diff / 1440)}d ago`;
 }
+
+export const COLORS = {
+  primaryTeal: '#008080',
+  darkBlue: '#0B2545',
+  lightBackground: '#F4F7F6',
+  white: '#FFFFFF',
+
+  // Severity backgrounds & colors
+  severity: {
+    highBg: '#FCECE9',
+    highText: '#E0533C',
+    mediumBg: '#FEF3E6',
+    mediumText: '#F08C43',
+    lowBg: '#EBF7F6',
+    lowText: '#2A9D8F',
+
+    Complete: '#FCECE9',
+    CompleteText: '#E0533C',
+    Minimal: '#FEF3E6',
+    MinimalText: '#F08C43',
+  
+  },
+
+  // Status tokens
+  status: {
+    verifiedBg: '#EBF7F6',
+    verifiedText: '#2A9D8F',
+    pendingBg: '#FEF3E6',
+    pendingText: '#F08C43',
+    reviewBg: '#EEF2F6',
+    reviewText: '#4A5D6E',
+  }
+};
