@@ -1,44 +1,12 @@
-import React, { useState } from "react";
-import {
-  MantineProvider,
-  Group,
-  Text,
-  ActionIcon,
-  Indicator,
-  Paper,
-  Box,
-  Button,
-  Stack,
-  Flex,
-  ThemeIcon,
-  Badge,
-  Image,
-} from "@mantine/core";
-import {
-  IconMenu2,
-  IconBell,
-  IconMapPinFilled,
-  IconX,
-  IconPlus,
-  IconMinus,
-  IconCurrentLocation,
-  IconArrowRight,
-  IconHome,
-  IconFileDescription,
-  IconInfoCircle,
-  IconUser,
-  IconWorld,
-} from "@tabler/icons-react";
-import { MobileFormDrawer2 } from "./MobileFormDrawer2";
-import ImpactReportForm from "./ImpactReportForm";
+import React from "react";
+import { Group, Text, ActionIcon, Indicator, Box, Image } from "@mantine/core";
+import { IconMenu2, IconBell } from "@tabler/icons-react";
+
 import { useTranslation } from "react-i18next";
 import { LanguagePicker } from "./LanguagePicker";
 
 import IconUNDP from "./icon-undp.png";
-import Home from "./Home";
-import MyReports from "./MyReports";
-import Information from "./Information";
-import Profile from "./Profile";
+import { getUserDetails } from "./utils";
 
 // Design System Colors
 const COLORS = {
@@ -54,7 +22,7 @@ export default function Header() {
   const { t } = useTranslation();
 
   return (
-    <Group justify="space-between" px="md" pt="xl" pb="sm">
+    <Group justify="space-between" px="md" pt="xs" pb="sm">
       <Group gap="sm">
         <ActionIcon variant="subtle" color="dark">
           <IconMenu2 size={24} />
@@ -85,11 +53,13 @@ export default function Header() {
       </Group>
       <Group gap={1}>
         <LanguagePicker />
-        <Indicator color={COLORS.redOrange} size={10} offset={4} withBorder>
-          <ActionIcon variant="subtle" color="dark">
-            <IconBell size={24} />
-          </ActionIcon>
-        </Indicator>
+        {getUserDetails() !== null && (
+          <Indicator color={COLORS.redOrange} size={10} offset={4} withBorder>
+            <ActionIcon variant="subtle" color="dark">
+              <IconBell size={24} />
+            </ActionIcon>
+          </Indicator>
+        )}
       </Group>
     </Group>
   );

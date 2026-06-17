@@ -9,13 +9,17 @@ from rest_framework_simplejwt.views import (
 )
 from django.views.decorators.csrf import csrf_exempt
 
-from .views import CrisisViewSet, ImpactReportViewSet, NatureOfCrisisQuestionViewSet
+from .views import CrisisViewSet, ImpactReportViewSet, NatureOfCrisisQuestionViewSet, UserViewSet, QuestionsViewSet, AnswerViewSet
 from .map_views import map_bbox
 
 router = DefaultRouter()
 router.register(r'impact-reports', ImpactReportViewSet, basename='impactreport')
 router.register(r'crises', CrisisViewSet, basename='crisis')
 router.register(r'nature-of-crisis-questions', NatureOfCrisisQuestionViewSet, basename='natureofcrisisquestion')
+router.register(r'user', UserViewSet, 'userviewset')
+
+router.register(r'questions', QuestionsViewSet, 'questionsviewsets')
+router.register(r'answers', AnswerViewSet, 'answers')
 
 
 urlpatterns = [

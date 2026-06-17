@@ -1,8 +1,10 @@
 import { useState } from "react";
 
 import {
+  Box,
   Button,
   Center,
+  Flex,
   PasswordInput,
   Stack,
   Text,
@@ -38,9 +40,7 @@ const LoginPage = () => {
       localStorage.setItem("refresh_token", refresh);
 
       console.log("Login successful! Tokens saved.");
-
       navigate("/home");
-      console.log(",,,,");
       // return response.data;
     } catch (error) {
       console.log(error);
@@ -58,11 +58,19 @@ const LoginPage = () => {
   };
 
   return (
-    <Center>
-      <Stack gap={15}>
+    <Flex h="100vh" justify="center" align="center" p={20}>
+      <Stack
+        gap={15}
+        bg={"var(--color-mint)"}
+        p={5}
+        flex={1}
+        pb={20}
+        pt={10}
+        style={{ borderRadius: "10px" }}
+      >
         <TextInput
           label="Username"
-          description="Select your user account in order to write the log"
+          // description="Select your user account in order to write the log"
           onChange={(value) => {
             setUsername(value.target.value);
           }}
@@ -79,9 +87,11 @@ const LoginPage = () => {
           {error}
         </Text>
 
-        <Button onClick={() => handleSetValues()}>Submit</Button>
+        <Button onClick={() => handleSetValues()} bg={"var(--color-navy)"}>
+          Submit
+        </Button>
       </Stack>
-    </Center>
+    </Flex>
   );
 };
 export default LoginPage;

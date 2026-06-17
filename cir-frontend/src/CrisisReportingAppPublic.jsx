@@ -1,5 +1,13 @@
-import React, { useEffect, useState, useEffect, useCallback } from "react";
-import { MantineProvider, Group, Text, Paper, Box, Flex } from "@mantine/core";
+import React, { useEffect, useState } from "react";
+import {
+  MantineProvider,
+  Group,
+  Text,
+  Paper,
+  Box,
+  Flex,
+  Indicator,
+} from "@mantine/core";
 import {
   IconHome,
   IconFileDescription,
@@ -8,15 +16,13 @@ import {
 } from "@tabler/icons-react";
 import ImpactReportForm from "./ImpactReportForm";
 import { useTranslation } from "react-i18next";
-import { notifications } from "@mantine/notifications";
-import { getPendingCount } from "./map/utils/pendingReports";
-import { flushPendingReports } from "./reportSync";
 import Home from "./Home";
 import MyReports from "./MyReports";
 import Information from "./Information";
 import Profile from "./Profile";
 import Header from "./Header";
 import api from "./api";
+import { getUserDetails } from "./utils";
 
 // Design System Colors
 const COLORS = {
@@ -35,35 +41,11 @@ const theme = {
   primaryColor: "blue",
 };
 
-export default function CrisisReportingApp() {
+export default function CrisisReportingAppPublic() {
   const { t } = useTranslation();
   const [showReportForm, setShowReportForm] = useState(false);
+
   const [activeContent, setActiveContent] = useState("HOME");
-  const [pendingCount, setPendingCount] = useState(0);
-
-  const flush = useCallback(async () => {
-    if (!navigator.onLine) return;
-    const { submitted } = await flushPendingReports();
-    const remaining = await getPendingCount();
-    setPendingCount(remaining);
-    if (submitted > 0) {
-      notifications.show({
-        title: 'Reports submitted',
-        message: `${submitted} queued report${submitted > 1 ? 's' : ''} submitted successfully.`,
-        color: '#009C9A',
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    getPendingCount().then(setPendingCount);
-    flush();
-    window.addEventListener('online', flush);
-    window.addEventListener('report-queued', () => getPendingCount().then(setPendingCount));
-    return () => {
-      window.removeEventListener('online', flush);
-    };
-  }, [flush]);
 
   const NAV_COMP_MAPPING = {
     HOME: <Home setActiveContent={setActiveContent} />,
@@ -77,7 +59,8 @@ export default function CrisisReportingApp() {
       try {
         const response = await api.get("user/get_user_details/");
         console.log(response.data);
-        localStorage.setItem("user", JSON.stringify(response.data));
+        if (response.data.get("id") !== null)
+          localStorage.setItem("user", JSON.stringify(response.data));
 
         console.log(localStorage.getItem("user").id);
       } catch (error) {}
@@ -102,21 +85,6 @@ export default function CrisisReportingApp() {
         style={{ overflow: "hidden" }}
       >
         <Header />
-        {pendingCount > 0 && (
-          <Box px="md" pt="xs">
-            <Paper
-              p="xs"
-              radius="md"
-              style={{ background: '#FFF8E1', border: '1px solid #FFE082' }}
-            >
-              <Group gap="xs">
-                <Text size="xs" fw={600} c="#E65100">
-                  {pendingCount} report{pendingCount > 1 ? 's' : ''} pending upload — will submit when back online
-                </Text>
-              </Group>
-            </Paper>
-          </Box>
-        )}
 
         <Box style={{ flex: 1, overflowY: "auto" }} px="md" pb="md">
           {NAV_COMP_MAPPING[activeContent]}
@@ -126,7 +94,7 @@ export default function CrisisReportingApp() {
           shadow="sm"
           style={{
             borderTop: "1px solid #f0f0f0",
-            borderRadius: "24px 24px 0 0",
+            // borderRadius: "24px 24px 0 0",
             zIndex: 10,
           }}
           p="xs"
@@ -147,20 +115,24 @@ export default function CrisisReportingApp() {
               active={activeContent === "MY_REPORTS"}
               component={"MY_REPORTS"}
             />
+            {/* 
             <NavItem
               icon={<IconInfoCircle size={24} />}
               label={t("Info")}
               setActiveContent={setActiveContent}
               component={"INFORMATION"}
               active={activeContent === "INFORMATION"}
-            />
-            <NavItem
-              icon={<IconUser size={24} />}
-              label={t("Profile")}
-              setActiveContent={setActiveContent}
-              component={"PROFILE"}
-              active={activeContent === "PROFILE"}
-            />
+            /> */}
+
+            <Indicator color={COLORS.redOrange} size={10} offset={4} withBorder>
+              <NavItem
+                icon={<IconUser size={24} />}
+                label={t("Profile")}
+                setActiveContent={setActiveContent}
+                component={"PROFILE"}
+                active={activeContent === "PROFILE"}
+              />
+            </Indicator>
           </Group>
         </Paper>
       </Flex>
