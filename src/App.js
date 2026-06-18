@@ -2,7 +2,6 @@ import './App.css';
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
 import CrisisDashboard2 from './/CrisisDashboard2';
-
 import { CrisisImpactDashboard } from './admin/admidDashboard';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { MantineProvider } from '@mantine/core';
