@@ -40,6 +40,7 @@ import { MobileFormDrawer } from "./MobileFormDrawer";
 import { DateTimePicker } from "@mantine/dates";
 import api from "./api";
 import { savePendingReport } from "./map/utils/pendingReports";
+import { DamageDateSelector } from "./DamageDateSelector";
 
 const NATURE_OF_CRISIS_OPTIONS = [
   { value: "flood", label: "Flood" },
@@ -83,8 +84,6 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     initialValues: {
       crisis_id: id || null,
       description: "",
-      nature_of_crisis: null,
-      nature_of_crisis_category: "",
       damage_severity: "",
       damage_datetime: new Date(),
       infrastructure_name: "",
@@ -116,7 +115,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
   // Pre-fill lat/lng from GPS/dragged location so it reaches the form submission
   useEffect(() => {
     if (userLocation) {
-      form.setFieldValue("infrastructure_latitude",  userLocation.latitude);
+      form.setFieldValue("infrastructure_latitude", userLocation.latitude);
       form.setFieldValue("infrastructure_longitude", userLocation.longitude);
     }
   }, [userLocation]); // eslint-disable-line
@@ -126,7 +125,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     if (!userLocation) return;
     const fetchBounds = async () => {
       try {
-        const res = await api.post('map/bbox/', {
+        const res = await api.post("map/bbox/", {
           latitude: userLocation.latitude,
           longitude: userLocation.longitude,
         });
@@ -136,7 +135,10 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
           Math.log2(((window.innerWidth || 400) * 360) / (256 * lngSpan))
         );
         setMapBounds({
-          maxBounds: [[min_lat, min_lng], [max_lat, max_lng]],
+          maxBounds: [
+            [min_lat, min_lng],
+            [max_lat, max_lng],
+          ],
           minZoom: Math.max(2, minZoom),
         });
       } catch {
@@ -151,7 +153,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     ["photos"],
     ["country", "city", "street_address"],
     ["infrastructure_type", "infrastructure_name"], // Fixed from camelCase
-    ["damage_severity", "nature_of_crisis"], // Fixed from camelCase
+    ["damage_severity"], // Fixed from camelCase
     ["electricity_condition", "health_services_rating", "pressing_need"],
   ];
 
@@ -200,28 +202,30 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
         await savePendingReport({
           fields: {
             ...values,
-            damage_datetime: values.damage_datetime instanceof Date
-              ? values.damage_datetime.toISOString()
-              : values.damage_datetime,
+            damage_datetime:
+              values.damage_datetime instanceof Date
+                ? values.damage_datetime.toISOString()
+                : values.damage_datetime,
           },
           photos: values.photos.map((p) => ({
             blob: p.file,
-            description: p.description ?? '',
-            name: p.file?.name ?? 'photo.jpg',
+            description: p.description ?? "",
+            name: p.file?.name ?? "photo.jpg",
           })),
         });
-        window.dispatchEvent(new CustomEvent('report-queued'));
+        window.dispatchEvent(new CustomEvent("report-queued"));
         notifications.show({
-          title: 'Saved offline',
-          message: 'Your report is queued and will be submitted automatically when you reconnect.',
-          color: '#F4A261',
+          title: "Saved offline",
+          message:
+            "Your report is queued and will be submitted automatically when you reconnect.",
+          color: "#F4A261",
           icon: <IconCheck size={16} />,
         });
       } catch {
         notifications.show({
-          title: 'Could not save offline',
-          message: 'Please check your storage settings and try again.',
-          color: '#E76F51',
+          title: "Could not save offline",
+          message: "Please check your storage settings and try again.",
+          color: "#E76F51",
           icon: <IconAlertTriangle size={16} />,
         });
       }
@@ -237,12 +241,6 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
 
     formData.append("description", values.description);
 
-    // Fixed: Appending formData keys to form snake_case keys
-    formData.append("nature_of_crisis", values.nature_of_crisis);
-    formData.append(
-      "nature_of_crisis_category",
-      values.nature_of_crisis_category
-    );
     formData.append("damage_severity", values.damage_severity);
     formData.append(
       "damage_datetime",
@@ -265,8 +263,6 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     formData.append("city", values.city);
     formData.append("state_province", values.state_province);
     formData.append("country", values.country);
-    formData.append("answers", JSON.stringify(answers));
-    formData.append("noc_answers", JSON.stringify(nocAnswers));
     formData.append("electricity_condition", values.electricity_condition);
     formData.append("health_services_rating", values.health_services_rating);
     formData.append("pressing_need", values.pressing_need.join(", "));
@@ -287,7 +283,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
       if (report != null) {
         try {
           const reportIDs = JSON.parse(
-            localStorage.getItem("report_ids") || "[]",
+            localStorage.getItem("report_ids") || "[]"
           );
           reportIDs.push(report.id);
           console.log(reportIDs);
@@ -306,14 +302,6 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
       setIsSubmitting(false);
       setActive(0);
       onClose();
-
-      // const crisis = response.data.crisis;
-      // if (!crisis) {
-      //   setReportID(response.data.id);
-      //   // setShowMappingRecommendation(true);
-      // } else {
-      //   navigate("/");
-      // }
     } catch (error) {
       notifications.show({
         title: "Submission Error",
@@ -425,13 +413,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
             {...form.getInputProps("infrastructure_name")}
           />
 
-          <DateTimePicker
-            label="Select Date and Time"
-            placeholder="Pick date and time"
-            valueFormat="DD MMM YYYY hh:mm A"
-            clearable
-            {...form.getInputProps("damage_datetime")}
-          />
+          <DamageDateSelector form={form} />
         </Stack>
       ),
     },
@@ -440,15 +422,6 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
       description: "Severity metrics",
       content: (
         <Stack gap="lg">
-          {/* <Select
-            label="Nature of Crisis"
-            placeholder="Select primary driving crisis category"
-            required
-            ff="Poppins"
-            data={NATURE_OF_CRISIS_OPTIONS}
-            {...form.getInputProps("nature_of_crisis")}
-          /> */}
-
           <Paper withBorder p="md" radius="sm" bg="#E6F4F1">
             <Text fw={600} size="sm" mb="sm" c="#0D3B66" ff="Poppins">
               Damage Severity

@@ -20,6 +20,7 @@ import api from "./api";
 import ReportCard from "./ReportCard";
 import { Navigate, useNavigate } from "react-router-dom";
 import { getUserDetails } from "./utils";
+import CIRUserFormModal from "./CIRUserFormModal";
 
 // Design System Colors
 const COLORS = {
@@ -122,6 +123,7 @@ export default function Home({ setActiveContent }) {
 
   return (
     <Box>
+      <CIRUserFormModal />
       <Stack gap={5}>
         {/* Info Banner */}
         <Paper bg={COLORS.mint} radius="md" p="md">

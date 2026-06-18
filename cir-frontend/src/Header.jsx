@@ -22,12 +22,13 @@ export default function Header() {
   const { t } = useTranslation();
 
   return (
-    <Group justify="space-between" px="md" pt="xs" pb="sm">
-      <Group gap="sm">
+    <Group justify="space-between" wrap="nowrap" px="md" pt="xs" pb="sm">
+      <Group gap="sm" wrap="nowrap">
         <ActionIcon variant="subtle" color="dark">
           <IconMenu2 size={24} />
         </ActionIcon>
-        <Group gap={8}>
+
+        <Group gap={8} wrap="nowrap">
           <Box c="white" px={4} py={2} style={{ borderRadius: 4 }}>
             <Image src={IconUNDP} h={30} />
           </Box>
@@ -36,7 +37,11 @@ export default function Header() {
               fz={14}
               fw={700}
               c={COLORS.navy}
-              style={{ fontFamily: "Montserrat", lineHeight: 1.2 }}
+              style={{
+                fontFamily: "Montserrat",
+                lineHeight: 1.2,
+                whiteSpace: "nowrap",
+              }}
             >
               {t("Crisis Impact")}
             </Text>
@@ -44,14 +49,19 @@ export default function Header() {
               fz={14}
               fw={700}
               c={COLORS.navy}
-              style={{ fontFamily: "Montserrat", lineHeight: 1.2 }}
+              style={{
+                fontFamily: "Montserrat",
+                lineHeight: 1.2,
+                whiteSpace: "nowrap",
+              }}
             >
               {t("Reporting")}
             </Text>
           </Box>
         </Group>
       </Group>
-      <Group gap={1}>
+
+      <Group gap={1} wrap="nowrap">
         <LanguagePicker />
         {getUserDetails() !== null && (
           <Indicator color={COLORS.redOrange} size={10} offset={4} withBorder>

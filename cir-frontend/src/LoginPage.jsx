@@ -1,6 +1,6 @@
 import { useState } from "react";
-
 import {
+  Anchor,
   Box,
   Button,
   Center,
@@ -9,89 +9,167 @@ import {
   Stack,
   Text,
   TextInput,
+  Paper,
+  Title,
+  Divider,
 } from "@mantine/core";
-
 import api from "./api";
-
 import { useNavigate } from "react-router-dom";
+import CIRUserFormModal from "./CIRUserFormModal";
 
 const LoginPage = () => {
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState();
-  const [password, setPassword] = useState();
-
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showCreateAccount, setShowCreateAccount] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async () => {
+    setError(""); // Clear previous errors
+    setIsLoading(true);
+
     try {
       const response = await api.post("login/", {
         username: username,
         password: password,
       });
 
-      console.log(response);
-
-      // 1. Extract the tokens from the DRF response
       const { access, refresh } = response.data;
-
-      // 2. Store them (localStorage is common, though HttpOnly cookies are more secure)
       localStorage.setItem("access_token", access);
       localStorage.setItem("refresh_token", refresh);
 
-      console.log("Login successful! Tokens saved.");
       navigate("/home");
-      // return response.data;
-    } catch (error) {
-      console.log(error);
+    } catch (err) {
+      console.error(err);
+      setError("Invalid username or password. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSetValues = () => {
     if (!username) {
-      setError("User account not selected!");
+      setError("Username is required.");
     } else if (!password) {
-      setError("Password is required");
+      setError("Password is required.");
     } else {
-      handleSubmit(username, password);
+      handleSubmit();
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSetValues();
     }
   };
 
   return (
-    <Flex h="100vh" justify="center" align="center" p={20}>
-      <Stack
-        gap={15}
-        bg={"var(--color-mint)"}
-        p={5}
-        flex={1}
-        pb={20}
-        pt={10}
-        style={{ borderRadius: "10px" }}
-      >
-        <TextInput
-          label="Username"
-          // description="Select your user account in order to write the log"
-          onChange={(value) => {
-            setUsername(value.target.value);
+    <Flex
+      h="100vh"
+      justify="center"
+      align="center"
+      // bg="var(--color-mint)"
+      p={20}
+    >
+      <Box w="100%" maw={420}>
+        <Paper
+          radius="lg"
+          p="xl"
+          shadow="md"
+          bg="white"
+          style={{
+            borderTop: "6px solid var(--color-navy)",
+            fontFamily: "Poppins, sans-serif",
           }}
-        ></TextInput>
+        >
+          <Stack gap="lg">
+            <Box ta="center" mb="sm">
+              <Text c="dimmed" size="sm" mt={5}>
+                Sign in to your account to continue
+              </Text>
+            </Box>
 
-        <PasswordInput
-          label="Password"
-          onChange={(e) => {
-            setPassword(e.target.value);
-          }}
-        />
+            <Stack gap="md">
+              <TextInput
+                required
+                label="Username"
+                placeholder="Enter your username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                onKeyDown={handleKeyDown}
+                styles={{ label: { fontWeight: 500 } }}
+              />
 
-        <Text size="xs" c={"red"}>
-          {error}
-        </Text>
+              <PasswordInput
+                required
+                label="Password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={handleKeyDown}
+                styles={{ label: { fontWeight: 500 } }}
+              />
+            </Stack>
 
-        <Button onClick={() => handleSetValues()} bg={"var(--color-navy)"}>
-          Submit
-        </Button>
-      </Stack>
+            {error && (
+              <Text size="sm" c="var(--color-red-orange)" ta="center" fw={500}>
+                {error}
+              </Text>
+            )}
+
+            <Button
+              fullWidth
+              size="md"
+              radius="md"
+              loading={isLoading}
+              onClick={handleSetValues}
+              bg="var(--color-navy)"
+              style={{ fontFamily: "Poppins, sans-serif", fontWeight: 500 }}
+              styles={{
+                root: {
+                  "&:hover": {
+                    backgroundColor: "var(--color-teal)",
+                  },
+                },
+              }}
+            >
+              Sign In
+            </Button>
+
+            <Divider
+              label="OR"
+              labelPosition="center"
+              color="var(--color-mint)"
+            />
+
+            {/* Secondary Action */}
+            <Center>
+              <Text size="sm" c="dimmed">
+                Don't have an account?{" "}
+                <Anchor
+                  component="button"
+                  type="button"
+                  c="var(--color-teal)"
+                  fw={600}
+                  onClick={() => setShowCreateAccount(true)}
+                  style={{ fontFamily: "Poppins, sans-serif" }}
+                >
+                  Create one now
+                </Anchor>
+              </Text>
+            </Center>
+          </Stack>
+        </Paper>
+      </Box>
+
+      <CIRUserFormModal
+        opened={showCreateAccount}
+        onClose={() => setShowCreateAccount(false)}
+      />
     </Flex>
   );
 };
+
 export default LoginPage;

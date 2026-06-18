@@ -10,12 +10,19 @@ import {
   Badge,
   Button,
 } from "@mantine/core";
+import { IconExternalLink } from "@tabler/icons-react";
+import ReportDetailsDrawer from "./ReportDetailsDrawer";
 
 const QuestionsForImpactReport = ({ group, report }) => {
   const [localAnswers, setLocalAnswers] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
+  const [selectedReport, setSelectedReport] = useState(null);
+
   const reportId = report?.id || null;
+
+  console.log(group);
+  console.log(report?.id);
 
   // Track field changes locally inside this specific report block
   const handleAnswerChange = (questionId, val) => {
@@ -59,6 +66,8 @@ const QuestionsForImpactReport = ({ group, report }) => {
     (i) => i.answer.trim() !== "",
   ).length;
 
+  if (!report) return <></>;
+
   return (
     <Paper
       withBorder
@@ -67,7 +76,7 @@ const QuestionsForImpactReport = ({ group, report }) => {
       styles={{ root: { overflow: "hidden" } }}
     >
       {/* --- Minimalist Report Header Holder --- */}
-      {report ? (
+      {report && (
         <div
           style={{
             backgroundColor: "#F8F9FA",
@@ -75,28 +84,24 @@ const QuestionsForImpactReport = ({ group, report }) => {
             borderBottom: "1px solid #E9ECEF",
           }}
         >
-          <Stack gap={5}>
-            <Stack gap={2}>
-              <Text ff="Poppins" size="sm" fw={600} c="var(--color-teal, teal)">
-                {report.infrastructure_name || "General Incident Area"}
-              </Text>
-              <Text ff="Poppins" size="xs" c="dimmed" lineClamp={1}>
-                {report.nature_of_crisis_category} •{" "}
-                {report.infrastructure_type}
-              </Text>
-            </Stack>
+          <Group justify="space-between">
+            <Stack gap={5}>
+              <Stack gap={2}>
+                <Text
+                  ff="Poppins"
+                  size="sm"
+                  fw={600}
+                  c="var(--color-teal, teal)"
+                >
+                  {report.infrastructure_name || "Unknown infrastructur name"}
+                </Text>
+                <Text ff="Poppins" size="xs" c="dimmed" lineClamp={1}>
+                  {/* {report.nature_of_crisis_category} •{" "} */}
+                  {report.infrastructure_type}
+                </Text>
+              </Stack>
 
-            <Group gap={6} wrap="nowrap">
-              <Badge
-                color="red"
-                variant="light"
-                size="xs"
-                radius="sm"
-                ff="Poppins"
-              >
-                {report.damage_severity}
-              </Badge>
-              {report.debris && (
+              <Group gap={6} wrap="nowrap">
                 <Badge
                   color="red"
                   variant="light"
@@ -104,23 +109,30 @@ const QuestionsForImpactReport = ({ group, report }) => {
                   radius="sm"
                   ff="Poppins"
                 >
-                  Debris
+                  {report.damage_severity || "Unknown Severity"}
                 </Badge>
-              )}
-            </Group>
-          </Stack>
-        </div>
-      ) : (
-        <div
-          style={{
-            backgroundColor: "#F8F9FA",
-            padding: "12px 16px",
-            borderBottom: "1px solid #E9ECEF",
-          }}
-        >
-          <Text ff="Poppins" size="xs" fw={500} c="dimmed">
-            General Location Tasks
-          </Text>
+                {report.debris && (
+                  <Badge
+                    color="red"
+                    variant="light"
+                    size="xs"
+                    radius="sm"
+                    ff="Poppins"
+                  >
+                    Debris
+                  </Badge>
+                )}
+              </Group>
+            </Stack>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelectedReport(report);
+              }}
+            >
+              <IconExternalLink size={16} color="var(--color-teal)" />
+            </Button>
+          </Group>
         </div>
       )}
 
@@ -205,7 +217,7 @@ const QuestionsForImpactReport = ({ group, report }) => {
         {/* --- Isolated Submit Button per Component --- */}
         <Group justify="flex-end" mt="md">
           <Button
-            color="teal"
+            color="var(--color-teal)"
             ff="Poppins"
             size="xs"
             radius="md"
@@ -217,6 +229,13 @@ const QuestionsForImpactReport = ({ group, report }) => {
           </Button>
         </Group>
       </Stack>
+      <ReportDetailsDrawer
+        opened={selectedReport !== null}
+        onClose={() => {
+          setSelectedReport(null);
+        }}
+        report={selectedReport}
+      />
     </Paper>
   );
 };

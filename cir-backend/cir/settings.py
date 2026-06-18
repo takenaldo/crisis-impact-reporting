@@ -178,8 +178,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=180),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=190),
     'ROTATE_REFRESH_TOKENS': True,          # Gives a new refresh token when refreshing
     'BLACKLIST_AFTER_ROTATION': True,       # Blacklists the old refresh token (requires blacklist app)
     'UPDATE_LAST_LOGIN': False,
