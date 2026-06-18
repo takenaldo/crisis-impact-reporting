@@ -1,4 +1,4 @@
-import { Box, Center } from "@mantine/core";
+import { Box, Center, Stack } from "@mantine/core";
 import { useEffect, useState } from "react";
 import api from "./api";
 import ReportDetailsDrawer from "./ReportDetailsDrawer";
@@ -36,24 +36,26 @@ const MyReports = () => {
 
   return (
     <Box h={"100%"}>
-      {reports.map((report) => (
-        <ReportCard
-          key={report.id}
-          title={
-            report?.infrastructure_type + " " + report?.infrastructure_name
-          }
-          time={
-            report?.damage_datetime
-              ? String(report?.damage_datetime).split("T")[0]
-              : "Unknown Date Time"
-          }
-          status="Submitted"
-          report={report}
-          onClick={() => {
-            setSelectedReport(report);
-          }}
-        />
-      ))}
+      <Stack gap={10}>
+        {reports.map((report) => (
+          <ReportCard
+            key={report.id}
+            title={
+              report?.infrastructure_type + " " + report?.infrastructure_name
+            }
+            time={
+              report?.damage_datetime
+                ? String(report?.damage_datetime).split("T")[0]
+                : "Unknown Date Time"
+            }
+            status="Submitted"
+            report={report}
+            onClick={() => {
+              setSelectedReport(report);
+            }}
+          />
+        ))}
+      </Stack>
       <ReportDetailsDrawer
         opened={selectedReport !== null}
         onClose={() => {

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import QuestionGroup, Question2, Answer, CIRUser, Crisis, NatureOfCrisisQuestion, Location, Photo, ImpactReport, InfrastructureLocation, NatureOfCrisisQuestionAnswer, CrisisQuestion, CrisisQuestionAnswer
+from .models import QuestionGroup, Question2, Answer, CIRUser, Location, Photo, ImpactReport, InfrastructureLocation
 
 # Register your models here.
 
@@ -10,11 +10,6 @@ admin.site.register(Photo)
 admin.site.register(ImpactReport)
 admin.site.register(InfrastructureLocation)
 
-admin.site.register(NatureOfCrisisQuestion)
-admin.site.register(NatureOfCrisisQuestionAnswer)
-admin.site.register(CrisisQuestion)
-admin.site.register(CrisisQuestionAnswer)
-admin.site.register(Crisis)
 admin.site.register(Location)
 
 admin.site.register(Question2)

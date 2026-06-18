@@ -40,6 +40,7 @@ import { MobileFormDrawer } from "./MobileFormDrawer";
 import { DateTimePicker } from "@mantine/dates";
 import api from "./api";
 import { savePendingReport } from "./map/utils/pendingReports";
+import { DamageDateSelector } from "./DamageDateSelector";
 
 const NATURE_OF_CRISIS_OPTIONS = [
   { value: "flood", label: "Flood" },
@@ -83,8 +84,6 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     initialValues: {
       crisis_id: id || null,
       description: "",
-      nature_of_crisis: null,
-      nature_of_crisis_category: "",
       damage_severity: "",
       damage_datetime: new Date(),
       infrastructure_name: "",
@@ -151,7 +150,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     ["photos"],
     ["country", "city", "street_address"],
     ["infrastructure_type", "infrastructure_name"], // Fixed from camelCase
-    ["damage_severity", "nature_of_crisis"], // Fixed from camelCase
+    ["damage_severity"], // Fixed from camelCase
     ["electricity_condition", "health_services_rating", "pressing_need"],
   ];
 
@@ -237,12 +236,6 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
 
     formData.append("description", values.description);
 
-    // Fixed: Appending formData keys to form snake_case keys
-    formData.append("nature_of_crisis", values.nature_of_crisis);
-    formData.append(
-      "nature_of_crisis_category",
-      values.nature_of_crisis_category,
-    );
     formData.append("damage_severity", values.damage_severity);
     formData.append(
       "damage_datetime",
@@ -267,8 +260,6 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     formData.append("city", values.city);
     formData.append("state_province", values.state_province);
     formData.append("country", values.country);
-    formData.append("answers", JSON.stringify(answers));
-    formData.append("noc_answers", JSON.stringify(nocAnswers));
     formData.append("electricity_condition", values.electricity_condition);
     formData.append("health_services_rating", values.health_services_rating);
     formData.append("pressing_need", values.pressing_need.join(", "));
@@ -308,14 +299,6 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
       setIsSubmitting(false);
       setActive(0);
       onClose();
-
-      // const crisis = response.data.crisis;
-      // if (!crisis) {
-      //   setReportID(response.data.id);
-      //   // setShowMappingRecommendation(true);
-      // } else {
-      //   navigate("/");
-      // }
     } catch (error) {
       notifications.show({
         title: "Submission Error",
@@ -427,13 +410,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
             {...form.getInputProps("infrastructure_name")}
           />
 
-          <DateTimePicker
-            label="Select Date and Time"
-            placeholder="Pick date and time"
-            valueFormat="DD MMM YYYY hh:mm A"
-            clearable
-            {...form.getInputProps("damage_datetime")}
-          />
+          <DamageDateSelector form={form} />
         </Stack>
       ),
     },
@@ -442,15 +419,6 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
       description: "Severity metrics",
       content: (
         <Stack gap="lg">
-          {/* <Select
-            label="Nature of Crisis"
-            placeholder="Select primary driving crisis category"
-            required
-            ff="Poppins"
-            data={NATURE_OF_CRISIS_OPTIONS}
-            {...form.getInputProps("nature_of_crisis")}
-          /> */}
-
           <Paper withBorder p="md" radius="sm" bg="#E6F4F1">
             <Text fw={600} size="sm" mb="sm" c="#0D3B66" ff="Poppins">
               Damage Severity

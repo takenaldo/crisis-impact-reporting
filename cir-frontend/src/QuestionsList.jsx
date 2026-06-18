@@ -25,16 +25,18 @@ const QuestionsList = () => {
         });
 
         const categorized = response.data.reduce((acc, question) => {
-          const reportId = question.impact_report?.id || "unassigned";
+          const reportId =
+            question.question_group.impact_report?.id || "unassigned";
           if (!acc[reportId]) {
             acc[reportId] = {
-              reportInfo: question.impact_report || null,
+              reportInfo: question.question_group.impact_report || null,
               questions: [],
             };
           }
           acc[reportId].questions.push(question);
           return acc;
         }, {});
+        console.log("categorized::: ", categorized);
 
         setCategorizedData(categorized);
       } catch (err) {

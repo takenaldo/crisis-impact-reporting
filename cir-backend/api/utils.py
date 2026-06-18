@@ -6,6 +6,11 @@ from datetime import datetime
 from PIL import Image
 from PIL.ExifTags import TAGS, GPSTAGS, IFD
 
+
+import random
+import secrets
+
+
 def haversine_distance(lat1, lon1, lat2, lon2):
     # Radius of the Earth in kilometers
     R = 6371.0
@@ -116,3 +121,34 @@ def extract_exif_metadata(photo_file):
     clean_exif_data = sanitize_for_json(raw_exif_data)
     
     return clean_exif_data, captured_at
+
+
+
+
+def generate_pseudonym() -> str:
+    """
+    Generates a human-readable, crisis-safe pseudonym.
+    Uses the secrets module instead of random for cryptographically 
+    stronger selections, reducing predictability.
+    """
+    
+    # Strictly curated, culturally neutral lists
+    adjectives = [
+        "Calm", "Brave", "Swift", "Quiet", "Solid", 
+        "Clear", "Bright", "Steady", "Keen", "Noble"
+    ]
+    
+    nouns = [
+        "River", "Stone", "Tree", "Bird", "Mountain", 
+        "Cloud", "Rain", "Cedar", "Valley", "Hawk"
+    ]
+    
+    # Select random elements using secrets for better entropy
+    adj = secrets.choice(adjectives)
+    noun = secrets.choice(nouns)
+    
+    # Generate a short number (10 to 999 for memorability vs. uniqueness)
+    number = secrets.randbelow(990) + 10 
+    
+    # Combine with hyphens for readability
+    return f"{adj}-{noun}-{number}"
