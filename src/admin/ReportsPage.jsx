@@ -195,7 +195,7 @@ export function ReportDataTablePage() {
       {/* Section Controls Toolbar Header */}
       <Group justify="space-between" mb="xl">
         <Box>
-          <Text fw={700} size="lg" c={COLORS.darkBlue}>Report Management</Text>
+          <Text fw={700} size="lg" c={COLORS.darkBlue}>Recent Reports</Text>
         </Box>
 
         <Group gap="xs">
