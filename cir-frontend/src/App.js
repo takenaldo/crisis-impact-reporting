@@ -8,7 +8,6 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Notifications } from '@mantine/notifications';
 import { MantineProvider } from '@mantine/core';
 import ImpactReportForm from './ImpactReportForm';
-import CrisisDetailPage from './CrisisDetailPage';
 import './i18n';
 
 import '@mantine/core/styles.css';
@@ -34,7 +33,7 @@ function App() {
 
 
     { path: '/add-report/:id?/:name?', element: <ImpactReportForm /> },
-    { path: '/crisis/:id?', element: <CrisisDetailPage /> },
+    // { path: '/crisis/:id?', element: <CrisisDetailPage /> },
     { path: '/login/', element: <LoginPage /> },
 
 

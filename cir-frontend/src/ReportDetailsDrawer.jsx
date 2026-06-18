@@ -39,11 +39,6 @@ import { MyDrawer } from "./MyDrawer";
 export default function ReportDetailsDrawer({ opened, onClose, report }) {
   const [showMore, setShowMore] = useState(false);
 
-  // Cleanly extract the date
-  const reportDate = report?.damage_datetime
-    ? String(report?.damage_datetime).split("T")[0]
-    : "Unknown Date Time";
-
   const toggleShowMore = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -69,26 +64,12 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
       }
       withCloseButton={true}
       styles={{
-        header: {
-          paddingTop: "20px",
-          paddingBottom: "20px",
-          borderBottom: "1px solid #E2E8F0",
-          backgroundColor: "#F8FAFC", // Very subtle background for header
-        },
-        title: {
-          flex: 1,
-          marginRight: "16px",
-        },
         body: {
           height: "calc(100% - 95px)",
           display: "flex",
           flexDirection: "column",
           padding: 0,
           backgroundColor: "#F0F4F8", // Off-white canvas to make the card pop
-        },
-        close: {
-          size: "lg",
-          color: "#0D3B66",
         },
       }}
     >
@@ -127,7 +108,7 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
                       <Text
                         size="xl"
                         fw={800}
-                        c="var(--coolor-navy)"
+                        c="var(--color-teal)"
                         ff="Montserrat"
                         lh={1.2}
                       >
@@ -136,7 +117,7 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
 
                       <Text
                         size="sm"
-                        c="var(--coolor-navy)"
+                        c="dark.3"
                         tt="uppercase"
                         fw={700}
                         ff="Poppins"
@@ -149,7 +130,30 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
                   </Group>
 
                   <Group gap="xs" mt="xs">
-                    <Badge
+                    <Group gap={6} wrap="nowrap">
+                      <Badge
+                        color="red"
+                        variant="light"
+                        size="xs"
+                        radius="sm"
+                        ff="Poppins"
+                      >
+                        {report?.damage_severity || "Unknown Severity"}
+                      </Badge>
+                      {report?.debris && (
+                        <Badge
+                          color="red"
+                          variant="light"
+                          size="xs"
+                          radius="sm"
+                          ff="Poppins"
+                        >
+                          Debris
+                        </Badge>
+                      )}
+                    </Group>
+
+                    {/* <Badge
                       variant="light"
                       size="md"
                       radius="sm"
@@ -177,25 +181,8 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
                       >
                         Debris Present
                       </Badge>
-                    )}
+                    )} */}
                   </Group>
-
-                  {/* High Priority Alert Box */}
-                  {true && (
-                    <Paper
-                      bg="#FFF0ED"
-                      p="xs"
-                      radius="sm"
-                      style={{ borderLeft: "4px solid #E76F51" }}
-                    >
-                      <Group gap="xs" wrap="nowrap">
-                        <IconAlertCircleFilled color="#E76F51" size={20} />
-                        <Text size="sm" c="#D9534F" fw={600} ff="Poppins">
-                          Immediate action required at this site
-                        </Text>
-                      </Group>
-                    </Paper>
-                  )}
 
                   {/* Description */}
 
@@ -247,39 +234,55 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
                             >
                               Location
                             </Text>
-                            <Text
-                              size="sm"
-                              c="#0D3B66"
-                              fw={500}
-                              ff="Poppins"
-                              style={{ lineHeight: 1.2 }}
-                            >
-                              {report?.location?.infrastructure_latitude?.toFixed(
-                                3,
-                              )}
-                              ,
-                              {report?.location?.infrastructure_longitude?.toFixed(
-                                3,
-                              )}
-                              <br />
-                              <Text component="span" size="xs" c="dimmed">
-                                {report?.location?.city}{" "}
-                                {report?.location?.state_province}{" "}
-                                {report?.location?.country}
+                            <Group gap={10}>
+                              <Text
+                                size="sm"
+                                c="#0D3B66"
+                                fw={500}
+                                ff="Poppins"
+                                style={{ lineHeight: 1.2 }}
+                              >
+                                {report?.location?.infrastructure_latitude?.toFixed(
+                                  3,
+                                )}
                               </Text>
+
+                              <Text
+                                size="sm"
+                                c="#0D3B66"
+                                fw={500}
+                                ff="Poppins"
+                                style={{ lineHeight: 1.2 }}
+                              >
+                                {report?.location?.infrastructure_longitude?.toFixed(
+                                  3,
+                                )}
+                              </Text>
+                            </Group>
+
+                            <br />
+                            <Text component="span" size="xs" c="dimmed">
+                              {report?.location?.city}{" "}
+                              {report?.location?.state_province}{" "}
+                              {report?.location?.country}
                             </Text>
                           </Stack>
-                          <IconExternalLink
-                            size={24}
-                            color="var(--color-teal)"
-                            onClick={() => {
-                              setShowMapView(true);
-                              setLocation([
-                                report?.location?.infrastructure_latitude,
-                                report?.location?.infrastructure_longitude,
-                              ]);
-                            }}
-                          />
+                          {report?.location?.infrastructure_latitude &&
+                          report?.location?.infrastructure_longitude ? (
+                            <IconExternalLink
+                              size={24}
+                              color="var(--color-teal)"
+                              onClick={() => {
+                                setShowMapView(true);
+                                setLocation([
+                                  report?.location?.infrastructure_latitude,
+                                  report?.location?.infrastructure_longitude,
+                                ]);
+                              }}
+                            />
+                          ) : (
+                            <Text></Text>
+                          )}
                         </Group>
                       </Group>
 
@@ -303,9 +306,9 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
                             Reported On
                           </Text>
                           <Text size="sm" c="#0D3B66" fw={500} ff="Poppins">
-                            {/* {reportDate} */}
-                            {report?.damage_datetime &&
-                              timeAgo(report?.damage_datetime)}
+                            {report?.damage_datetime
+                              ? timeAgo(report?.damage_datetime)
+                              : "Unknown "}
                           </Text>
                         </Box>
                       </Group>
@@ -401,7 +404,7 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
                     <Text size="sm" fw={600} c="#64748B" ff="Poppins">
                       {" "}
                       <Text component="span" c="#0D3B66">
-                        user123
+                        {report?.reported_by?.user}
                       </Text>
                     </Text>
                   </Group>
