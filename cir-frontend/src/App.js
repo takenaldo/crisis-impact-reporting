@@ -20,13 +20,14 @@ import CrisisReportingApp from './CrisisReportingApp';
 import LoginPage from './LoginPage';
 import CIRAuthChecker from './CIRAuthChecker';
 import { SplashScreen } from './SplashScreen';
+import { CrisisImpactAdminDashboard } from './admin/admidDashboard';
 
 
 
 function App() {
 
   const router = createBrowserRouter([
-    { path: '/', element: <SplashScreen /> },
+    { path: '/admin', element: <CrisisImpactAdminDashboard /> }, { path: '/', element: <SplashScreen /> },
     { path: '/splash', element: <SplashScreen /> },
 
     { path: '/home', element: <CrisisReportingApp /> },

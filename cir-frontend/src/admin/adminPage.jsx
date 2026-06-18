@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   MantineProvider,
   createTheme,
@@ -31,12 +31,9 @@ import { urls } from './url';
 // Fix Leaflet icons
 delete (L.Icon.Default.prototype)._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
 export function DashboardPage() {
@@ -62,7 +59,6 @@ export function DashboardPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setProgress({ high: 58, medium: 27, low: 15 });
-      setProgress({ high: 58, medium: 27, low: 15 });
     }, 300);
 
     return () => clearTimeout(timer);
@@ -83,24 +79,12 @@ export function DashboardPage() {
   return (
     <Box bg={COLORS.lightBackground} minHeight="100vh" py="md" px="lg">
       <Container size="xl">
-    <Box bg={COLORS.lightBackground} minHeight="100vh" py="md" px="lg">
-      <Container size="xl">
         {/* Header */}
-        <header
-          style={{
-            background: "white",
-            borderBottom: "1px solid #e2e8f0",
-            padding: "12px 28px",
-          }}
-        >
+        <header style={{ background: 'white', borderBottom: '1px solid #e2e8f0', padding: '12px 28px' }}>
           <Group justify="space-between" align="center">
             <Group align="center">
-              <Text fw={700} size="xl" c="#0f766e">
-                UNDP
-              </Text>
-              <Title order={3} style={{ marginLeft: 20 }}>
-                Crisis Impact Overview
-              </Title>
+              <Text fw={700} size="xl" c="#0f766e">UNDP</Text>
+              <Title order={3} style={{ marginLeft: 20 }}>Crisis Impact Overview</Title>
             </Group>
             <Group gap="lg">
 
@@ -123,30 +107,16 @@ export function DashboardPage() {
               <Button variant="subtle" radius="md" p={8}>
                 <IconBell size={22} />
               </Button>
+
               <Group gap={10}>
-                <div
-                  style={{
-                    width: 38,
-                    height: 38,
-                    background: "#1e2937",
-                    color: "white",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                    fontSize: "15px",
-                  }}
-                >
-                  KS
-                </div>
+                <div style={{
+                  width: 38, height: 38, background: '#1e2937', color: 'white',
+                  borderRadius: '50%', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', fontWeight: 700, fontSize: '15px'
+                }}>KS</div>
                 <div>
-                  <Text fw={600} size="sm">
-                    Karim S.
-                  </Text>
-                  <Text size="xs" c="dimmed">
-                    Responder - KE
-                  </Text>
+                  <Text fw={600} size="sm">Karim S.</Text>
+                  <Text size="xs" c="dimmed">Responder - KE</Text>
                 </div>
               </Group>
             </Group>
@@ -170,44 +140,27 @@ export function DashboardPage() {
             <Card shadow="sm" radius="md" style={{ flex: 3 }} p="xl">
               <Group justify="space-between" mb="xl">
                 <div>
-                  <Text fw={700} size="lg">
-                    Status Distribution
-                  </Text>
-                  <Text size="sm" c="dimmed">
-                    By Impact Level
-                  </Text>
+                  <Text fw={700} size="lg">Status Distribution</Text>
+                  <Text size="sm" c="dimmed">By Impact Level</Text>
                 </div>
-                <Button variant="light" radius="md">
-                  Details
-                </Button>
+                <Button variant="light" radius="md">Details</Button>
               </Group>
 
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  margin: "24px 0",
-                }}
-              >
+              <div style={{ display: 'flex', justifyContent: 'center', margin: '24px 0' }}>
                 <RingProgress
                   size={235}
                   thickness={38}
                   roundCaps
                   animationDuration={1200}
-                  animationDuration={1200}
                   sections={[
-                    { value: progress.high, color: "#ef4444" },
-                    { value: progress.medium, color: "#f59e0b" },
-                    { value: progress.low, color: "#14b8a6" },
+                    { value: progress.high, color: '#ef4444' },
+                    { value: progress.medium, color: '#f59e0b' },
+                    { value: progress.low, color: '#14b8a6' },
                   ]}
                   label={
-                    <div style={{ textAlign: "center" }}>
-                      <Text size={38} fw={700} lh={1}>
-                        1,284
-                      </Text>
-                      <Text size="sm" c="dimmed" mt={2}>
-                        total reports
-                      </Text>
+                    <div style={{ textAlign: 'center' }}>
+                      <Text size={38} fw={700} lh={1}>1,284</Text>
+                      <Text size="sm" c="dimmed" mt={2}>total reports</Text>
                     </div>
                   }
                 />
@@ -215,20 +168,13 @@ export function DashboardPage() {
 
               <Stack gap="md" mt="md">
                 {[
-                  { label: "High-Impact", percent: 58, color: "#ef4444" },
-                  { label: "Medium-Impact", percent: 27, color: "#f59e0b" },
-                  { label: "Low-Impact", percent: 15, color: "#14b8a6" },
+                  { label: 'High-Impact', percent: 58, color: '#ef4444' },
+                  { label: 'Medium-Impact', percent: 27, color: '#f59e0b' },
+                  { label: 'Low-Impact', percent: 15, color: '#14b8a6' },
                 ].map((item) => (
                   <Group key={item.label} justify="space-between">
                     <Group gap="sm">
-                      <div
-                        style={{
-                          width: 13,
-                          height: 13,
-                          background: item.color,
-                          borderRadius: "50%",
-                        }}
-                      />
+                      <div style={{ width: 13, height: 13, background: item.color, borderRadius: '50%' }} />
                       <Text>{item.label}</Text>
                     </Group>
                     <Text fw={600}>{item.percent}%</Text>
