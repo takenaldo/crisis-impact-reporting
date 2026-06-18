@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { MantineProvider, Group, Text, Paper, Box, Flex } from "@mantine/core";
 import {
   IconHome,
@@ -106,6 +106,22 @@ export default function CrisisReportingApp() {
         style={{ overflow: "hidden" }}
       >
         <Header />
+        {pendingCount > 0 && (
+          <Box px="md" pt="xs">
+            <Paper
+              p="xs"
+              radius="md"
+              style={{ background: "#FFF8E1", border: "1px solid #FFE082" }}
+            >
+              <Group gap="xs">
+                <Text size="xs" fw={600} c="#E65100">
+                  {pendingCount} report{pendingCount > 1 ? "s" : ""} pending
+                  upload — will submit when back online
+                </Text>
+              </Group>
+            </Paper>
+          </Box>
+        )}
 
         <Box style={{ flex: 1, overflowY: "auto" }} px="md" pb="md">
           {NAV_COMP_MAPPING[activeContent]}
