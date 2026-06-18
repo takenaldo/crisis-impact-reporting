@@ -182,7 +182,7 @@ class ImpactReport(models.Model):
     )
 
     def __str__(self):
-        return (self.crisis.name if self.crisis else "") + " - Impact Report " + str(self.infrastructure_name) + str(self.infrastructure_type)
+        return "Impact Report " + str(self.infrastructure_name) + str(self.infrastructure_type)
 
 
 class Question(models.Model):

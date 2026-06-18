@@ -104,26 +104,6 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
             except (json.JSONDecodeError, TypeError):
                 pass
 
-        answers = data.get('answers', None)
-        if answers:
-            answer_objects = json.loads(data.get('answers', None))
-            for answer in answer_objects:
-                question_id = answer.get('question_id')
-                answer_text = answer.get('answer')
-                impact_report_id = ser.data['id']
-                noc_answer = CrisisQuestionAnswer(question_id=question_id, answer=answer_text, impact_report_id=impact_report_id)
-                noc_answer.save()
-
-        nocAnswers = data.get('noc_answers', None)
-        if nocAnswers:
-            noc_answer_objects = json.loads(nocAnswers)
-            for answer in noc_answer_objects:
-                question_id = answer.get('question_id')
-                answer_text = answer.get('answer')
-                impact_report_id = ser.data['id']
-                noc_answer = NatureOfCrisisQuestionAnswer(question_id=question_id, answer=answer_text, impact_report_id=impact_report_id)
-                noc_answer.save()
-
 
 
         # 
@@ -136,7 +116,7 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["GET"], url_name= "get_unmapped_imapct_reports")
     def get_unmapped_imapct_reports(self, request,):
         """
-        Returns all reports that are unmapped to a particular crisis
+        Returns all reports that are unmapped
         """
         queryset = ImpactReport.objects.filter()
         serializer = ImpactReportSerializer(queryset, many=True)
@@ -251,37 +231,8 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
 
             return Response(serializer.data)
 
-
-
-
-class CrisisViewSet(viewsets.ModelViewSet):
-    queryset = Crisis.objects.all()
-    serializer_class = CrisisSerializer
-    lookup_value_regex = r'\d+'
     
     
-    @action(detail=True, methods=["GET"], url_name="get_questions_for_crisis")
-    def get_questions_for_crisis(self, request, pk):
-        
-        queryset = CrisisQuestion.objects.filter(crisis__pk=pk)
-        serializer = CrisisQuestionSerializer(queryset, many=True)
-        
-        return Response(serializer.data)
-    
-    
-class NatureOfCrisisQuestionViewSet(viewsets.ModelViewSet):
-    queryset = NatureOfCrisisQuestion.objects.none()
-    serializer_class = NatureOfCrisisQuestionSerializer
-    
-    @action(detail=False, methods=["GET"], url_name="get_nature_of_crisis_questions")
-    def get_nature_of_crisis_questions(self, request):
-        nature_of_crisis = request.query_params.get('nature_of_crisis', None)
-        if not nature_of_crisis:
-            return Response({'error': 'nature_of_crisis query parameter is required.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        queryset = NatureOfCrisisQuestion.objects.filter(nature_of_crisis=str(nature_of_crisis).lower())
-        serializer = NatureOfCrisisQuestionSerializer(queryset, many=True)
-        return Response(serializer.data)
     
 
 class UserViewSet(viewsets.ModelViewSet):

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { MantineProvider, Group, Text, Paper, Box, Flex } from "@mantine/core";
 import {
   IconHome,
@@ -48,9 +48,9 @@ export default function CrisisReportingApp() {
     setPendingCount(remaining);
     if (submitted > 0) {
       notifications.show({
-        title: 'Reports submitted',
-        message: `${submitted} queued report${submitted > 1 ? 's' : ''} submitted successfully.`,
-        color: '#009C9A',
+        title: "Reports submitted",
+        message: `${submitted} queued report${submitted > 1 ? "s" : ""} submitted successfully.`,
+        color: "#009C9A",
       });
     }
   }, []);
@@ -58,10 +58,12 @@ export default function CrisisReportingApp() {
   useEffect(() => {
     getPendingCount().then(setPendingCount);
     flush();
-    window.addEventListener('online', flush);
-    window.addEventListener('report-queued', () => getPendingCount().then(setPendingCount));
+    window.addEventListener("online", flush);
+    window.addEventListener("report-queued", () =>
+      getPendingCount().then(setPendingCount),
+    );
     return () => {
-      window.removeEventListener('online', flush);
+      window.removeEventListener("online", flush);
     };
   }, [flush]);
 
@@ -107,11 +109,12 @@ export default function CrisisReportingApp() {
             <Paper
               p="xs"
               radius="md"
-              style={{ background: '#FFF8E1', border: '1px solid #FFE082' }}
+              style={{ background: "#FFF8E1", border: "1px solid #FFE082" }}
             >
               <Group gap="xs">
                 <Text size="xs" fw={600} c="#E65100">
-                  {pendingCount} report{pendingCount > 1 ? 's' : ''} pending upload — will submit when back online
+                  {pendingCount} report{pendingCount > 1 ? "s" : ""} pending
+                  upload — will submit when back online
                 </Text>
               </Group>
             </Paper>
