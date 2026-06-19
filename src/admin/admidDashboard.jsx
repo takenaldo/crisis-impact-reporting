@@ -52,7 +52,7 @@ const navItems = [
 ];
 
 // ==================== MAIN APP ====================
-export function CrisisImpactDashboard() {
+export function CrisisImpactAdminDashboard() {
   const [activeTab, setActiveTab] = useState('Dashboard');
 
   const renderActivePage = () => {

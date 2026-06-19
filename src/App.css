@@ -36,30 +36,3 @@
     transform: rotate(360deg);
   }
 }
-/* App.css */
-.map-page-container {
-  position: relative;
-  /* Acts as the anchor for the panel */
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-}
-
-.map-container {
-  height: 100%;
-  width: 100%;
-}
-
-.overlay-panel {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  bottom: 10px;
-  z-index: 1000;
-  /* Ensures it stays on top of the map */
-  background: white;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  overflow-y: auto;
-  transition: width 0.3s ease;
-}

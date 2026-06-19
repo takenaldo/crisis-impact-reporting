@@ -39,7 +39,7 @@ const createCustomCrisisIcon = (crisisType) => {
       </div>
     `,
 
-    iconSize: [21,21],
+    iconSize: [21, 21],
     iconAnchor: [19.5, 19.5], // Anchors the center of the circle to the geographic coordinate
   });
 };
@@ -61,8 +61,8 @@ export function CrisisMapPage() {
     const fetchCrises = async () => {
       try {
         const response = await api.get("/impact-reports/");
-        // setCrisesList(response.data);
-        console.log("Fetched crises:", response.data);
+        setCrisesList(response.data);
+
       } catch (error) {
         console.error("Error fetching crises:", error);
       }
@@ -103,11 +103,11 @@ export function CrisisMapPage() {
                 {crisesList.map((crisis, index) => {
                   // Match custom icon configuration based on nature of crisis
                   const markerIcon = createCustomCrisisIcon(crisis.nature_of_crisis);
-
+                  console.log("location of  crises:", crisis.location.infrastructure_latitude, crisis.location.infrastructure_longitude);
                   return (
                     <React.Fragment key={index}>
                       <Marker
-                        position={[crisis.location.infrastructure_latitude, crisis.location.infrastructure_longitude]}
+                        position={[crisis.location.infrastructure_latitude || 0, crisis.location.infrastructure_longitude || 0]}
                         icon={markerIcon}
                         eventHandlers={{
                           click: () => {
@@ -115,11 +115,10 @@ export function CrisisMapPage() {
 
                             setCurrentPhotoIndex(0); // Reset index counter context
                             setSelectedCrisis({
-                              name: crisis.crisis.name !== undefined ? crisis.crisis.name : 'Dynamic Crisis Event',
                               type: crisis.nature_of_crisis,
                               color: CRISIS_CONFIG[crisis.nature_of_crisis]?.color || 'teal',
-                              lat: crisis.location.infrastructure_latitude,
-                              lng: crisis.location.infrastructure_longitude,
+                              lat: crisis.location.infrastructure_latitude || 0,
+                              lng: crisis.location.infrastructure_longitude || 0,
                               imagesList: images,
                               rawDetails: crisis, // Store the entire object for detailed view
                             });
@@ -127,9 +126,7 @@ export function CrisisMapPage() {
                         }}
                       >
                         {/* Changed permanent to false (removed) so tooltip shows only on hover */}
-                        <Tooltip direction="top" offset={[0, -20]}>
-                          {crisis.crisis.name}
-                        </Tooltip>
+
                       </Marker>
                       {/* <Circle
                         center={[crisis.location.infrastructure_latitude, crisis.location.infrastructure_longitude]}
@@ -172,7 +169,7 @@ export function CrisisMapPage() {
                 </Stack>
               </Paper>
 
-           
+
             </div>
           </Card>
 
@@ -194,7 +191,7 @@ export function CrisisMapPage() {
               {/* Fixed Panel Header */}
               <Group justify="space-between" align="center" mb="md" style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
                 <div>
-                  <Title order={4} style={{ color: '#0f172a' }}>{selectedCrisis.name}</Title>
+                  <Title order={4} style={{ color: '#0f172a' }}></Title>
                 </div>
                 <ActionIcon variant="subtle" color="gray" radius="xl" onClick={() => setSelectedCrisis(null)}>
                   ✕
