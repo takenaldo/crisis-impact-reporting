@@ -20,6 +20,7 @@ import CrisisReportingApp from './CrisisReportingApp';
 import LoginPage from './LoginPage';
 import CIRAuthChecker from './CIRAuthChecker';
 import { SplashScreen } from './SplashScreen';
+import MobileContainer from './MobileContainer';
 import { CrisisImpactAdminDashboard } from './admin/admidDashboard';
 
 
@@ -48,18 +49,20 @@ function App() {
 
   return (
     <MantineProvider withGlobalStyles withNormalizeCSS>
+      <MobileContainer>
 
 
-      <Notifications
-        styles={{
-          notification: {
-            height: 'auto',
-            alignItems: 'flex-start'
-          }
-        }}
-      />
+        <Notifications
+          styles={{
+            notification: {
+              height: 'auto',
+              alignItems: 'flex-start'
+            }
+          }}
+        />
 
-      <RouterProvider router={router} />
+        <RouterProvider router={router} />
+      </MobileContainer>
     </MantineProvider>
   );
 }

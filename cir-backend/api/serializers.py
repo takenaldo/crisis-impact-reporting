@@ -119,6 +119,11 @@ class QuestionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class QuestionMinimalSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Question2
+        fields = ['id', 'question']
         
 
 class AnswerSerializer(serializers.ModelSerializer):
@@ -135,6 +140,19 @@ class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answer
         fields = ['impact_report', 'impact_report_id', 'question', 'question_id', 'answer', 'id', 'reported_by_pk', 'reported_by']
+
+
+
+class AnswerMinimalSerializer(serializers.ModelSerializer):
+
+    question = QuestionMinimalSerializer(read_only=True)
+
+    reported_by = UserMinimalSerializer(read_only=True)
+
+    class Meta:
+        model = Answer
+        fields = ['question','answer', 'id', 'reported_by', 'answer']
+
 
 
 class QuestionGroupSerializer(serializers.ModelSerializer):

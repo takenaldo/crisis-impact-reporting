@@ -4,6 +4,9 @@ import api from "./api";
 import ReportDetailsDrawer from "./ReportDetailsDrawer";
 import ReportCard from "./ReportCard";
 import { getUserDetails } from "./utils";
+import QuestionForm from "./QuestionForm";
+import { QuestionGroupModal } from "./QuestionGroupModal";
+import QuestionsForImpactReport from "./QuestionsForImpactReport";
 
 const MyReports = () => {
   const [reports, setReports] = useState([]);
@@ -36,6 +39,10 @@ const MyReports = () => {
 
   return (
     <Box h={"100%"}>
+      {/* <QuestionGroupModal
+        opened={true}
+        reportID={"0718155d-3a7c-41f1-a025-af49afeb6246"}
+      /> */}
       <Stack gap={10}>
         {reports.map((report) => (
           <ReportCard

@@ -5,80 +5,107 @@ import {
   Group,
   Badge,
   Divider,
-  Skeleton,
-  Alert,
   Box,
+  ThemeIcon,
 } from "@mantine/core";
-import { useEffect, useState } from "react";
-import api from "./api";
+import { useState } from "react";
 
-const QuestionsTabView = ({ report, impactReportId, natureOfCrisis }) => {
+const COLORS = {
+  navy: "#0D3B66",
+  teal: "#009C9A",
+  redOrange: "#E76F51",
+  amber: "#F4A261",
+  mint: "#E6F4F1",
+  bg: "#F4F7F9",
+};
+
+const QuestionsTabView = ({ report, natureOfCrisis }) => {
   const [questions, setQuestions] = useState([]);
   const [nocQuestions, setNocQuestions] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchAllQuestions = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        // Fetch both endpoints in parallel for better performance
-        const [generalRes, nocRes] = await Promise.all([
-          api.get(`impact-reports/${impactReportId}/get_qa_for_impact_report/`),
-          api.get(
-            `impact-reports/${impactReportId}/get_noc_qa_for_impact_report/`,
-          ),
-        ]);
-
-        setQuestions(generalRes.data);
-        setNocQuestions(nocRes.data);
-      } catch (err) {
-        setError("Failed to load impact report questions. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // if (impactReportId) {
-    //   fetchAllQuestions();
-    // }
-  }, [impactReportId]);
-
-  // Helper function to render a consistently styled Q&A card
   const renderQACard = (q, index) => (
     <Paper
       key={q.id || index}
       withBorder
-      p="md"
-      radius="md"
-      bg="var(--mantine-color-gray-0)"
+      p={{ base: "md", sm: "xl" }} // Scales padding
+      radius="lg"
+      shadow="sm"
+      bg="white"
+      style={{ borderColor: "#E9ECEF" }}
     >
-      <Stack gap="xs">
-        <Text size="sm" fw={600} c="dark.8">
+      <Box mb={{ base: "sm", sm: "md" }}>
+        <Badge
+          bg={COLORS.mint}
+          c={COLORS.teal}
+          radius="sm"
+          size="sm"
+          tt="none"
+          fw={600}
+          mb="xs"
+        >
+          Question {index}
+        </Badge>
+        <Text
+          // size="lg"
+          // size={{ base: "md", sm: "lg" }}
+          // fw={500}
+          c={COLORS.navy}
+          style={{
+            fontFamily: "Montserrat, sans-serif",
+            wordBreak: "break-word",
+          }}
+        >
           {q.question}
         </Text>
-        <Group wrap="nowrap" align="flex-start" gap="sm">
-          <Text size="sm" fw={700} c="blue.6">
-            A:
-          </Text>
-          <Text size="sm" fs="italic" c="dark.6">
-            {q.answer || "No answer provided"}
-          </Text>
+      </Box>
+
+      <Divider color={COLORS.mint} mb={{ base: "sm", sm: "md" }} />
+
+      <Box bg="#FAFAFA" p={{ base: "sm", sm: "md" }} radius="md">
+        <Group wrap="nowrap" align="flex-start" gap={{ base: "sm", sm: "md" }}>
+          <ThemeIcon color={COLORS.teal} variant="light" size="md" radius="xl">
+            <Text size="sm" fw={700}>
+              A
+            </Text>
+          </ThemeIcon>
+
+          <Box style={{ flex: 1, minWidth: 0 }}>
+            <Text
+              // size="md"
+              // size={{ base: "sm", sm: "md" }}
+              c={COLORS.navy}
+              // fw={300}
+              style={{
+                fontFamily: "Poppins, sans-serif",
+                wordBreak: "break-word",
+              }}
+            >
+              {q.answer || "No answer provided"}
+            </Text>
+          </Box>
         </Group>
-      </Stack>
+      </Box>
     </Paper>
   );
 
   return (
-    <Stack gap="xl">
-      {/* General Questions Section */}
+    <Stack
+      gap={{ base: "lg", sm: "xl" }}
+      p={{ base: "xs", sm: "md" }}
+      bg={COLORS.bg}
+    >
       <Box>
-        <Text size="lg" fw={700} mb="md">
+        <Text
+          size={{ base: "lg", sm: "xl" }}
+          fw={700}
+          c={COLORS.navy}
+          mb={{ base: "sm", sm: "lg" }}
+          style={{ fontFamily: "Montserrat, sans-serif" }}
+        >
           General Impact Questions
         </Text>
-        <Stack gap={"sm"}>
+
+        <Stack gap={{ base: "md", sm: "lg" }}>
           {renderQACard(
             {
               question:
@@ -103,42 +130,16 @@ const QuestionsTabView = ({ report, impactReportId, natureOfCrisis }) => {
             },
             3,
           )}
+
+          {questions.length > 0 &&
+            questions.map((q, index) => renderQACard(q, index + 4))}
         </Stack>
-
-        {/* {questions.length > 0 ? (
-          <Stack gap="sm">
-            {questions.map((q, index) => renderQACard(q, index))}
-          </Stack>
-        ) : (
-          <Text size="sm" c="dimmed" fs="italic">
-            No general questions found.
-          </Text>
-        )} */}
       </Box>
-      {/* Nature of Crisis Questions Section */}
-      <Box>
-        {/* <Group mb="sm" justify="space-between">
-          <Text size="lg" fw={700}>
-            Crisis Specific Questions
-          </Text>
-          {natureOfCrisis && (
-            <Badge color="red" variant="light" size="md">
-              {natureOfCrisis}
-            </Badge>
-          )}
-        </Group> */}
 
-        <Divider mb="md" variant="dashed" />
-        {/* 
-        {nocQuestions.length > 0 ? (
-          <Stack gap="sm">
-            {nocQuestions.map((q, index) => renderQACard(q, index))}
-          </Stack>
-        ) : (
-          <Text size="sm" c="dimmed" fs="italic">
-            No crisis-specific questions found.
-          </Text>
-        )} */}
+      <Box>
+        {/* Wrap allowed on mobile to prevent the badge from overflowing the screen on very small devices */}
+
+        <Divider color={COLORS.mint} mb={{ base: "md", sm: "lg" }} />
       </Box>
     </Stack>
   );

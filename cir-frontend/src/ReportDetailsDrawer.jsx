@@ -31,10 +31,13 @@ import {
   IconCircleOpenArrowDown,
   IconMapPinDown,
   IconExternalLink,
+  IconClock,
+  IconBuilding,
 } from "@tabler/icons-react";
 import { getSeverityColor, timeAgo } from "./utils";
 import CirMap from "./map/CirMap";
 import { MyDrawer } from "./MyDrawer";
+import SurveyTabView from "./SurveyTabView";
 
 export default function ReportDetailsDrawer({ opened, onClose, report }) {
   const [showMore, setShowMore] = useState(false);
@@ -58,9 +61,21 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
       size="90%"
       radius="xl"
       title={
-        <Title order={4} ff="Montserrat" c="#0D3B66" fw={700}>
-          Report Details
-        </Title>
+        <Group justify="space-between" align="flex-start" wrap="nowrap">
+          <Box style={{ flex: 1 }}>
+            <Text
+              size="xl"
+              fw={800}
+              c="var(--color-teal)"
+              ff="Montserrat"
+              lh={1.2}
+              tt="uppercase"
+            >
+              Damage Report on{" "}
+              {report?.infrastructure_name || "UnIdentified Infrastructure"}
+            </Text>
+          </Box>
+        </Group>
       }
       withCloseButton={true}
       styles={{
@@ -99,40 +114,11 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
               <Box p="lg">
                 <Stack gap="md">
                   {/* Header: Title and Type */}
-                  <Group
-                    justify="space-between"
-                    align="flex-start"
-                    wrap="nowrap"
-                  >
-                    <Box style={{ flex: 1 }}>
-                      <Text
-                        size="xl"
-                        fw={800}
-                        c="var(--color-teal)"
-                        ff="Montserrat"
-                        lh={1.2}
-                      >
-                        {report?.infrastructure_name}
-                      </Text>
-
-                      <Text
-                        size="sm"
-                        c="dark.3"
-                        tt="uppercase"
-                        fw={700}
-                        ff="Poppins"
-                        mb={4}
-                        style={{ letterSpacing: "0.5px" }}
-                      >
-                        {report?.infrastructure_type || "Infrastructure"}
-                      </Text>
-                    </Box>
-                  </Group>
 
                   <Group gap="xs" mt="xs">
                     <Group gap={6} wrap="nowrap">
                       <Badge
-                        color="red"
+                        color="var(--color-teal)"
                         variant="light"
                         size="xs"
                         radius="sm"
@@ -142,7 +128,7 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
                       </Badge>
                       {report?.debris && (
                         <Badge
-                          color="red"
+                          color="var(--color-teal)"
                           variant="light"
                           size="xs"
                           radius="sm"
@@ -184,10 +170,29 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
                     )} */}
                   </Group>
 
+                  <Group
+                    justify="space-between"
+                    align="flex-start"
+                    wrap="nowrap"
+                  >
+                    <IconBuilding size={16} color="var(--color-teal)" />
+                    <Box style={{ flex: 1 }}>
+                      <Text
+                        size="xs"
+                        c="dark.3"
+                        ff="Poppins"
+                        mb={4}
+                        style={{ letterSpacing: "0.5px" }}
+                      >
+                        {report?.infrastructure_type || "Infrastructure"}
+                      </Text>
+                    </Box>
+                  </Group>
+
                   {/* Description */}
 
                   {report?.description ? (
-                    <Text size="md" c="#334155" lh={1.6} ff="Poppins" mt="xs">
+                    <Text size="sm" c="#334155" lh={1.6} ff="Poppins" mt="xs">
                       {report?.description}
                     </Text>
                   ) : (
@@ -206,72 +211,86 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
                   {/* Tags / Metadata */}
 
                   {/* Location & Date Information Strip */}
-                  <Paper p="sm" radius="md" mt="sm">
-                    <SimpleGrid cols={1} spacing="md">
-                      <Group
-                        gap="xs"
-                        wrap="nowrap"
-                        bg={"var(--color-mint)"}
-                        p={5}
-                        radius="sm"
-                      >
+                  <Stack gap="xs">
+                    {/* MAIN ACTIONABLE CARD: Location */}
+                    <Paper
+                      withBorder
+                      p={{ base: "md", sm: "lg" }}
+                      radius="lg"
+                      shadow="sm"
+                      bg="#E6F4F1" // Mint background
+                      style={{ borderColor: "#E9ECEF" }}
+                    >
+                      <Group wrap="nowrap" align="flex-start" gap="md">
                         <ThemeIcon
                           color="#009C9A"
                           variant="light"
-                          size="md"
+                          size="lg"
                           radius="xl"
                         >
-                          <IconMapPin size={16} />
+                          <IconMapPin size={20} />
                         </ThemeIcon>
-                        <Group justify="space-between" w={"100%"}>
-                          <Stack gap={1}>
+
+                        <Box style={{ flex: 1, minWidth: 0 }}>
+                          <Text
+                            size="xs"
+                            c="dimmed"
+                            tt="uppercase"
+                            fw={700}
+                            style={{
+                              fontFamily: "Montserrat, sans-serif",
+                              letterSpacing: "0.5px",
+                            }}
+                            mb={2}
+                          >
+                            Location
+                          </Text>
+
+                          <Group gap="xs" align="center">
                             <Text
-                              size="xs"
-                              c="dimmed"
-                              tt="uppercase"
+                              size="sm"
+                              c="#0D3B66"
                               fw={600}
-                              ff="Poppins"
+                              style={{
+                                fontFamily: "Poppins, sans-serif",
+                                lineHeight: 1.2,
+                              }}
                             >
-                              Location
+                              {report?.location?.infrastructure_latitude?.toFixed(
+                                3,
+                              ) || "N/A"}
+                              ,{" "}
+                              {report?.location?.infrastructure_longitude?.toFixed(
+                                3,
+                              ) || "N/A"}
                             </Text>
-                            <Group gap={10}>
-                              <Text
-                                size="sm"
-                                c="#0D3B66"
-                                fw={500}
-                                ff="Poppins"
-                                style={{ lineHeight: 1.2 }}
-                              >
-                                {report?.location?.infrastructure_latitude?.toFixed(
-                                  3,
-                                )}
-                              </Text>
+                          </Group>
 
-                              <Text
-                                size="sm"
-                                c="#0D3B66"
-                                fw={500}
-                                ff="Poppins"
-                                style={{ lineHeight: 1.2 }}
-                              >
-                                {report?.location?.infrastructure_longitude?.toFixed(
-                                  3,
-                                )}
-                              </Text>
-                            </Group>
+                          <Text
+                            size="xs"
+                            c="dimmed"
+                            mt={4}
+                            lineClamp={2}
+                            style={{ fontFamily: "Poppins, sans-serif" }}
+                          >
+                            {[
+                              report?.location?.city,
+                              report?.location?.state_province,
+                              report?.location?.country,
+                            ]
+                              .filter(Boolean)
+                              .join(", ") || "Unknown Address"}
+                          </Text>
+                        </Box>
 
-                            <br />
-                            <Text component="span" size="xs" c="dimmed">
-                              {report?.location?.city}{" "}
-                              {report?.location?.state_province}{" "}
-                              {report?.location?.country}
-                            </Text>
-                          </Stack>
-                          {report?.location?.infrastructure_latitude &&
-                          report?.location?.infrastructure_longitude ? (
-                            <IconExternalLink
-                              size={24}
-                              color="var(--color-teal)"
+                        {report?.location?.infrastructure_latitude &&
+                          report?.location?.infrastructure_longitude && (
+                            <ActionIcon
+                              variant="light"
+                              color="#009C9A"
+                              size="lg"
+                              radius="md"
+                              aria-label="View on map"
                               onClick={() => {
                                 setShowMapView(true);
                                 setLocation([
@@ -279,41 +298,29 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
                                   report?.location?.infrastructure_longitude,
                                 ]);
                               }}
-                            />
-                          ) : (
-                            <Text></Text>
+                            >
+                              <IconExternalLink size={20} stroke={2} />
+                            </ActionIcon>
                           )}
-                        </Group>
                       </Group>
+                    </Paper>
 
-                      <Group gap="xs" wrap="nowrap" bg={"var(--color-mint)"}>
-                        <ThemeIcon
-                          color="#009C9A"
-                          variant="light"
-                          size="md"
-                          radius="xl"
-                        >
-                          <IconCalendar size={16} />
-                        </ThemeIcon>
-                        <Box>
-                          <Text
-                            size="xs"
-                            c="dimmed"
-                            tt="uppercase"
-                            fw={600}
-                            ff="Poppins"
-                          >
-                            Reported On
-                          </Text>
-                          <Text size="sm" c="#0D3B66" fw={500} ff="Poppins">
-                            {report?.damage_datetime
-                              ? timeAgo(report?.damage_datetime)
-                              : "Unknown "}
-                          </Text>
-                        </Box>
-                      </Group>
-                    </SimpleGrid>
-                  </Paper>
+                    {/* SECONDARY METADATA: Timestamp as small, subtle text to save space */}
+                    <Group gap={6} justify="flex-end" px="sm">
+                      <IconClock size={14} color="#868E96" stroke={2} />
+                      <Text
+                        size="xs"
+                        c="dimmed"
+                        fw={500}
+                        style={{ fontFamily: "Poppins, sans-serif" }}
+                      >
+                        Reported{" "}
+                        {report?.damage_datetime
+                          ? timeAgo(report?.damage_datetime)
+                          : "at unknown time"}
+                      </Text>
+                    </Group>
+                  </Stack>
                 </Stack>
               </Box>
 
@@ -332,7 +339,10 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
                         Photos ({report?.photos?.length || 0})
                       </Tabs.Tab>
                       <Tabs.Tab value="Questions" fw={600} ff="Poppins" fz="sm">
-                        Questions & Surveys
+                        Questions
+                      </Tabs.Tab>
+                      <Tabs.Tab value="Surveys" fw={600} ff="Poppins" fz="sm">
+                        Surveys
                       </Tabs.Tab>
                     </Tabs.List>
 
@@ -373,6 +383,16 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
                     <Tabs.Panel value="Questions" pt="lg">
                       <ScrollArea h={350} type="auto" offsetScrollbars>
                         <QuestionsTabView
+                          impactReportId={report?.id}
+                          natureOfCrisis={report?.nature_of_crisis}
+                          report={report}
+                        />
+                      </ScrollArea>
+                    </Tabs.Panel>
+
+                    <Tabs.Panel value="Surveys" pt="lg">
+                      <ScrollArea h={350} type="auto" offsetScrollbars>
+                        <SurveyTabView
                           impactReportId={report?.id}
                           natureOfCrisis={report?.nature_of_crisis}
                           report={report}

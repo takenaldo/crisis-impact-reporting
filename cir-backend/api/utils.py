@@ -1,14 +1,12 @@
 import math
-from PIL import Image
-from PIL.ExifTags import TAGS
+import secrets
 from datetime import datetime
 
 from PIL import Image
+from PIL.ExifTags import TAGS
+from PIL import Image
 from PIL.ExifTags import TAGS, GPSTAGS, IFD
 
-
-import random
-import secrets
 
 
 def haversine_distance(lat1, lon1, lat2, lon2):
@@ -43,9 +41,6 @@ def convert_to_decimal_degrees(value):
         return None
 
 
-
-from PIL import Image
-from PIL.ExifTags import TAGS, GPSTAGS, IFD
 
 def sanitize_for_json(value):
     """Recursively converts non-serializable EXIF data types into standard JSON types."""

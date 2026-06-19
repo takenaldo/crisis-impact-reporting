@@ -16,10 +16,9 @@ from .serializers import ImpactReportSerializer
 from .serializers import InfrastructureLocationSerializer
 from .serializers import UserSerializer
 from .serializers import QuestionSerializer
+from .serializers import AnswerMinimalSerializer
 from .serializers import AnswerSerializer
 from .serializers import QuestionGroupSerializer
-
-
 
 
 from .utils import haversine_distance, extract_exif_metadata
@@ -104,12 +103,6 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
             except (json.JSONDecodeError, TypeError):
                 pass
 
-
-
-        # 
-
-
-        
         return Response(ser.data, status=status.HTTP_201_CREATED)
 
 
@@ -231,7 +224,32 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
 
             return Response(serializer.data)
 
-    
+    @action(detail=False, methods=["GET"], url_name="get_survey_answers_for_report")
+    def get_survey_answers_for_report(self, request):
+        
+        pk = request.query_params.get('reportID')
+        print(pk)
+        report = ImpactReport.objects.filter(id=pk).first()
+        if not report:
+            return Response("Impact Report not found")
+        
+        questions = Question2.objects.filter(question_group__impact_report__pk=pk)
+        if not questions.first():
+            return Response({})
+        qa_dict = {}
+        for question in questions:
+            answers_queryset = Answer.objects.filter(question__question_group__impact_report__pk=pk)
+            serializer = AnswerMinimalSerializer(instance=answers_queryset, many=True)
+            qa_dict[str(question.pk)] = {
+                'question': question.question,
+                'answers': serializer.data
+                }
+            
+            
+            
+        
+        
+        return Response(qa_dict)
     
     
 
