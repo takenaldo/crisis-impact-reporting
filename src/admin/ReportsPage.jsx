@@ -175,7 +175,7 @@ export function ReportDataTablePage() {
     const fetchCrises = async () => {
       try {
         const response = await api.get("/impact-reports/");
-        // setCrisesReportList(response.data);
+         setCrisesReportList(response.data);
         console.log("Fetched crises:", response.data);
       } catch (error) {
         console.error("Error fetching crises:", error);

@@ -205,7 +205,7 @@ export function HeaderCardPage({ selectedDateRange }) {
       try {
         const response = await api.get(urls.getReportsByDate + "/?range=" + selectedDateRange);
         setCrisesReportList(response.data);
-        console.log("Fetched crises:", response.data);
+    
       } catch (error) {
         console.error("Error fetching crises:", error);
       }
