@@ -1,10 +1,7 @@
 import React from "react";
 import {
-  MantineProvider,
-  createTheme,
   TextInput,
   PasswordInput,
-  Select,
   Button,
   Paper,
   Title,
@@ -12,12 +9,11 @@ import {
   Container,
   Grid,
   Stack,
-  Divider,
   Modal,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import api from "./api";
-import { notifications, showNotification } from "@mantine/notifications";
+import { notifications } from "@mantine/notifications";
 import { IconCheck } from "@tabler/icons-react";
 
 // --- Design System Configuration ---
@@ -69,7 +65,7 @@ export default function CIRUserFormModal({ opened, onClose }) {
   const handleSubmit = (values) => {
     values["username"] = values["first_name"] + values["last_name"];
     try {
-      const response = api.post("user/create_account/", values);
+      api.post("user/create_account/", values);
       notifications.show({
         title: "Account Created Successfully",
         message: "Now You can Log in and contribute.",

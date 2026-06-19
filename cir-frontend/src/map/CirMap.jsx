@@ -17,7 +17,6 @@ import {
   IconCircle,
   IconCurrentLocation,
   IconMapPin,
-  IconNavigation,
   IconPolygon,
   IconTrash,
 } from "@tabler/icons-react";

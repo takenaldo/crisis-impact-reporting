@@ -1,11 +1,3 @@
-import axios from "axios";
-
-// export const api = axios.create({
-//     baseURL: "http://localhost:8000/api/",
-// });
-
-
-
 // Utility function to convert base64 to File
 export function dataURLtoFile(dataurl, filename) {
     const arr = dataurl.split(',');
@@ -78,6 +70,12 @@ export const SEVERITY_CONFIG = {
     medium: { label: "Medium", color: "#f0b400", bg: "#fef9e7" },
     low: { label: "Low", color: "#27ae60", bg: "#e9f7ef" },
 };
+
+
+export const COLORS = {
+
+}
+
 
 // ─── Components ───────────────────────────────────────────────────────────────
 

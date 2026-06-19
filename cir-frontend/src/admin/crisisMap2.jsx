@@ -22,8 +22,15 @@ import {
   Tooltip,
 } from "react-leaflet";
 import L from "leaflet";
-import { CRISIS_CONFIG, SEVERITY_CONFIG, COLORS } from "../utils";
+import {
+  CRISIS_CONFIG,
+  SEVERITY_CONFIG,
+  COLORS,
+  categorizeReports,
+} from "../utils";
 import api from "../api";
+
+import example from "../example.json";
 
 const createCustomCrisisIcon = (crisisType) => {
   const config = CRISIS_CONFIG[crisisType] || {
@@ -60,27 +67,13 @@ const theme = createTheme({
   fontFamily: "Inter, system-ui, sans-serif",
 });
 
-export function CrisisMapPage() {
-  const [crisesList, setCrisesList] = useState([]);
+export function CrisisMapPage2() {
+  const crisesList = categorizeReports(example) || [];
 
   // State to manage the selected marker's information
   const [selectedCrisis, setSelectedCrisis] = useState(null);
   // Track the active picture index in the slider
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-
-  useEffect(() => {
-    const fetchCrises = async () => {
-      try {
-        const response = await api.get("/impact-reports/");
-        // setCrisesList(response.data);
-        console.log("Fetched crises:", response.data);
-      } catch (error) {
-        console.error("Error fetching crises:", error);
-      }
-    };
-
-    fetchCrises();
-  }, []);
 
   // Helper logic to switch slides back and forth safely
   const handlePrevPhoto = (maxItems) => {
@@ -122,112 +115,31 @@ export function CrisisMapPage() {
                 />
 
                 {/* Hotspots matching the image */}
-                {crisesList.map((crisis, index) => {
-                  // Match custom icon configuration based on nature of crisis
-                  const markerIcon = createCustomCrisisIcon(
-                    crisis.nature_of_crisis,
-                  );
+                {Object.keys(crisesList).forEach((itemKey) => {
+                  const items = crisesList[itemKey];
+                  console.log(`\n--- Group: ${itemKey} ---`, items.length);
+
+                  if (items.length > 0) {
+                    return <>ppp</>;
+                  }
+                  const markerIcon = createCustomCrisisIcon("flood", null);
 
                   return (
-                    <React.Fragment key={index}>
+                    <React.Fragment key={itemKey}>
+                      <p>zzzzzzzzzzz</p>
                       <Marker
                         position={[
-                          crisis.location.infrastructure_latitude,
-                          crisis.location.infrastructure_longitude,
+                          items[0].annotations.incident_point.geometry
+                            .coordinates[0],
+                          items[0].annotations.incident_point.geometry
+                            .coordinates[1],
                         ]}
                         icon={markerIcon}
-                        eventHandlers={{
-                          click: () => {
-                            const images =
-                              crisis.photos ||
-                              (crisis.photos ? crisis.photos : []);
-
-                            setCurrentPhotoIndex(0); // Reset index counter context
-                            setSelectedCrisis({
-                              name:
-                                crisis.crisis.name !== undefined
-                                  ? crisis.crisis.name
-                                  : "Dynamic Crisis Event",
-                              type: crisis.nature_of_crisis,
-                              color:
-                                CRISIS_CONFIG[crisis.nature_of_crisis]?.color ||
-                                "teal",
-                              lat: crisis.location.infrastructure_latitude,
-                              lng: crisis.location.infrastructure_longitude,
-                              imagesList: images,
-                              rawDetails: crisis, // Store the entire object for detailed view
-                            });
-                          },
-                        }}
-                      >
-                        {/* Changed permanent to false (removed) so tooltip shows only on hover */}
-                        <Tooltip direction="top" offset={[0, -20]}>
-                          {crisis.crisis.name}
-                        </Tooltip>
-                      </Marker>
-                      {/* <Circle
-                        center={[crisis.location.infrastructure_latitude, crisis.location.infrastructure_longitude]}
-                        radius={9000}
-                        color={CRISIS_CONFIG[crisis.nature_of_crisis]?.color || 'teal'}
-                        fillOpacity={0.4}
-                      /> */}
+                      ></Marker>
                     </React.Fragment>
                   );
                 })}
               </MapContainer>
-
-              {/* Severity Legend */}
-              <Paper
-                shadow="md"
-                radius="md"
-                style={{
-                  position: "absolute",
-                  bottom: 30,
-                  left: 30,
-                  padding: "16px 20px",
-                  zIndex: 1000,
-                  background: "white",
-                }}
-              >
-                <Text size="xs" fw={600} mb={10}>
-                  Severity
-                </Text>
-                <Stack gap={8}>
-                  <Group gap={10}>
-                    <div
-                      style={{
-                        width: 16,
-                        height: 16,
-                        background: "#ef4444",
-                        borderRadius: "50%",
-                      }}
-                    />
-                    <Text size="sm">High • 86</Text>
-                  </Group>
-                  <Group gap={10}>
-                    <div
-                      style={{
-                        width: 16,
-                        height: 16,
-                        background: "#f59e0b",
-                        borderRadius: "50%",
-                      }}
-                    />
-                    <Text size="sm">Medium • 142</Text>
-                  </Group>
-                  <Group gap={10}>
-                    <div
-                      style={{
-                        width: 16,
-                        height: 16,
-                        background: "#14b8a6",
-                        borderRadius: "50%",
-                      }}
-                    />
-                    <Text size="sm">Low • 218</Text>
-                  </Group>
-                </Stack>
-              </Paper>
             </div>
           </Card>
 
