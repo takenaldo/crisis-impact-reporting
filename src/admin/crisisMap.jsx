@@ -39,7 +39,7 @@ const createCustomCrisisIcon = (crisisType) => {
       </div>
     `,
 
-    iconSize: [21,21],
+    iconSize: [21, 21],
     iconAnchor: [19.5, 19.5], // Anchors the center of the circle to the geographic coordinate
   });
 };
@@ -62,7 +62,7 @@ export function CrisisMapPage() {
       try {
         const response = await api.get("/impact-reports/");
         setCrisesList(response.data);
-      
+
       } catch (error) {
         console.error("Error fetching crises:", error);
       }
@@ -103,7 +103,6 @@ export function CrisisMapPage() {
                 {crisesList.map((crisis, index) => {
                   // Match custom icon configuration based on nature of crisis
                   const markerIcon = createCustomCrisisIcon(crisis.nature_of_crisis);
-
                   console.log("location of  crises:", crisis.location.infrastructure_latitude, crisis.location.infrastructure_longitude);
                   return (
                     <React.Fragment key={index}>
@@ -116,7 +115,6 @@ export function CrisisMapPage() {
 
                             setCurrentPhotoIndex(0); // Reset index counter context
                             setSelectedCrisis({
-                         
                               type: crisis.nature_of_crisis,
                               color: CRISIS_CONFIG[crisis.nature_of_crisis]?.color || 'teal',
                               lat: crisis.location.infrastructure_latitude || 0,
@@ -128,7 +126,7 @@ export function CrisisMapPage() {
                         }}
                       >
                         {/* Changed permanent to false (removed) so tooltip shows only on hover */}
-                       
+
                       </Marker>
                       {/* <Circle
                         center={[crisis.location.infrastructure_latitude, crisis.location.infrastructure_longitude]}
@@ -171,7 +169,7 @@ export function CrisisMapPage() {
                 </Stack>
               </Paper>
 
-           
+
             </div>
           </Card>
 

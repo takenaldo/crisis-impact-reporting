@@ -48,13 +48,13 @@ export function DashboardPage() {
   const formattedData = dateOptions.map((item) => {
     const [key, text] = Object.entries(item)[0];
     return {
-      value: String(key), 
+      value: String(key),
       label: text
     };
   });
   const [progress, setProgress] = useState({ high: 0, medium: 0, low: 0 });
-  const [crisesReportList, setCrisesReportList] = useState([]); 
-  const[selectedDateRange, setSelectedDateRange] = useState(formattedData[2].value);
+  const [crisesReportList, setCrisesReportList] = useState([]);
+  const [selectedDateRange, setSelectedDateRange] = useState(formattedData[2].value);
   // Animate the ring chart
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -66,9 +66,7 @@ export function DashboardPage() {
   useEffect(() => {
     const fetchCrises = async () => {
       try {
-        const response = await api.get(urls.getReportsByDate+"/?range="+selectedDateRange);
-        setCrisesReportList(response.data);
-        console.log("Fetched crises:", response.data);
+
       } catch (error) {
         console.error("Error fetching crises:", error);
       }
@@ -88,7 +86,7 @@ export function DashboardPage() {
             </Group>
             <Group gap="lg">
 
-              
+
               <Select
                 placeholder={"Select date range"}
                 defaultValue={formattedData[2].value} // Default to "Last 7 days"
@@ -198,14 +196,14 @@ export function DashboardPage() {
 
 export function HeaderCardPage({ selectedDateRange }) {
 
-  const [crisesReportList, setCrisesReportList] = useState([]);
+  const [crisesReportList, setCrisesReportList] = useState({});
 
   useEffect(() => {
     const fetchCrises = async () => {
       try {
-        const response = await api.get(urls.getReportsByDate + "/?range=" + selectedDateRange);
+        const response = await api.get(urls.getReportsByDate + selectedDateRange);
         setCrisesReportList(response.data);
-    
+        console.log("Fetched crises report list:", response.data);
       } catch (error) {
         console.error("Error fetching crises:", error);
       }
@@ -216,23 +214,16 @@ export function HeaderCardPage({ selectedDateRange }) {
   return (
 
     <Grid mb="lg">
+      {/* {Object.entries(crisesReportList.damage_severity).map(([key, value]) => (
+        <Group justify="space-between" key={key}>
+          <Text size="sm" c="dimmed">{key}</Text>
+          <Badge color={key === 'No Damage' ? 'green' : 'orange'} variant="light">
+            {value} Incidents
+          </Badge>
+        </Group>
+      ))} */}
 
 
-      {crisesReportList.map((crisis, i) => (
-        <Grid.Col span={{ sm: 6, md: 4 }} key={i}>
-          <Card padding="md" radius="lg" withBorder={false}>
-            <Group gap="md" align="center">
-              <ThemeIcon size="xl" radius="md" variant="light" color={COLORS.severity?.[crisis.damage_severity] || COLORS.darkBlue} bg="#EEF4FC" c="#2B6CB0">
-                <IconFileText size={20} />
-              </ThemeIcon>
-              <Box>
-                <Text size="xs" c="dimmed" fw={500}>{crisis.damage_severity}</Text>
-                <Text size="xl" fw={700} c={COLORS.severity?.[crisis.damage_severity] || COLORS.darkBlue}>71</Text>
-              </Box>
-            </Group>
-          </Card>
-        </Grid.Col>
-      ))}
     </Grid>
 
 
