@@ -196,26 +196,23 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     console.log("Submitting:", values);
     setIsSubmitting(true);
 
-    const pendingPayload = {
-      fields: {
-        ...values,
-        answers,
-        noc_answers: nocAnswers,
-        damage_datetime:
-          values.damage_datetime instanceof Date
-            ? values.damage_datetime.toISOString()
-            : values.damage_datetime,
-      },
-      photos: values.photos.map((p) => ({
-        blob: p.file,
-        description: p.description ?? "",
-        name: p.file?.name ?? "photo.jpg",
-      })),
-    };
-
-    const queueOffline = async () => {
+    // ── Offline path ────────────────────────────────────────────────────────
+    if (!navigator.onLine) {
       try {
-        await savePendingReport(pendingPayload);
+        await savePendingReport({
+          fields: {
+            ...values,
+            damage_datetime:
+              values.damage_datetime instanceof Date
+                ? values.damage_datetime.toISOString()
+                : values.damage_datetime,
+          },
+          photos: values.photos.map((p) => ({
+            blob: p.file,
+            description: p.description ?? "",
+            name: p.file?.name ?? "photo.jpg",
+          })),
+        });
         window.dispatchEvent(new CustomEvent("report-queued"));
         notifications.show({
           title: "Saved offline",
@@ -236,7 +233,8 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
       setActive(0);
       form.reset();
       onClose();
-    };
+      return;
+    }
 
     const formData = new FormData();
     if (values.crisis_id) formData.append("crisis_id", values.crisis_id);
@@ -305,18 +303,15 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
       setActive(0);
       onClose();
     } catch (error) {
-      if (!error.response) {
-        await queueOffline();
-      } else {
-        notifications.show({
-          title: "Submission Error",
-          message:
-            "Failed to upload the report. Please verify connection metrics.",
-          color: "#E76F51",
-          icon: <IconAlertTriangle size={16} />,
-        });
-        setIsSubmitting(false);
-      }
+      notifications.show({
+        title: "Submission Error",
+        message:
+          "Failed to upload the report. Please verify connection metrics.",
+        color: "#E76F51",
+        icon: <IconAlertTriangle size={16} />,
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

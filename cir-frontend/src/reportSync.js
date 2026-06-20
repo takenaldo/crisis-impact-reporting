@@ -3,7 +3,7 @@ import { getPendingReports, removePendingReport } from './map/utils/pendingRepor
 
 // Build and submit a single pending report entry to the server.
 export async function submitPendingReport(report) {
-  const { fields = {}, photos = [] } = report;
+  const { fields = {}, photos = [], answers = [], noc_answers = [] } = report;
 
   const formData = new FormData();
 
@@ -25,8 +25,8 @@ export async function submitPendingReport(report) {
   formData.append('city',                       fields.city ?? '');
   formData.append('state_province',             fields.state_province ?? '');
   formData.append('country',                    fields.country ?? '');
-  formData.append('answers',                    JSON.stringify(fields.answers ?? []));
-  formData.append('noc_answers',                JSON.stringify(fields.noc_answers ?? []));
+  formData.append('answers',                    JSON.stringify(answers));
+  formData.append('noc_answers',                JSON.stringify(noc_answers));
   formData.append('electricity_condition',      fields.electricity_condition ?? 'unknown');
   formData.append('health_services_rating',     fields.health_services_rating ?? 'unknown');
   formData.append('pressing_need',
@@ -35,7 +35,7 @@ export async function submitPendingReport(report) {
   formData.append('annotations', JSON.stringify(fields.annotations ?? {}));
 
   photos.forEach((p) => {
-    if (p.blob) formData.append('photos', p.blob, p.name ?? 'photo.jpg');
+    formData.append('photos', p.blob, p.name ?? 'photo.jpg');
   });
   formData.append('photoDescription', JSON.stringify(photos.map((p) => p.description ?? '')));
 

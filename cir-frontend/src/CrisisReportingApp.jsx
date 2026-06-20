@@ -43,41 +43,29 @@ export default function CrisisReportingApp() {
 
   const flush = useCallback(async () => {
     if (!navigator.onLine) return;
-    try {
-      const { submitted, failed } = await flushPendingReports();
-      const remaining = await getPendingCount();
-      setPendingCount(remaining);
-      if (submitted > 0) {
-        notifications.show({
-          title: "Reports submitted",
-          message: `${submitted} queued report${submitted > 1 ? "s" : ""} submitted successfully.`,
-          color: "#009C9A",
-        });
-      }
-      if (failed > 0) {
-        notifications.show({
-          title: "Sync failed",
-          message: `${failed} report${failed > 1 ? "s" : ""} could not be submitted — will retry automatically.`,
-          color: "#F4A261",
-        });
-      }
-    } catch { /* IndexedDB unavailable */ }
+    const { submitted } = await flushPendingReports();
+    const remaining = await getPendingCount();
+    setPendingCount(remaining);
+    if (submitted > 0) {
+      notifications.show({
+        title: "Reports submitted",
+        message: `${submitted} queued report${
+          submitted > 1 ? "s" : ""
+        } submitted successfully.`,
+        color: "#009C9A",
+      });
+    }
   }, []);
 
   useEffect(() => {
     getPendingCount().then(setPendingCount);
     flush();
-    const onQueued = () => getPendingCount().then(setPendingCount);
-    const onVisible = () => { if (document.visibilityState === "visible") flush(); };
-    const interval = setInterval(flush, 30_000);
     window.addEventListener("online", flush);
-    window.addEventListener("report-queued", onQueued);
-    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("report-queued", () =>
+      getPendingCount().then(setPendingCount)
+    );
     return () => {
       window.removeEventListener("online", flush);
-      window.removeEventListener("report-queued", onQueued);
-      document.removeEventListener("visibilitychange", onVisible);
-      clearInterval(interval);
     };
   }, [flush]);
 
