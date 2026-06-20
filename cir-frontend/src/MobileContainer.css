@@ -1,0 +1,53 @@
+/* Centers the mobile device on the page for presentation */
+.mobile-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f0f2f5;
+  padding: 20px;
+}
+
+/* The actual phone casing */
+.mobile-device {
+  position: relative;
+  width: 375px; /* Standard mobile width */
+  height: 812px; /* Standard mobile height (iPhone X/11/12/13) */
+  background-color: #ffffff;
+  border: 14px solid #1f1f1f; /* Phone bezel */
+  border-radius: 40px; /* Rounded corners */
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden; /* Keeps the screen inside the rounded corners */
+}
+
+/* The top notch */
+.mobile-notch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150px;
+  height: 25px;
+  background-color: #1f1f1f;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  z-index: 10; /* Ensures it sits above the screen content */
+}
+
+/* The screen area where your content goes */
+.mobile-screen {
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  overflow-y: auto; /* Allows scrolling inside the app */
+  position: relative;
+}
+
+/* Hide scrollbar for a cleaner app look (optional) */
+.mobile-screen::-webkit-scrollbar {
+  display: none;
+}
+.mobile-screen {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}

@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  cir-backend:
+    build: .
+    container_name: cir_backend
+    volumes:
+      - .:/cir-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    stdin_open: true 
+    tty: true

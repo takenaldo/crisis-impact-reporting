@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
  
   Title,
@@ -31,8 +30,8 @@ import {
   IconTrendingUp,
   IconTrendingDown,
   IconUserPlus,
-  IconMaximize,        // ← Added back
-} from '@tabler/icons-react';
+  IconMaximize, // ← Added back
+} from "@tabler/icons-react";
 
 import { COLORS } from '../utils';
 
@@ -64,6 +63,21 @@ export function SettingsPage() {
               label="Strict Mode verification schema validation protocols"
               styles={{ label: { fontWeight: 500 } }}
             />
+          <Stack gap="md" style={{ maxWidth: 500 }}>
+            <Switch
+              label="Activate immediate emergency notifications pipeline to target hubs"
+              defaultChecked
+              styles={{ label: { fontWeight: 500 } }}
+            />
+            <Switch
+              label="Perform real-time continuous localized vector cache compression"
+              defaultChecked
+              styles={{ label: { fontWeight: 500 } }}
+            />
+            <Switch
+              label="Strict Mode verification schema validation protocols"
+              styles={{ label: { fontWeight: 500 } }}
+            />
 
             <Select
               label="Default Mapping Base Layer Provider Engine"
@@ -73,6 +87,13 @@ export function SettingsPage() {
               mt="xs"
             />
 
+            <Button bg={COLORS.sidebarBg} radius="md" w="max-content" mt="md">
+              Save All System States
+            </Button>
+          </Stack>
+        </Card>
+      </Container>
+    </Box>
             <Button bg={COLORS.sidebarBg} radius="md" w="max-content" mt="md">
               Save All System States
             </Button>
