@@ -39,23 +39,10 @@ const MyReports = () => {
 
   return (
     <Box h={"100%"}>
-      {/* <QuestionGroupModal
-        opened={true}
-        reportID={"0718155d-3a7c-41f1-a025-af49afeb6246"}
-      /> */}
       <Stack gap={10}>
         {reports.map((report) => (
           <ReportCard
             key={report.id}
-            title={
-              report?.infrastructure_type + " " + report?.infrastructure_name
-            }
-            time={
-              report?.damage_datetime
-                ? String(report?.damage_datetime).split("T")[0]
-                : "Unknown Date Time"
-            }
-            status="Submitted"
             report={report}
             onClick={() => {
               setSelectedReport(report);

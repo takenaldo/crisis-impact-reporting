@@ -28,7 +28,7 @@ import { SettingsPage } from "./settingPage";
 import { TeamsPage } from "./TeamsPage";
 import { AnalyticsPage } from "./analyticsPage";
 import { DashboardPage } from "./adminPage";
-import { CrisisMapPage2 } from "./crisisMap2";
+import { CrisisMapPage } from "./crisisMap";
 
 // ==================== THEME ====================
 const colors = {
@@ -60,7 +60,7 @@ export function CrisisImpactAdminDashboard() {
       case "Dashboard":
         return <DashboardPage />;
       case "Crisis Map":
-        return <CrisisMapPage2 />;
+        return <CrisisMapPage />;
       case "Reports":
         return <ReportsPage />;
       case "Analytics":

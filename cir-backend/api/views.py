@@ -20,8 +20,7 @@ from .serializers import AnswerMinimalSerializer
 from .serializers import AnswerSerializer
 from .serializers import QuestionGroupSerializer
 
-
-from .utils import haversine_distance, extract_exif_metadata
+from .utils import generate_pseudonym, extract_exif_metadata
 
 from rest_framework import viewsets
 from rest_framework import permissions
@@ -32,6 +31,7 @@ from rest_framework import status
 User = get_user_model()
 
 
+from .constants import ElectrictyDamageLevel, HealthServicesRatingLevel
 
 class ImpactReportViewSet(viewsets.ModelViewSet):
     queryset = ImpactReport.objects.all()
@@ -91,10 +91,12 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
         
         if request.user.pk:
             data['reported_by_pk'] = request.user.pk
+        else:
+            data['anonymous_reported_by'] = generate_pseudonym()
         
         ser = ImpactReportSerializer(data=data)
         ser.is_valid(raise_exception=True)
-        ser.save()
+        report: ImpactReport = ser.save()
 
         if annotations_raw:
             try:
@@ -102,7 +104,26 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
                 ser.instance.save(update_fields=['annotations'])
             except (json.JSONDecodeError, TypeError):
                 pass
-
+        
+        # get_report_quality_score(report)
+        score = 0
+        score += (report.photos.count() * 3)  # 3 points for each photo
+        score += len([p for p in report.photos.all() if p.description is not None]) # 3 points for each captioned photo
+        score += (5 if report.infrastructure_name else 0)
+        score += (5 if report.infrastructure_name else 0)
+        score += (5 if report.description else 0)
+       
+        score += (2 if report.damage_datetime else 0)
+        
+        score +=(1 if report.electricity_condition is not ElectrictyDamageLevel.UNKNOWN else 0)
+        score +=(1 if report.health_services_rating is not HealthServicesRatingLevel.UNKNOWN else 0)
+        
+        
+        report.quality_score = score
+        report.save()
+        
+        
+        
         return Response(ser.data, status=status.HTTP_201_CREATED)
 
 

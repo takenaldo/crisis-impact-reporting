@@ -13,6 +13,7 @@ function ReportCard({ title, report, onClick }) {
       p="sm"
       style={{ borderColor: "#E9ECEF" }}
       onClick={onClick}
+      w={"100%"}
     >
       <Group wrap="nowrap" align="center">
         <ThemeIcon

@@ -19,7 +19,7 @@ import {
 } from "@tabler/icons-react";
 
 import example from "./example.json";
-import { categorizeReports } from "./utils";
+import { getCategorizeReports } from "./utils";
 
 const COLORS = {
   navy: "#0D3B66",
@@ -98,7 +98,7 @@ const SurveyTabView = ({ report, impactReportId }) => {
       p={{ base: "sm", sm: "md" }}
       bg={COLORS.bg}
     >
-      {console.log(categorizeReports(example))}
+      {console.log(getCategorizeReports(example))}
 
       <Box>
         <Text

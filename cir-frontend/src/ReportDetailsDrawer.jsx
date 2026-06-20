@@ -424,7 +424,8 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
                     <Text size="sm" fw={600} c="#64748B" ff="Poppins">
                       {" "}
                       <Text component="span" c="#0D3B66">
-                        {report?.reported_by?.user}
+                        {report?.reported_by?.user ||
+                          report?.anonymous_reported_by}
                       </Text>
                     </Text>
                   </Group>

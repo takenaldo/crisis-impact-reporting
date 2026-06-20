@@ -24,7 +24,6 @@ import MobileContainer from './MobileContainer';
 import { CrisisImpactAdminDashboard } from './admin/admidDashboard';
 
 
-
 function App() {
 
   const router = createBrowserRouter([
@@ -49,20 +48,27 @@ function App() {
 
   return (
     <MantineProvider withGlobalStyles withNormalizeCSS>
-      <MobileContainer>
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@400;500;600&display=swap');
+        `}
+      </style>
 
 
-        <Notifications
-          styles={{
-            notification: {
-              height: 'auto',
-              alignItems: 'flex-start'
-            }
-          }}
-        />
+      {/* <MobileContainer> */}
 
-        <RouterProvider router={router} />
-      </MobileContainer>
+
+      <Notifications
+        styles={{
+          notification: {
+            height: 'auto',
+            alignItems: 'flex-start'
+          }
+        }}
+      />
+
+      <RouterProvider router={router} />
+      {/* </MobileContainer> */}
     </MantineProvider>
   );
 }

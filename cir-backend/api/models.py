@@ -176,10 +176,14 @@ class ImpactReport(models.Model):
         on_delete=models.RESTRICT
     )
 
+    anonymous_reported_by = models.CharField(max_length=20, blank=True, null=True, help_text="A pseudoname for anonymous users")
+
     annotations = models.JSONField(
         blank=True, null=True,
         help_text="GeoJSON annotation data drawn on the map by the reporter (polygon, radius, point, direction, position)."
     )
+    
+    quality_score = models.IntegerField(default=0, blank=True, null=True)
 
     def __str__(self):
         return "Impact Report " + str(self.infrastructure_name) + str(self.infrastructure_type)
