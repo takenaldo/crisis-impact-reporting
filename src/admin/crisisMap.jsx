@@ -150,7 +150,7 @@ export function CrisisMapPage() {
                   borderRadius: '6px',
                 }}
               >
-                0 ——— 500 km
+                0 - 500 km
               </Paper>
             </div>
           </Card>

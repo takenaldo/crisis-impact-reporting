@@ -82,7 +82,7 @@ const CachingLayer = L.TileLayer.extend({
         }
       })
       .catch(() => {
-        // IndexedDB unavailable — fall back to direct URL
+        // IndexedDB unavailable  fall back to direct URL
         img.onload = () => done(null, img);
         img.onerror = (e) => done(e, img);
         img.src = url;
