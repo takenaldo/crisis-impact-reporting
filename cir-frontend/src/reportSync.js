@@ -1,5 +1,6 @@
 import api from './api';
 import { getPendingReports, removePendingReport } from './map/utils/pendingReports';
+import { swapAnnotationPointCoords } from './utils';
 
 // Build and submit a single pending report entry to the server.
 export async function submitPendingReport(report) {
@@ -32,7 +33,7 @@ export async function submitPendingReport(report) {
   formData.append('pressing_need',
     Array.isArray(fields.pressing_need) ? fields.pressing_need.join(', ') : (fields.pressing_need ?? '')
   );
-  formData.append('annotations', JSON.stringify(fields.annotations ?? {}));
+  formData.append('annotations', JSON.stringify(swapAnnotationPointCoords(fields.annotations) ?? {}));
 
   photos.forEach((p) => {
     if (p.blob) formData.append('photos', p.blob, p.name ?? 'photo.jpg');
