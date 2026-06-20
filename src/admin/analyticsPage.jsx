@@ -1,4 +1,5 @@
-import React from 'react';
+import React from "react";
+
 import {
   Container,
   Grid,
@@ -39,23 +40,24 @@ import { HeaderCardPage } from './adminPage';
 import { COLORS } from '../utils';
 // --- Mock Data ---
 const trendData = [
-  { name: 'Mon', submissions: 24, verifications: 16 },
-  { name: 'Tue', submissions: 38, verifications: 22 },
-  { name: 'Wed', submissions: 32, verifications: 26 },
-  { name: 'Thu', submissions: 55, verifications: 31 },
-  { name: 'Fri', submissions: 48, verifications: 36 },
-  { name: 'Sat', submissions: 63, verifications: 41 },
-  { name: 'Sun', submissions: 72, verifications: 52 },
+  { name: "Mon", submissions: 24, verifications: 16 },
+  { name: "Tue", submissions: 38, verifications: 22 },
+  { name: "Wed", submissions: 32, verifications: 26 },
+  { name: "Thu", submissions: 55, verifications: 31 },
+  { name: "Fri", submissions: 48, verifications: 36 },
+  { name: "Sat", submissions: 63, verifications: 41 },
+  { name: "Sun", submissions: 72, verifications: 52 },
 ];
 
 const incidentData = [
-  { name: 'Flood', count: 85 },
-  { name: 'Quake', count: 42 },
-  { name: 'Fire', count: 32 },
-  { name: 'Health', count: 28 },
-  { name: 'Food', count: 18 },
-  { name: 'Other', count: 12 },
+  { name: "Flood", count: 85 },
+  { name: "Quake", count: 42 },
+  { name: "Fire", count: 32 },
+  { name: "Health", count: 28 },
+  { name: "Food", count: 18 },
+  { name: "Other", count: 12 },
 ];
+
 
 export function AnalyticsPage() {
   return (

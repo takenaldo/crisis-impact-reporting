@@ -1,7 +1,6 @@
-
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
- 
+
   Title,
   Text,
 
@@ -31,23 +30,21 @@ import {
   IconTrendingUp,
   IconTrendingDown,
   IconUserPlus,
-  IconMaximize,        // ← Added back
-} from '@tabler/icons-react';
+  IconMaximize, // ← Added back
+} from "@tabler/icons-react";
 
 import { COLORS } from '../utils';
 
 export function SettingsPage() {
-  return (
-
-    <Box bg={COLORS.lightBackground} minHeight="100vh" py="md" px="lg">
-      <Container size="xl">
-        <Card radius="lg" withBorder p="xl">
-          <Title order={4} color={COLORS.sidebarBg} mb="xs">
-            System Configuration & Parameters
-          </Title>
-          <Text size="xs" color={COLORS.textSecondary} mb="xl">
-            Alter structural parameters, automated calculation metrics, and security authentication filters.
-          </Text>
+  return (<Box bg={COLORS.lightBackground} minHeight="100vh" py="md" px="lg">
+    <Container size="xl">
+      <Card radius="lg" withBorder p="xl">
+        <Title order={4} color={COLORS.sidebarBg} mb="xs">
+          System Configuration & Parameters
+        </Title>
+        <Text size="xs" color={COLORS.textSecondary} mb="xl">
+          Alter structural parameters, automated calculation metrics, and security authentication filters.
+        </Text>
 
           <Stack gap="md" style={{ maxWidth: 500 }}>
             <Switch
@@ -77,8 +74,9 @@ export function SettingsPage() {
               Save All System States
             </Button>
           </Stack>
-        </Card>
-      </Container>
-    </Box>
-  );
+      </Card>
+    </Container>
+  </Box>);
 }
+
+

@@ -115,17 +115,17 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
   // Pre-fill lat/lng from GPS/dragged location so it reaches the form submission
   useEffect(() => {
     if (userLocation) {
-      form.setFieldValue("infrastructure_latitude",  userLocation.latitude);
+      form.setFieldValue("infrastructure_latitude", userLocation.latitude);
       form.setFieldValue("infrastructure_longitude", userLocation.longitude);
     }
   }, [userLocation]); // eslint-disable-line
 
-  // Fetch bbox whenever userLocation is known — always required in the form
+  // Fetch bbox whenever userLocation is known  always required in the form
   useEffect(() => {
     if (!userLocation) return;
     const fetchBounds = async () => {
       try {
-        const res = await api.post('map/bbox/', {
+        const res = await api.post("map/bbox/", {
           latitude: userLocation.latitude,
           longitude: userLocation.longitude,
         });
@@ -135,11 +135,14 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
           Math.log2(((window.innerWidth || 400) * 360) / (256 * lngSpan))
         );
         setMapBounds({
-          maxBounds: [[min_lat, min_lng], [max_lat, max_lng]],
+          maxBounds: [
+            [min_lat, min_lng],
+            [max_lat, max_lng],
+          ],
           minZoom: Math.max(2, minZoom),
         });
       } catch {
-        // bbox unavailable — map stays unconstrained
+        // bbox unavailable  map stays unconstrained
       }
     };
     fetchBounds();
@@ -199,28 +202,30 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
         await savePendingReport({
           fields: {
             ...values,
-            damage_datetime: values.damage_datetime instanceof Date
-              ? values.damage_datetime.toISOString()
-              : values.damage_datetime,
+            damage_datetime:
+              values.damage_datetime instanceof Date
+                ? values.damage_datetime.toISOString()
+                : values.damage_datetime,
           },
           photos: values.photos.map((p) => ({
             blob: p.file,
-            description: p.description ?? '',
-            name: p.file?.name ?? 'photo.jpg',
+            description: p.description ?? "",
+            name: p.file?.name ?? "photo.jpg",
           })),
         });
-        window.dispatchEvent(new CustomEvent('report-queued'));
+        window.dispatchEvent(new CustomEvent("report-queued"));
         notifications.show({
-          title: 'Saved offline',
-          message: 'Your report is queued and will be submitted automatically when you reconnect.',
-          color: '#F4A261',
+          title: "Saved offline",
+          message:
+            "Your report is queued and will be submitted automatically when you reconnect.",
+          color: "#F4A261",
           icon: <IconCheck size={16} />,
         });
       } catch {
         notifications.show({
-          title: 'Could not save offline',
-          message: 'Please check your storage settings and try again.',
-          color: '#E76F51',
+          title: "Could not save offline",
+          message: "Please check your storage settings and try again.",
+          color: "#E76F51",
           icon: <IconAlertTriangle size={16} />,
         });
       }
@@ -239,22 +244,20 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     formData.append("damage_severity", values.damage_severity);
     formData.append(
       "damage_datetime",
-      values.damage_datetime
-        ? values.damage_datetime
-        : new Date().toISOString(),
+      values.damage_datetime ? values.damage_datetime : new Date().toISOString()
     );
     formData.append("infrastructure_name", values.infrastructure_name);
     formData.append("infrastructure_type", values.infrastructure_type);
     formData.append(
       "infrastructureDescription",
-      values.infrastructure_description,
+      values.infrastructure_description
     );
 
     formData.append("debris", values.debris);
     formData.append("infrastructure_latitude", values.infrastructure_latitude);
     formData.append(
       "infrastructure_longitude",
-      values.infrastructure_longitude,
+      values.infrastructure_longitude
     );
     formData.append("street_address", values.street_address);
     formData.append("city", values.city);
@@ -270,7 +273,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     });
     formData.append(
       "photoDescription",
-      JSON.stringify(values.photos.map((p) => p.description)),
+      JSON.stringify(values.photos.map((p) => p.description))
     );
 
     try {
@@ -280,7 +283,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
       if (report != null) {
         try {
           const reportIDs = JSON.parse(
-            localStorage.getItem("report_ids") || "[]",
+            localStorage.getItem("report_ids") || "[]"
           );
           reportIDs.push(report.id);
           console.log(reportIDs);
@@ -740,7 +743,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
 
     if (!stepHasErrors) {
       setActive((current) =>
-        current < steps.length - 1 ? current + 1 : current,
+        current < steps.length - 1 ? current + 1 : current
       );
     }
   };

@@ -1,0 +1,13 @@
+{
+  "name": "CIR Frontend",
+  "dockerComposeFile": ["../docker-compose.yml"],
+  "service": "cir-frontend",
+  "runServices": ["cir-frontend"],
+  "workspaceFolder": "/cir-frontend",
+  "forwardPorts": [3000],
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]
+    }
+  }
+}

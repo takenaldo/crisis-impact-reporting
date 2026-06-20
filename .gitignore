@@ -1,4 +1,25 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+venv
+
+
+
+# Large data files  must be generated locally
+# See README.md for setup instructions
+pbf/
+tiles/
+sources/
+tmp/
+
+# Planetiler generated statistics file
+tile_weights.tsv.gz
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Docker
+*.log# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
 /node_modules
