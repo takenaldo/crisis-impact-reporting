@@ -967,13 +967,8 @@ export default function CirMap({
       color: COLORS.polygon,
       tip: "Click vertices, double-click to close",
     },
-    {
-      tool: TOOLS.RADIUS,
-      icon: <IconCircle size={18} />,
-      label: "Effect Radius",
-      color: COLORS.radius,
-      tip: "Click center, then click edge",
-    },
+    
+    // { tool: TOOLS.RADIUS, icon: <IconCircle size={18} />, label: "Effect Radius", color: COLORS.radius, tip: "Click center, then click edge" },
     {
       tool: TOOLS.POINT,
       icon: <IconMapPin size={18} />,

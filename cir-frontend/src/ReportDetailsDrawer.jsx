@@ -34,7 +34,7 @@ import {
   IconClock,
   IconBuilding,
 } from "@tabler/icons-react";
-import { getSeverityColor, timeAgo } from "./utils";
+import { getSeverityColor, timeAgo, swapAnnotationPointCoords } from "./utils";
 import CirMap from "./map/CirMap";
 import { MyDrawer } from "./MyDrawer";
 import SurveyTabView from "./SurveyTabView";
@@ -459,7 +459,7 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
             center={location}
             zoom={15}
             height="500px"
-            annotations={report?.annotations}
+            annotations={swapAnnotationPointCoords(report?.annotations)}
             userLocation={{ latitude: location[0], longitude: location[1] }}
           />
         )}
