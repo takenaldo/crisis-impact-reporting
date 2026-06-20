@@ -21,6 +21,8 @@ from .serializers import AnswerSerializer
 from .serializers import QuestionGroupSerializer
 
 from .utils import generate_pseudonym, extract_exif_metadata
+from .utils import send_invitation_email
+
 
 from rest_framework import viewsets
 from rest_framework import permissions
@@ -119,6 +121,53 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
         score +=(1 if report.health_services_rating is not HealthServicesRatingLevel.UNKNOWN else 0)
         
         
+        # send survey invitation mai;l for users in the surrounding of the impact
+        users_to_receive_survey_email = []
+        for user in User.objects.all():
+            if user.email:
+                
+                if not user.location.latitude or not user.location.longitude:
+                    continue
+                            
+                try:
+                    # TODO: lat lng are swapped by mistake, 
+                    report_lat = report.annotations['incident_point']['geometry']['coordinates'][1]; 
+                    report_lng = report.annotations['incident_point']['geometry']['coordinates'][0];
+
+                    
+                except Exception as e:
+                    continue
+                
+                distance_threshold_in_km = 100 # KM
+                
+                # TODO: change this to annotation latlng
+                # Skip if missing necessary geospatial data
+                if report_lat is None or report_lng is None or distance_threshold_in_km is None:
+                    continue
+                
+                    
+                # Convert degrees to radians
+                lat1, lon1 = math.radians(user.location.latitude), math.radians(user.location.longitude)
+                lat2, lon2 = math.radians(report_lat), math.radians(report_lng)
+                
+                dlat = lat2 - lat1
+                dlon = lon2 - lon1
+                
+                # Haversine formula
+                a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+                c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+                distance = 6371 * c 
+
+                # Check if user is within the specific question's allowed threshold
+                if distance <= distance_threshold_in_km:
+                    users_to_receive_survey_email.append(user)
+
+        if len(users_to_receive_survey_email) > 0:                
+            for u in users_to_receive_survey_email:      
+                send_invitation_email(u.email ,'report')
+
+        
+        
         report.quality_score = score
         report.save()
         
@@ -211,19 +260,54 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
             data['start_time'] = start_time.isoformat().replace('+00:00', 'Z')
             data['end_time'] = end_time.isoformat().replace('+00:00', 'Z')
 
-            print(data)
-
             qg_serializer = QuestionGroupSerializer(data=data)
             qg_serializer.is_valid(raise_exception=True)
-            qg = qg_serializer.save()
+            question_group = qg_serializer.save()
 
             questions_list = request.data.get('questions', []) 
             for question in questions_list:
-                question['question_group_id'] = qg.pk
+                question['question_group_id'] = question_group.pk
 
             s = QuestionSerializer(data=questions_list, many=True)
             s.is_valid(raise_exception=True)
             s.save()
+            
+            
+            # send survey invitation mai;l for users in the surrounding of the impact
+            users_to_receive_survey_email = []
+            for user in User.objects.all():
+                print(user, user.email)
+                if user.email:
+                    
+                    if not user.location.latitude or not user.location.longitude:
+                        continue
+                                
+                    # TODO: change this to annotation latlng
+                    # Skip if missing necessary geospatial data
+                    if question_group.latitude is None or question_group.longitude is None or question_group.distance_threshold_in_km is None:
+                        continue
+                    
+                        
+                    # Convert degrees to radians
+                    lat1, lon1 = math.radians(user.location.latitude), math.radians(user.location.longitude)
+                    lat2, lon2 = math.radians(question_group.latitude), math.radians(question_group.longitude)
+                    
+                    dlat = lat2 - lat1
+                    dlon = lon2 - lon1
+                    
+                    # Haversine formula
+                    a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+                    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+                    distance = 6371 * c 
+
+                    print(distance, question_group.distance_threshold_in_km )
+                    # Check if user is within the specific question's allowed threshold
+                    if distance <= question_group.distance_threshold_in_km:
+                        users_to_receive_survey_email.append(user)
+
+            if len(users_to_receive_survey_email) > 0:                
+                for u in users_to_receive_survey_email:      
+                  send_invitation_email(u.email ,'survey')
             
             
             return Response({'question_group': qg_serializer.data, 'questions': s.data})
@@ -249,7 +333,6 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
     def get_survey_answers_for_report(self, request):
         
         pk = request.query_params.get('reportID')
-        print(pk)
         report = ImpactReport.objects.filter(id=pk).first()
         if not report:
             return Response("Impact Report not found")
@@ -280,6 +363,8 @@ class UserViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=["GET"], url_name="get_user_details")
     def get_user_details(self, request):
+        if request.user.is_anonymous:
+            return Response()
         return Response(UserSerializer(instance=request.user).data)
     
 
