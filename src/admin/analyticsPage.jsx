@@ -67,7 +67,7 @@ export function AnalyticsPage() {
         {/* --- HEADER NAVIGATION --- */}
         <Flex justify="space-between" align="center" mb="xl" gap="md" wrap="wrap">
           <Flex align="center" gap="xs">
-            <Text size="xs" c="dimmed" fw={700} style={{ letterSpacing: 1 }}>UNDP / Africa</Text>
+            <Text size="xs" c="dimmed" fw={700} style={{ letterSpacing: 1 }}>UNDP / </Text>
             <Title order={3} c="#0f2d59" style={{ fontFamily: 'sans-serif' }}>Analytics</Title>
           </Flex>
 

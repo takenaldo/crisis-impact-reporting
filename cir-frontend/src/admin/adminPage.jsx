@@ -29,6 +29,12 @@ import {
   IconCircleCheck,
   IconDeviceMobile,
   IconFileText,
+  IconFolder,
+  IconFolderHeart,
+  IconFolderPlus,
+  IconFolderFilled,
+  IconReport,
+  IconReportSearch,
 } from "@tabler/icons-react";
 import {
   MapContainer,
@@ -71,7 +77,8 @@ export function DashboardPage() {
     };
   });
   const [progress, setProgress] = useState({ high: 0, medium: 0, low: 0 });
-  const [crisesReportList, setCrisesReportList] = useState([]);
+  const [crisesReportList, setCrisesReportList] = useState({});
+  const [crisesReports, setCrisesReports] = useState([]);
   const [selectedDateRange, setSelectedDateRange] = useState(
     formattedData[2].value,
   );
@@ -80,14 +87,34 @@ export function DashboardPage() {
     const timer = setTimeout(() => {
       setProgress({ high: 58, medium: 27, low: 15 });
     }, 300);
-
     return () => clearTimeout(timer);
   }, []);
+
+
+  useEffect(() => {
+    const fetchCrises = async () => {
+      try {
+        const response = await api.get("/impact-reports/");
+        const incomingData = Array.isArray(response.data)
+          ? response.data
+          : (response.data?.results || []);
+
+        setCrisesReports(incomingData);
+        console.log("Fetched crises:", incomingData);
+      } catch (error) {
+        console.error("Error fetching crises:", error);
+        setCrisesReports([]);
+      }
+    };
+
+    fetchCrises();
+  }, []);
+
   useEffect(() => {
     const fetchCrises = async () => {
       try {
         const response = await api.get(
-          urls.getReportsByDate + "/?range=" + selectedDateRange,
+          urls.getReportsByDate + selectedDateRange,
         );
         setCrisesReportList(response.data);
         console.log("Fetched crises:", response.data);
@@ -97,7 +124,11 @@ export function DashboardPage() {
     };
 
     fetchCrises();
-  }, []);
+  }, [selectedDateRange]);
+
+  const totalReports = crisesReportList?.total_reports ?? 0;
+  const damageSeverityEntries = Object.entries(crisesReportList?.damage_severity || {});
+  const infrastructureEntries = Object.entries(crisesReportList?.infrastructure_type || {});
   return (
     <Box bg={COLORS.lightBackground} minHeight="100vh" py="md" px="lg">
       <Container size="xl">
@@ -208,15 +239,21 @@ export function DashboardPage() {
                   thickness={38}
                   roundCaps
                   animationDuration={1200}
-                  sections={[
-                    { value: progress.high, color: "#ef4444" },
-                    { value: progress.medium, color: "#f59e0b" },
-                    { value: progress.low, color: "#14b8a6" },
-                  ]}
+                  sections={
+                    damageSeverityEntries.map(([item, count]) => {
+                      const percentage = totalReports > 0 ? (count / totalReports) * 100 : 0;
+                      let segmentColor = SEVERITY_CONFIG[item.toLowerCase()] == undefined ? SEVERITY_CONFIG["low"].color : SEVERITY_CONFIG[item.toLowerCase()]?.color // default 
+                      return {
+                        value: percentage,
+                        color: segmentColor,
+                        tooltip: `${item}: ${count} (${percentage.toFixed(0)}%)`
+                      };
+                    })
+                  }
                   label={
                     <div style={{ textAlign: "center" }}>
                       <Text size={38} fw={700} lh={1}>
-                        1,284
+                        {totalReports}
                       </Text>
                       <Text size="sm" c="dimmed" mt={2}>
                         total reports
@@ -227,44 +264,40 @@ export function DashboardPage() {
               </div>
 
               <Stack gap="md" mt="md">
-                {[
-                  { label: "High-Impact", percent: 58, color: "#ef4444" },
-                  { label: "Medium-Impact", percent: 27, color: "#f59e0b" },
-                  { label: "Low-Impact", percent: 15, color: "#14b8a6" },
-                ].map((item) => (
-                  <Group key={item.label} justify="space-between">
+                {damageSeverityEntries.map(([item, count]) => (
+                  <Group key={item} justify="space-between">
                     <Group gap="sm">
                       <div
                         style={{
                           width: 13,
                           height: 13,
-                          background: item.color,
+                          background: SEVERITY_CONFIG[item.toLowerCase()] == undefined ? SEVERITY_CONFIG["low"].color : SEVERITY_CONFIG[item.toLowerCase()]?.color,
                           borderRadius: "50%",
                         }}
                       />
-                      <Text>{item.label}</Text>
+                      <Text>{item}</Text>
                     </Group>
-                    <Text fw={600}>{item.percent}%</Text>
+                    <Text fw={600}>{((count / totalReports) * 100).toFixed(2)}%</Text>
                   </Group>
                 ))}
               </Stack>
             </Card>
           </Flex>
         </Container>
-        {<ReportDataTablePage />}
+               <ReportDataTablePage crisesReportList={crisesReports} />
       </Container>
     </Box>
   );
 }
 
 export function HeaderCardPage({ selectedDateRange }) {
-  const [crisesReportList, setCrisesReportList] = useState([]);
+  const [crisesReportList, setCrisesReportList] = useState({});
 
   useEffect(() => {
     const fetchCrises = async () => {
       try {
         const response = await api.get(
-          urls.getReportsByDate + "/?range=" + selectedDateRange,
+          urls.getReportsByDate + selectedDateRange,
         );
         setCrisesReportList(response.data);
         console.log("Fetched crises:", response.data);
@@ -275,10 +308,46 @@ export function HeaderCardPage({ selectedDateRange }) {
 
     fetchCrises();
   }, [selectedDateRange]);
+
+  const totalReports = crisesReportList?.total_reports ?? 0;
+  const damageSeverityEntries = Object.entries(crisesReportList?.damage_severity || {});
+  const infrastructureEntries = Object.entries(crisesReportList?.infrastructure_type || {});
   return (
+
+
     <Grid mb="lg">
-      {crisesReportList.map((crisis, i) => (
-        <Grid.Col span={{ sm: 6, md: 4 }} key={i}>
+      {totalReports == 0 ? <Text size="xs" c="dimmed" fw={500}>
+        { }
+      </Text> : <Grid.Col span={{ sm: 6, md: 4 }} >
+        <Card padding="md" radius="lg" withBorder={false}>
+          <Group gap="md" align="center">
+            <ThemeIcon
+              size="xl"
+              radius="md"
+              variant="light"
+              bg="#EEF4FC"
+              c="#2B6CB0"
+            >
+              <IconReport size={20} />
+            </ThemeIcon>
+            <Box>
+              <Text size="xs" c="dimmed" fw={500}>
+                {"Total Reports"}
+              </Text>
+              <Text
+                size="xl"
+                fw={700}
+
+              >
+                {totalReports}
+              </Text>
+            </Box>
+          </Group>
+        </Card>
+      </Grid.Col>}
+
+      {damageSeverityEntries.map(([severity, count]) => (
+        <Grid.Col span={{ sm: 6, md: 4 }} key={severity}>
           <Card padding="md" radius="lg" withBorder={false}>
             <Group gap="md" align="center">
               <ThemeIcon
@@ -286,25 +355,25 @@ export function HeaderCardPage({ selectedDateRange }) {
                 radius="md"
                 variant="light"
                 color={
-                  COLORS.severity?.[crisis.damage_severity] || COLORS.darkBlue
+                  COLORS.severity?.[severity] || COLORS.darkBlue
                 }
                 bg="#EEF4FC"
                 c="#2B6CB0"
               >
-                <IconFileText size={20} />
+                <IconFolder size={20} />
               </ThemeIcon>
               <Box>
                 <Text size="xs" c="dimmed" fw={500}>
-                  {crisis.damage_severity}
+                  {severity}
                 </Text>
                 <Text
                   size="xl"
                   fw={700}
                   c={
-                    COLORS.severity?.[crisis.damage_severity] || COLORS.darkBlue
+                    COLORS.severity?.[severity] || COLORS.darkBlue
                   }
                 >
-                  71
+                  {count}
                 </Text>
               </Box>
             </Group>

@@ -142,7 +142,7 @@ export function ReportsPage() {
         <Group justify="space-between" mb="xl">
           <Group>
             <Text size="xs" c="dimmed" fw={700} lts={1}>
-              UNDP / Africa
+              UNDP /
             </Text>
             <Text
               size="xl"
