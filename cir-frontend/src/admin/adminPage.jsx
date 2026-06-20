@@ -80,7 +80,7 @@ export function DashboardPage() {
   const [crisesReportList, setCrisesReportList] = useState({});
   const [crisesReports, setCrisesReports] = useState([]);
   const [selectedDateRange, setSelectedDateRange] = useState(
-    formattedData[2].value,
+    formattedData[2].value
   );
   // Animate the ring chart
   useEffect(() => {
@@ -90,14 +90,13 @@ export function DashboardPage() {
     return () => clearTimeout(timer);
   }, []);
 
-
   useEffect(() => {
     const fetchCrises = async () => {
       try {
         const response = await api.get("/impact-reports/");
         const incomingData = Array.isArray(response.data)
           ? response.data
-          : (response.data?.results || []);
+          : response.data?.results || [];
 
         setCrisesReports(incomingData);
         console.log("Fetched crises:", incomingData);
@@ -114,7 +113,7 @@ export function DashboardPage() {
     const fetchCrises = async () => {
       try {
         const response = await api.get(
-          urls.getReportsByDate + selectedDateRange,
+          urls.getReportsByDate + selectedDateRange
         );
         setCrisesReportList(response.data);
         console.log("Fetched crises:", response.data);
@@ -127,8 +126,12 @@ export function DashboardPage() {
   }, [selectedDateRange]);
 
   const totalReports = crisesReportList?.total_reports ?? 0;
-  const damageSeverityEntries = Object.entries(crisesReportList?.damage_severity || {});
-  const infrastructureEntries = Object.entries(crisesReportList?.infrastructure_type || {});
+  const damageSeverityEntries = Object.entries(
+    crisesReportList?.damage_severity || {}
+  );
+  const infrastructureEntries = Object.entries(
+    crisesReportList?.infrastructure_type || {}
+  );
   return (
     <Box bg={COLORS.lightBackground} minHeight="100vh" py="md" px="lg">
       <Container size="xl">
@@ -239,17 +242,19 @@ export function DashboardPage() {
                   thickness={38}
                   roundCaps
                   animationDuration={1200}
-                  sections={
-                    damageSeverityEntries.map(([item, count]) => {
-                      const percentage = totalReports > 0 ? (count / totalReports) * 100 : 0;
-                      let segmentColor = SEVERITY_CONFIG[item.toLowerCase()] == undefined ? SEVERITY_CONFIG["low"].color : SEVERITY_CONFIG[item.toLowerCase()]?.color // default 
-                      return {
-                        value: percentage,
-                        color: segmentColor,
-                        tooltip: `${item}: ${count} (${percentage.toFixed(0)}%)`
-                      };
-                    })
-                  }
+                  sections={damageSeverityEntries.map(([item, count]) => {
+                    const percentage =
+                      totalReports > 0 ? (count / totalReports) * 100 : 0;
+                    let segmentColor =
+                      SEVERITY_CONFIG[item.toLowerCase()] == undefined
+                        ? SEVERITY_CONFIG["low"].color
+                        : SEVERITY_CONFIG[item.toLowerCase()]?.color; // default
+                    return {
+                      value: percentage,
+                      color: segmentColor,
+                      tooltip: `${item}: ${count} (${percentage.toFixed(0)}%)`,
+                    };
+                  })}
                   label={
                     <div style={{ textAlign: "center" }}>
                       <Text size={38} fw={700} lh={1}>
@@ -271,13 +276,18 @@ export function DashboardPage() {
                         style={{
                           width: 13,
                           height: 13,
-                          background: SEVERITY_CONFIG[item.toLowerCase()] == undefined ? SEVERITY_CONFIG["no_Damage"].color : SEVERITY_CONFIG[item.toLowerCase()]?.color,
+                          background:
+                            SEVERITY_CONFIG[item.toLowerCase()] == undefined
+                              ? SEVERITY_CONFIG["no_Damage"].color
+                              : SEVERITY_CONFIG[item.toLowerCase()]?.color,
                           borderRadius: "50%",
                         }}
                       />
                       <Text>{item}</Text>
                     </Group>
-                    <Text fw={600}>{((count / totalReports) * 100).toFixed(2)}%</Text>
+                    <Text fw={600}>
+                      {((count / totalReports) * 100).toFixed(2)}%
+                    </Text>
                   </Group>
                 ))}
               </Stack>
@@ -297,9 +307,10 @@ export function HeaderCardPage({ selectedDateRange }) {
     const fetchCrises = async () => {
       try {
         const response = await api.get(
-          urls.getReportsByDate + selectedDateRange,
+          urls.getReportsByDate + selectedDateRange
         );
-        setCrisesReportList(response.data);
+        console.log("+++++++++++++++++++++" + response.data);
+        // setCrisesReportList(response.data);
         console.log("Fetched crises:", response.data);
       } catch (error) {
         console.error("Error fetching crises:", error);
@@ -310,42 +321,51 @@ export function HeaderCardPage({ selectedDateRange }) {
   }, [selectedDateRange]);
 
   const totalReports = crisesReportList?.total_reports ?? 0;
-  const damageSeverityEntries = Object.entries(crisesReportList?.damage_severity || {});
-  const infrastructureEntries = Object.entries(crisesReportList?.infrastructure_type || {});
+  const damageSeverityEntries = Object.entries(
+    crisesReportList?.damage_severity || {}
+  );
+  const infrastructureEntries = Object.entries(
+    crisesReportList?.infrastructure_type || {}
+  );
   return (
-
-
-    <Grid mb="lg" type="container"
-      breakpoints={{ xs: '100px', sm: '200px', md: '300px', lg: '400px', xl: '500px' }}>
-      {totalReports == 0 ? <Text size="xs" c="dimmed" fw={500}>
-
-      </Text> : <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
-        <Card padding="md" radius="lg" withBorder={false}>
-          <Group gap="md" align="center">
-            <ThemeIcon
-              size="xl"
-              radius="md"
-              variant="light"
-              bg="#EEF4FC"
-              c="#2B6CB0"
-            >
-              <IconReport size={20} />
-            </ThemeIcon>
-            <Box>
-              <Text size="xs" c="dimmed" fw={500}>
-                {"Total Reports"}
-              </Text>
-              <Text
+    <Grid
+      mb="lg"
+      type="container"
+      breakpoints={{
+        xs: "100px",
+        sm: "200px",
+        md: "300px",
+        lg: "400px",
+        xl: "500px",
+      }}
+    >
+      {totalReports == 0 ? (
+        <Text size="xs" c="dimmed" fw={500}></Text>
+      ) : (
+        <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
+          <Card padding="md" radius="lg" withBorder={false}>
+            <Group gap="md" align="center">
+              <ThemeIcon
                 size="xl"
-                fw={700}
-
+                radius="md"
+                variant="light"
+                bg="#EEF4FC"
+                c="#2B6CB0"
               >
-                {totalReports}
-              </Text>
-            </Box>
-          </Group>
-        </Card>
-      </Grid.Col>}
+                <IconReport size={20} />
+              </ThemeIcon>
+              <Box>
+                <Text size="xs" c="dimmed" fw={500}>
+                  {"Total Reports"}
+                </Text>
+                <Text size="xl" fw={700}>
+                  {totalReports}
+                </Text>
+              </Box>
+            </Group>
+          </Card>
+        </Grid.Col>
+      )}
 
       {damageSeverityEntries.map(([severity, count]) => (
         <Grid.Col span={{ base: 12, md: 6, lg: 3 }} key={severity}>
@@ -356,26 +376,42 @@ export function HeaderCardPage({ selectedDateRange }) {
                 radius="md"
                 variant="light"
                 color={
-                  SEVERITY_CONFIG[severity.toLowerCase()] == undefined ? SEVERITY_CONFIG["no_Damage"].color : SEVERITY_CONFIG[severity.toLowerCase()]?.color
+                  SEVERITY_CONFIG[severity.toLowerCase()] == undefined
+                    ? SEVERITY_CONFIG["no_Damage"].color
+                    : SEVERITY_CONFIG[severity.toLowerCase()]?.color
                 }
                 bg="#EEF4FC"
                 c="#2B6CB0"
               >
-                <IconFolder size={20} color={
-                  SEVERITY_CONFIG[severity.toLowerCase()] == undefined ? SEVERITY_CONFIG["no_Damage"].color : SEVERITY_CONFIG[severity.toLowerCase()]?.color
-                } />
+                <IconFolder
+                  size={20}
+                  color={
+                    SEVERITY_CONFIG[severity.toLowerCase()] == undefined
+                      ? SEVERITY_CONFIG["no_Damage"].color
+                      : SEVERITY_CONFIG[severity.toLowerCase()]?.color
+                  }
+                />
               </ThemeIcon>
               <Box>
-                <Text size="xs" c="dimmed" fw={500} c={
-                  SEVERITY_CONFIG[severity.toLowerCase()] == undefined ? SEVERITY_CONFIG["no_Damage"].color : SEVERITY_CONFIG[severity.toLowerCase()]?.color
-                }>
+                <Text
+                  size="xs"
+                  c="dimmed"
+                  fw={500}
+                  c={
+                    SEVERITY_CONFIG[severity.toLowerCase()] == undefined
+                      ? SEVERITY_CONFIG["no_Damage"].color
+                      : SEVERITY_CONFIG[severity.toLowerCase()]?.color
+                  }
+                >
                   {severity}
                 </Text>
                 <Text
                   size="xl"
                   fw={700}
                   c={
-                    SEVERITY_CONFIG[severity.toLowerCase()] == undefined ? SEVERITY_CONFIG["no_Damage"].color : SEVERITY_CONFIG[severity.toLowerCase()]?.color
+                    SEVERITY_CONFIG[severity.toLowerCase()] == undefined
+                      ? SEVERITY_CONFIG["no_Damage"].color
+                      : SEVERITY_CONFIG[severity.toLowerCase()]?.color
                   }
                 >
                   {count}
