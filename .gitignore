@@ -2,7 +2,7 @@ venv
 
 
 
-# Large data files — must be generated locally
+# Large data files  must be generated locally
 # See README.md for setup instructions
 pbf/
 tiles/
