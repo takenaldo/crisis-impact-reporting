@@ -266,7 +266,8 @@ export function HeaderCardPage({ selectedDateRange }) {
         const response = await api.get(
           urls.getReportsByDate + "/?range=" + selectedDateRange,
         );
-        setCrisesReportList(response.data);
+        console.log("+++++++++++++++++++++" + response.data);
+        // setCrisesReportList(response.data);
         console.log("Fetched crises:", response.data);
       } catch (error) {
         console.error("Error fetching crises:", error);
@@ -277,7 +278,7 @@ export function HeaderCardPage({ selectedDateRange }) {
   }, [selectedDateRange]);
   return (
     <Grid mb="lg">
-      {crisesReportList.map((crisis, i) => (
+      {crisesReportList?.map((crisis, i) => (
         <Grid.Col span={{ sm: 6, md: 4 }} key={i}>
           <Card padding="md" radius="lg" withBorder={false}>
             <Group gap="md" align="center">

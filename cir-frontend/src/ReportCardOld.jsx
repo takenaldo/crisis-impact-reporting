@@ -23,6 +23,7 @@ import {
 import { useState } from "react";
 import QuestionsTabView from "./QuestionsTabView";
 import { getSeverityColor } from "./utils";
+import { SERVER_IP } from "./constants";
 
 const ReportCardOld = ({ report }) => {
   const [showMore, setShowMore] = useState(false);
@@ -155,7 +156,7 @@ const ReportCardOld = ({ report }) => {
                     {report?.photos.map((p, index) => (
                       <Image
                         key={index}
-                        src={`http://localhost:8000${p.image}`}
+                        src={`${SERVER_IP}/${p.image}`}
                         alt={p.description || "Damage photo"}
                         radius="md"
                         fallbackSrc="https://placehold.co/600x400?text=Image+Not+Found"

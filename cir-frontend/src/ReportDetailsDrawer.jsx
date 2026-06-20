@@ -38,6 +38,7 @@ import { getSeverityColor, timeAgo } from "./utils";
 import CirMap from "./map/CirMap";
 import { MyDrawer } from "./MyDrawer";
 import SurveyTabView from "./SurveyTabView";
+import { SERVER_IP } from "./constants";
 
 export default function ReportDetailsDrawer({ opened, onClose, report }) {
   const [showMore, setShowMore] = useState(false);
@@ -353,7 +354,7 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
                             <Stack gap={"xs"}>
                               <Image
                                 key={index}
-                                src={`http://localhost:8000${p.image}`}
+                                src={`${SERVER_IP}/${p.image}`}
                                 alt={p.description || "Damage photo"}
                                 radius="md"
                                 fallbackSrc="https://placehold.co/600x400?text=Image+Not+Found"
