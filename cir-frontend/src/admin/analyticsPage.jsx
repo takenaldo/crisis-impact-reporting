@@ -93,7 +93,7 @@ export function AnalyticsPage() {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
- 
+
   const infrastructureEntries = Object.entries(analyticsData.infrastructure_type).map(([key, value]) => ({
     name: formatLabel(key).includes("(") ? formatLabel(key).split("(")[0] : formatLabel(key),
     count: value
@@ -244,44 +244,6 @@ export function AnalyticsPage() {
           </Grid.Col>
         </Grid>
 
-        {/* --- PREDICTIVE SIGNALS SECTION --- */}
-        <Grid>
-          {/* Signal 01 */}
-          <Grid.Col span={{ base: 12, md: 4 }}>
-            <Card padding="lg" radius="md" shadow="xs">
-              <Text size="xs" c="dimmed" fw={500}>Predictive signal 01</Text>
-              <Text fw={700} size="md" c="#0f2d59" mb="md">Lake Victoria basin</Text>
-              <Progress value={82} color="teal" size="sm" radius="xl" mb="xs" />
-              <Text size="xs" c="dimmed">
-                <Text span fw={500} c="gray.7">Confidence 82%</Text> · recommended for coordinator review.
-              </Text>
-            </Card>
-          </Grid.Col>
-
-          {/* Signal 02 */}
-          <Grid.Col span={{ base: 12, md: 4 }}>
-            <Card padding="lg" radius="md" shadow="xs">
-              <Text size="xs" c="dimmed" fw={500}>Predictive signal 02</Text>
-              <Text fw={700} size="md" c="#0f2d59" mb="md">Dadaab health cluster</Text>
-              <Progress value={68} color="teal" size="sm" radius="xl" mb="xs" />
-              <Text size="xs" c="dimmed">
-                <Text span fw={500} c="gray.7">Confidence 68%</Text> · recommended for coordinator review.
-              </Text>
-            </Card>
-          </Grid.Col>
-
-          {/* Signal 03 */}
-          <Grid.Col span={{ base: 12, md: 4 }}>
-            <Card padding="lg" radius="md" shadow="xs">
-              <Text size="xs" c="dimmed" fw={500}>Predictive signal 03</Text>
-              <Text fw={700} size="md" c="#0f2d59" mb="md">Mombasa logistics corridor</Text>
-              <Progress value={54} color="teal" size="sm" radius="xl" mb="xs" />
-              <Text size="xs" c="dimmed">
-                <Text span fw={500} c="gray.7">Confidence 54%</Text> · recommended for coordinator review.
-              </Text>
-            </Card>
-          </Grid.Col>
-        </Grid>
       </Container>
     </Box>
   );
