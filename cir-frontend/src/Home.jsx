@@ -63,7 +63,7 @@ export default function Home({ setActiveContent }) {
         minZoom: Math.max(2, minZoom),
       });
     } catch {
-      // bbox fetch failed — map stays unconstrained
+      // bbox fetch failed  map stays unconstrained
     }
   }, []); // setUserLocation, setMapBounds, and api are all stable references
 

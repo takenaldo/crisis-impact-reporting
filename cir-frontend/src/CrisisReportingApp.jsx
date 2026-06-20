@@ -57,7 +57,7 @@ export default function CrisisReportingApp() {
       if (failed > 0) {
         notifications.show({
           title: "Sync failed",
-          message: `${failed} report${failed > 1 ? "s" : ""} could not be submitted — will retry automatically.`,
+          message: `${failed} report${failed > 1 ? "s" : ""} could not be submitted  will retry automatically.`,
           color: "#F4A261",
         });
       }
@@ -128,7 +128,7 @@ export default function CrisisReportingApp() {
               <Group gap="xs">
                 <Text size="xs" fw={600} c="#E65100">
                   {pendingCount} report{pendingCount > 1 ? "s" : ""} pending
-                  upload — will submit when back online
+                  upload  will submit when back online
                 </Text>
               </Group>
             </Paper>

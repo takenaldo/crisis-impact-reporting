@@ -120,7 +120,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     }
   }, [userLocation]); // eslint-disable-line
 
-  // Fetch bbox whenever userLocation is known — always required in the form
+  // Fetch bbox whenever userLocation is known  always required in the form
   useEffect(() => {
     if (!userLocation) return;
     const fetchBounds = async () => {
@@ -142,7 +142,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
           minZoom: Math.max(2, minZoom),
         });
       } catch {
-        // bbox unavailable — map stays unconstrained
+        // bbox unavailable  map stays unconstrained
       }
     };
     fetchBounds();
