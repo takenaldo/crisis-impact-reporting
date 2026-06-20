@@ -1,5 +1,8 @@
+import os
 import math
 import secrets
+import threading
+
 from datetime import datetime
 
 from PIL import Image
@@ -7,6 +10,14 @@ from PIL.ExifTags import TAGS
 from PIL import Image
 from PIL.ExifTags import TAGS, GPSTAGS, IFD
 
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+
+
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
 
 def haversine_distance(lat1, lon1, lat2, lon2):
@@ -147,3 +158,66 @@ def generate_pseudonym() -> str:
     
     # Combine with hyphens for readability
     return f"{adj}-{noun}-{number}"
+
+
+
+
+def send_invitation_email(receiver=None, survey_type="report"):
+    try:
+        subject = "Crisis Impact Reporting: Survey Invitation"
+
+        context = {
+            'info': {'url': "http://localhost:3000/"}
+            }
+        
+        template = "report_invitation.html" if survey_type is 'report' else 'survey_invitation.html'
+
+        html_content = render_to_string(
+            template, context)
+
+        text_content = strip_tags(html_content)
+
+        to_email = [receiver]
+
+        
+        mail_content = {
+            'subject': subject,
+            'html_content': html_content,
+            'text_content': text_content,
+            'to_email': to_email,
+            "from_email": settings.DEFAULT_FROM_EMAIL
+            }
+        mail_content = dict(mail_content)
+
+
+        email_thread = threading.Thread(
+                target=send_mail,
+                args=(mail_content,)
+            )
+        email_thread.start()
+
+    except Exception as e:
+        return
+
+
+
+def send_mail(mail_content):
+    """
+    Sends an email in a separate thread
+    """
+    try:
+        subject = mail_content.get('subject')
+        html_content = mail_content.get('html_content')
+        text_content = mail_content.get('text_content')
+        to_email = mail_content.get('to_email')
+
+        from_email = settings.DEFAULT_FROM_EMAIL
+        email_message = EmailMultiAlternatives(
+            subject, text_content, from_email, to_email)
+
+        email_message.attach_alternative(html_content, "text/html")
+
+        email_message.send()
+
+    except Exception as e:
+        print(e)

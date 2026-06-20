@@ -13,23 +13,38 @@ import {
   RingProgress,
   Stack,
   Paper,
-  Flex, Select, Grid, ThemeIcon
-  , Box
-} from '@mantine/core';
+  Flex,
+  Select,
+  Grid,
+  ThemeIcon,
+  Box,
+} from "@mantine/core";
 import {
   IconSearch,
   IconDownload,
-  IconBell, IconFilter, IconChevronDown, IconClock, IconCircleCheck, IconDeviceMobile, IconFileText
-} from '@tabler/icons-react';
-import { MapContainer, TileLayer, Marker, Circle, Tooltip } from 'react-leaflet';
-import L from 'leaflet';
-import { api, CRISIS_CONFIG, SEVERITY_CONFIG, COLORS } from '../utils';
-import { CrisisMapPage } from './crisisMap';
-import { ReportDataTablePage } from './ReportsPage';
-import { urls } from './url';
+  IconBell,
+  IconFilter,
+  IconChevronDown,
+  IconClock,
+  IconCircleCheck,
+  IconDeviceMobile,
+  IconFileText,
+} from "@tabler/icons-react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Circle,
+  Tooltip,
+} from "react-leaflet";
+import L from "leaflet";
+import { api, CRISIS_CONFIG, SEVERITY_CONFIG, COLORS } from "../utils";
+import { CrisisMapPage } from "./crisisMap";
+import { ReportDataTablePage } from "./ReportsPage";
+import { urls } from "./url";
 
 // Fix Leaflet icons
-delete (L.Icon.Default.prototype)._getIconUrl;
+delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
@@ -41,23 +56,24 @@ L.Icon.Default.mergeOptions({
 
 export function DashboardPage() {
   const dateOptions = [
-    { 1: 'Today' },
-    { 2: 'Yesterday' },
-    { 7: 'Last 7 days' },
-    { 30: 'Last 30 days' },
-    { 365: 'This year' }
-
+    { 1: "Today" },
+    { 2: "Yesterday" },
+    { 7: "Last 7 days" },
+    { 30: "Last 30 days" },
+    { 365: "This year" },
   ];
   const formattedData = dateOptions.map((item) => {
     const [key, text] = Object.entries(item)[0];
     return {
-      value: String(key), 
-      label: text
+      value: String(key),
+      label: text,
     };
   });
   const [progress, setProgress] = useState({ high: 0, medium: 0, low: 0 });
-  const [crisesReportList, setCrisesReportList] = useState([]); 
-  const[selectedDateRange, setSelectedDateRange] = useState(formattedData[2].value);
+  const [crisesReportList, setCrisesReportList] = useState([]);
+  const [selectedDateRange, setSelectedDateRange] = useState(
+    formattedData[2].value
+  );
   // Animate the ring chart
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -70,7 +86,9 @@ export function DashboardPage() {
   useEffect(() => {
     const fetchCrises = async () => {
       try {
-        const response = await api.get(urls.getReportsByDate+"/?range="+selectedDateRange);
+        const response = await api.get(
+          urls.getReportsByDate + "/?range=" + selectedDateRange
+        );
         setCrisesReportList(response.data);
         console.log("Fetched crises:", response.data);
       } catch (error) {
@@ -81,8 +99,6 @@ export function DashboardPage() {
     fetchCrises();
   }, []);
   return (
-    <Box bg={COLORS.lightBackground} minHeight="100vh" py="md" px="lg">
-      <Container size="xl">
     <Box bg={COLORS.lightBackground} minHeight="100vh" py="md" px="lg">
       <Container size="xl">
         {/* Header */}
@@ -103,15 +119,13 @@ export function DashboardPage() {
               </Title>
             </Group>
             <Group gap="lg">
-
-              
               <Select
                 placeholder={"Select date range"}
                 defaultValue={formattedData[2].value} // Default to "Last 7 days"
                 data={formattedData}
                 onChange={(value) => {
                   setSelectedDateRange(value);
-                  console.log('Selected date range:', value);
+                  console.log("Selected date range:", value);
                 }}
                 rightSection={<IconChevronDown size={14} />}
                 radius="md"
@@ -157,11 +171,10 @@ export function DashboardPage() {
           {/* Top Metrics Cards */}
           <HeaderCardPage selectedDateRange={selectedDateRange} />
 
-
           <Flex gap={24}>
             {/* Interactive Crisis Map */}
             <Card shadow="sm" radius="md" style={{ flex: 7 }} p={0}>
-              <div style={{ height: '680px', position: 'relative' }}>
+              <div style={{ height: "680px", position: "relative" }}>
                 <CrisisMapPage />
               </div>
             </Card>
@@ -237,27 +250,22 @@ export function DashboardPage() {
               </Stack>
             </Card>
           </Flex>
-
         </Container>
         {<ReportDataTablePage />}
       </Container>
     </Box>
   );
-};
-
-
-
-
-
+}
 
 export function HeaderCardPage({ selectedDateRange }) {
-
   const [crisesReportList, setCrisesReportList] = useState([]);
 
   useEffect(() => {
     const fetchCrises = async () => {
       try {
-        const response = await api.get(urls.getReportsByDate + "/?range=" + selectedDateRange);
+        const response = await api.get(
+          urls.getReportsByDate + "/?range=" + selectedDateRange
+        );
         setCrisesReportList(response.data);
         console.log("Fetched crises:", response.data);
       } catch (error) {
@@ -268,28 +276,41 @@ export function HeaderCardPage({ selectedDateRange }) {
     fetchCrises();
   }, [selectedDateRange]);
   return (
-
     <Grid mb="lg">
-
-
       {crisesReportList.map((crisis, i) => (
         <Grid.Col span={{ sm: 6, md: 4 }} key={i}>
           <Card padding="md" radius="lg" withBorder={false}>
             <Group gap="md" align="center">
-              <ThemeIcon size="xl" radius="md" variant="light" color={COLORS.severity?.[crisis.damage_severity] || COLORS.darkBlue} bg="#EEF4FC" c="#2B6CB0">
+              <ThemeIcon
+                size="xl"
+                radius="md"
+                variant="light"
+                color={
+                  COLORS.severity?.[crisis.damage_severity] || COLORS.darkBlue
+                }
+                bg="#EEF4FC"
+                c="#2B6CB0"
+              >
                 <IconFileText size={20} />
               </ThemeIcon>
               <Box>
-                <Text size="xs" c="dimmed" fw={500}>{crisis.damage_severity}</Text>
-                <Text size="xl" fw={700} c={COLORS.severity?.[crisis.damage_severity] || COLORS.darkBlue}>71</Text>
+                <Text size="xs" c="dimmed" fw={500}>
+                  {crisis.damage_severity}
+                </Text>
+                <Text
+                  size="xl"
+                  fw={700}
+                  c={
+                    COLORS.severity?.[crisis.damage_severity] || COLORS.darkBlue
+                  }
+                >
+                  71
+                </Text>
               </Box>
             </Group>
           </Card>
         </Grid.Col>
       ))}
     </Grid>
-
-
   );
-};
-
+}

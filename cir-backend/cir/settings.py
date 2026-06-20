@@ -208,3 +208,16 @@ SIMPLE_JWT = {
 
 
 AUTH_USER_MODEL = 'api.CIRUser'
+
+
+# email related configs
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+EMAIL_HOST_USER="ecaa@ethioden.com"
+DEFAULT_FROM_EMAIL="ecaa@ethioden.com"
+EMAIL_HOST_PASSWORD="@ecaa1234"
+EMAIL_HOST="send.one.com"
+EMAIL_PORT=465
+EMAIL_USE_SSL=True
+EMAIL_USE_TLS=False
+DEBUG_EMAIL_ADDRESS="takelearega2017@gmail.com"

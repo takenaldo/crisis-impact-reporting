@@ -23,6 +23,7 @@ import {
   Marker,
   Circle,
   Tooltip,
+  useMap,
 } from "react-leaflet";
 import L, { divIcon } from "leaflet";
 import {
@@ -93,75 +94,22 @@ const createNumberedIcon = (number = null) => {
   });
 };
 
-// Define the custom icon
-const myCustomIcon = new Icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/512/447/447031.png",
-  iconSize: [38, 38],
-  iconAnchor: [19, 38],
-  popupAnchor: [0, -38],
-  c: "red",
-  color: "yellow",
-});
-
 const createCustomCrisisIcon = (reportCount) => {
-  const areaMarkerSvgString = `
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-    <ellipse cx="16" cy="28" rx="12" ry="4" fill="teal" fill-opacity="0.3" stroke="teal" stroke-width="1.5" />
-    
-    <path fill="navy" d="M 16 2 C 9.5 2 5 7 5 12.5 C 5 19 16 28 16 28 C 16 28 27 19 27 12.5 C 27 7 22.5 2 16 2 Z" />
-    
-    <circle cx="16" cy="11" r="4" fill="white" />
-  </svg>
-`;
-
-  // 2. Configure the divIcon with smaller sizing
-  const areaIcon = divIcon({
-    html: areaMarkerSvgString,
-    className: "custom-leaflet-svg-icon", // Keeps background transparent
-
-    // New size
-    iconSize: [32, 32],
-
-    // New Anchors calculated for 32x32 size:
-    // The tip is horizontally in the middle (16).
-    // The tip of the pin hits the ground ellipse at internal y-coordinate 28.
-    iconAnchor: [16, 28],
-    popupAnchor: [0, -28],
-  });
   return createNumberedIcon(reportCount);
-
-  const config = CRISIS_CONFIG[reportCount] || {
-    emoji: "⚠️",
-    color: "#334155",
-    bg: "transparent",
-  };
-
-  return L.divIcon({
-    html: `
-      <div style="
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 31px;
-        height: 31px;
-        border: 0px solid ${config.color};
-        border-radius: 0%;
-        font-size: 20px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-      ">
-        ${config.emoji}
-      </div>
-    `,
-
-    iconSize: [21, 21],
-    iconAnchor: [19.5, 19.5], // Anchors the center of the circle to the geographic coordinate
-  });
 };
 
-const theme = createTheme({
-  primaryColor: "teal",
-  fontFamily: "Inter, system-ui, sans-serif",
-});
+function MapRecenter({ center, zoom }) {
+  const map = useMap();
+
+  useEffect(() => {
+    // This smoothly pan/zooms the map when coordinates change
+    map.flyTo(center, zoom, {
+      duration: 1.5, // seconds
+    });
+  }, [center, zoom, map]);
+
+  return null;
+}
 
 export function CrisisMapPage() {
   const [crisesList, setCrisesList] = useState([]);
@@ -175,20 +123,17 @@ export function CrisisMapPage() {
 
   const [categorizedReports, setCategorizedreports] = useState(null);
 
+  const center_lat = selectedCrisis?.location?.infrastructure_latitude || 4;
+  const center_lng = selectedCrisis?.location?.infrastructure_longitude || 38;
+  const zoom = selectedCrisis?.location?.infrastructure_latitude ? 13 : 5;
+
   useEffect(() => {
     const fetchCrises = async () => {
       try {
         const response = await api.get("/impact-reports/");
         setCrisesList(response.data);
         console.log("Fetched crises:", response.data);
-        setCategorizedreports(
-          getCategorizeReports([
-            ...response.data,
-            // ...response.data,
-            // ...response.data,
-            // ...response.data,
-          ]),
-        );
+        setCategorizedreports(getCategorizeReports([...response.data]));
       } catch (error) {
         console.error("Error fetching crises:", error);
       }
@@ -196,15 +141,6 @@ export function CrisisMapPage() {
 
     fetchCrises();
   }, []);
-
-  // Helper logic to switch slides back and forth safely
-  const handlePrevPhoto = (maxItems) => {
-    setCurrentPhotoIndex((prev) => (prev === 0 ? maxItems - 1 : prev - 1));
-  };
-
-  const handleNextPhoto = (maxItems) => {
-    setCurrentPhotoIndex((prev) => (prev === maxItems - 1 ? 0 : prev + 1));
-  };
 
   return (
     <Box
@@ -233,8 +169,8 @@ export function CrisisMapPage() {
         >
           <div style={{ height: "100%", position: "relative" }}>
             <MapContainer
-              center={[4, 38]}
-              zoom={5}
+              center={[center_lat, center_lng]}
+              zoom={zoom}
               style={{ height: "100%", width: "100%", borderRadius: "12px" }}
             >
               <TileLayer
@@ -300,6 +236,7 @@ export function CrisisMapPage() {
               })}
               {categorizedReports &&
                 Object.keys(categorizedReports).map((key) => {
+                  if (key === "No Match") return <></>;
                   const items = categorizedReports[key];
 
                   // Safety check in case the array is empty
@@ -334,6 +271,8 @@ export function CrisisMapPage() {
                     </React.Fragment>
                   );
                 })}
+
+              <MapRecenter center={[center_lat, center_lng]} zoom={zoom} />
             </MapContainer>
 
             {/* {selectedCrisis && (
@@ -384,7 +323,12 @@ export function CrisisMapPage() {
                               <></>
                             ) : (
                               <>
-                                <Text>MATCH GROUP: {selectedMatchGroup}</Text>
+                                <Badge
+                                  variant="outline"
+                                  c={"var(--color-navy)"}
+                                >
+                                  {selectedMatchGroup}
+                                </Badge>
                                 <Stack flex={1}>
                                   {categorizedReports[selectedMatchGroup]?.map(
                                     (reportItem, index) => (
