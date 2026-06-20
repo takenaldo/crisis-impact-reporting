@@ -186,7 +186,7 @@ class ImpactReport(models.Model):
     quality_score = models.IntegerField(default=0, blank=True, null=True)
 
     def __str__(self):
-        return "Impact Report " + str(self.infrastructure_name) + str(self.infrastructure_type)
+        return "Impact Report " + str(self.infrastructure_name) + str(self.infrastructure_type) + "--> " + str(self.annotations['incident_point'])
 
 
 class Question(models.Model):

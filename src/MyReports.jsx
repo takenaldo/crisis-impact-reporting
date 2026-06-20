@@ -18,13 +18,13 @@ const MyReports = () => {
           setReports(response.data);
         } else {
           const reportIDs = JSON.parse(
-            localStorage.getItem("report_ids") || "[]",
+            localStorage.getItem("report_ids") || "[]"
           );
           const response = await api.post(
             "impact-reports/get_reports_by_stored_ids/",
             {
               report_ids: reportIDs,
-            },
+            }
           );
           setReports(response.data);
         }

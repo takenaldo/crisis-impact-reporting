@@ -11,7 +11,7 @@ function ReportCard({ title, report, onClick }) {
       withBorder
       radius="md"
       p="sm"
-      style={{ borderColor: "#E9ECEF" }}
+      style={{ borderColor: "#E9ECEF", cursor: "pointer" }}
       onClick={onClick}
       w={"100%"}
     >

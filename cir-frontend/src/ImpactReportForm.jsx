@@ -1,3 +1,5 @@
+import dayjs from "dayjs";
+
 import {
   TextInput,
   Textarea,
@@ -81,12 +83,21 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
   const [reportID, setReportID] = useState(null);
   const [mapBounds, setMapBounds] = useState({ maxBounds: null, minZoom: 2 });
 
+  function getMapping(label) {
+    const mapping = {
+      today: dayjs().toISOString(),
+      yesterday: dayjs().subtract(1, "day").toDate().toISOString(),
+      last_week: dayjs().subtract(7, "day").toDate().toISOString(),
+    };
+    return mapping[label];
+  }
+
   const form = useForm({
     initialValues: {
       crisis_id: id || null,
       description: "",
       damage_severity: "",
-      damage_datetime: new Date(),
+      damage_datetime: new Date().toISOString(),
       infrastructure_name: "",
       infrastructure_type: "",
       infrastructure_description: "",
@@ -111,6 +122,10 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
       infrastructure_type: (value) =>
         !value ? "Infrastructure type is required" : null,
     },
+    transformValues: (values) => ({
+      ...values,
+      damage_datetime: getMapping(values.damage_datetime),
+    }),
   });
 
   // Pre-fill lat/lng from GPS/dragged location so it reaches the form submission
@@ -133,7 +148,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
         const { min_lng, min_lat, max_lng, max_lat } = res.data.bbox;
         const lngSpan = max_lng - min_lng;
         const minZoom = Math.ceil(
-          Math.log2(((window.innerWidth || 400) * 360) / (256 * lngSpan))
+          Math.log2(((window.innerWidth || 400) * 360) / (256 * lngSpan)),
         );
         setMapBounds({
           maxBounds: [
@@ -247,20 +262,22 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     formData.append("damage_severity", values.damage_severity);
     formData.append(
       "damage_datetime",
-      values.damage_datetime ? values.damage_datetime : new Date().toISOString()
+      values.damage_datetime
+        ? values.damage_datetime
+        : new Date().toISOString(),
     );
     formData.append("infrastructure_name", values.infrastructure_name);
     formData.append("infrastructure_type", values.infrastructure_type);
     formData.append(
       "infrastructureDescription",
-      values.infrastructure_description
+      values.infrastructure_description,
     );
 
     formData.append("debris", values.debris);
     formData.append("infrastructure_latitude", values.infrastructure_latitude);
     formData.append(
       "infrastructure_longitude",
-      values.infrastructure_longitude
+      values.infrastructure_longitude,
     );
     formData.append("street_address", values.street_address);
     formData.append("city", values.city);
@@ -276,7 +293,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     });
     formData.append(
       "photoDescription",
-      JSON.stringify(values.photos.map((p) => p.description))
+      JSON.stringify(values.photos.map((p) => p.description)),
     );
 
     try {
@@ -286,7 +303,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
       if (report != null) {
         try {
           const reportIDs = JSON.parse(
-            localStorage.getItem("report_ids") || "[]"
+            localStorage.getItem("report_ids") || "[]",
           );
           reportIDs.push(report.id);
           console.log(reportIDs);
@@ -749,7 +766,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
 
     if (!stepHasErrors) {
       setActive((current) =>
-        current < steps.length - 1 ? current + 1 : current
+        current < steps.length - 1 ? current + 1 : current,
       );
     }
   };
