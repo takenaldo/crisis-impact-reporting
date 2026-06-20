@@ -33,7 +33,7 @@ import {
   IconAlertTriangle,
   IconChevronDown,
 } from "@tabler/icons-react";
-import { timeAgo, COLORS } from "../utils";
+import { timeAgo, COLORS, SEVERITY_CONFIG } from "../utils";
 import { HeaderCardPage } from "./adminPage";
 import api from "../api";
 
@@ -362,7 +362,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                         {row?.infrastructure_name || "N/A"}
                       </Text>
                       <Text size="xs" c="dimmed">
-                        {row?.infrastructure_type || "N/A"}
+                        {row?.infrastructure_type.includes("(") ? row?.infrastructure_type.split("(")[0] : row?.infrastructure_type }
                       </Text>
                     </Stack>
                   </Table.Td>
@@ -373,7 +373,9 @@ export function ReportDataTablePage({ crisesReportList }) {
                       <Text size="sm">{row?.location?.city || "N/A"}</Text>
                     </Group>
                   </Table.Td>
-                  <Table.Td>{renderSeverity(row?.damage_severity)}</Table.Td>
+                  <Table.Td><Text size="sm" c={
+                    SEVERITY_CONFIG[row?.damage_severity.toLowerCase()] == undefined ? SEVERITY_CONFIG["no_Damage"].color : SEVERITY_CONFIG[row?.damage_severity.toLowerCase()]?.color
+                  }>{row?.damage_severity}</Text></Table.Td>
                   <Table.Td ta="right">
                     {row?.damage_datetime ? (
                       <>

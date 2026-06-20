@@ -93,9 +93,9 @@ export function AnalyticsPage() {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
-  // Map entries into explicit key-value pairs for the BarChart data parsing loop
+ 
   const infrastructureEntries = Object.entries(analyticsData.infrastructure_type).map(([key, value]) => ({
-    name: formatLabel(key),
+    name: formatLabel(key).includes("(") ? formatLabel(key).split("(")[0] : formatLabel(key),
     count: value
   }));
 

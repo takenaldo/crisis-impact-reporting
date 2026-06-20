@@ -73,11 +73,10 @@ export const CRISIS_CONFIG = {
 };
 
 export const SEVERITY_CONFIG = {
-    critical: { label: "Critical", color: "#c0392b", bg: "#fadbd8" },
-    high: { label: "High", color: "#e67e22", bg: "#fdebd0" },
-    medium: { label: "Medium", color: "#f0b400", bg: "#fef9e7" },
-    partial: { label: "Partial", color: "#f0b400", bg: "#fef9e7" },
-    low: { label: "Low", color: "#27ae60", bg: "#e9f7ef" }, 
+    complete: { label: "Critical", color: "red", bg: "red" },
+    partial: { label: "High", color: "#e67e22", bg: "#fdebd0" },
+    minimal: { label: "Medium", color: "#f0b400", bg: "#fef9e7" },
+    low: { label: "Low", color: "#27ae60", bg: "#e9f7ef" },
     no_Damage: { label: "Low", color: "#27ae60", bg: "#e9f7ef" },
 
 };

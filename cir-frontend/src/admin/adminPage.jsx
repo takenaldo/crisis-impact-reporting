@@ -271,7 +271,7 @@ export function DashboardPage() {
                         style={{
                           width: 13,
                           height: 13,
-                          background: SEVERITY_CONFIG[item.toLowerCase()] == undefined ? SEVERITY_CONFIG["low"].color : SEVERITY_CONFIG[item.toLowerCase()]?.color,
+                          background: SEVERITY_CONFIG[item.toLowerCase()] == undefined ? SEVERITY_CONFIG["no_Damage"].color : SEVERITY_CONFIG[item.toLowerCase()]?.color,
                           borderRadius: "50%",
                         }}
                       />
@@ -284,7 +284,7 @@ export function DashboardPage() {
             </Card>
           </Flex>
         </Container>
-               <ReportDataTablePage crisesReportList={crisesReports} />
+        <ReportDataTablePage crisesReportList={crisesReports} />
       </Container>
     </Box>
   );
@@ -355,22 +355,26 @@ export function HeaderCardPage({ selectedDateRange }) {
                 radius="md"
                 variant="light"
                 color={
-                  COLORS.severity?.[severity] || COLORS.darkBlue
+                  SEVERITY_CONFIG[severity.toLowerCase()] == undefined ? SEVERITY_CONFIG["no_Damage"].color : SEVERITY_CONFIG[severity.toLowerCase()]?.color
                 }
                 bg="#EEF4FC"
                 c="#2B6CB0"
               >
-                <IconFolder size={20} />
+                <IconFolder size={20} color={
+                  SEVERITY_CONFIG[severity.toLowerCase()] == undefined ? SEVERITY_CONFIG["no_Damage"].color : SEVERITY_CONFIG[severity.toLowerCase()]?.color
+                } />
               </ThemeIcon>
               <Box>
-                <Text size="xs" c="dimmed" fw={500}>
+                <Text size="xs" c="dimmed" fw={500} c={
+                  SEVERITY_CONFIG[severity.toLowerCase()] == undefined ? SEVERITY_CONFIG["no_Damage"].color : SEVERITY_CONFIG[severity.toLowerCase()]?.color
+                }>
                   {severity}
                 </Text>
                 <Text
                   size="xl"
                   fw={700}
                   c={
-                    COLORS.severity?.[severity] || COLORS.darkBlue
+                    SEVERITY_CONFIG[severity.toLowerCase()] == undefined ? SEVERITY_CONFIG["no_Damage"].color : SEVERITY_CONFIG[severity.toLowerCase()]?.color
                   }
                 >
                   {count}
