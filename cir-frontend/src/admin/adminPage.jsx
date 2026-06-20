@@ -315,10 +315,11 @@ export function HeaderCardPage({ selectedDateRange }) {
   return (
 
 
-    <Grid mb="lg">
+    <Grid mb="lg" type="container"
+      breakpoints={{ xs: '100px', sm: '200px', md: '300px', lg: '400px', xl: '500px' }}>
       {totalReports == 0 ? <Text size="xs" c="dimmed" fw={500}>
-        { }
-      </Text> : <Grid.Col span={{ sm: 6, md: 4 }} >
+
+      </Text> : <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
         <Card padding="md" radius="lg" withBorder={false}>
           <Group gap="md" align="center">
             <ThemeIcon
@@ -347,7 +348,7 @@ export function HeaderCardPage({ selectedDateRange }) {
       </Grid.Col>}
 
       {damageSeverityEntries.map(([severity, count]) => (
-        <Grid.Col span={{ sm: 6, md: 4 }} key={severity}>
+        <Grid.Col span={{ base: 12, md: 6, lg: 3 }} key={severity}>
           <Card padding="md" radius="lg" withBorder={false}>
             <Group gap="md" align="center">
               <ThemeIcon
