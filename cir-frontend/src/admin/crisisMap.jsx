@@ -30,6 +30,7 @@ import {
   SEVERITY_CONFIG,
   COLORS,
   getCategorizeReports,
+  swapAnnotationPointCoords,
 } from "../utils";
 import api from "../api";
 
@@ -179,14 +180,18 @@ export function CrisisMapPage() {
     const fetchCrises = async () => {
       try {
         const response = await api.get("/impact-reports/");
-        setCrisesList(response.data);
-        console.log("Fetched crises:", response.data);
+        const reports = response.data.map(r => ({
+          ...r,
+          annotations: swapAnnotationPointCoords(r.annotations),
+        }));
+        setCrisesList(reports);
+        console.log("Fetched crises:", reports);
         setCategorizedreports(
           getCategorizeReports([
-            ...response.data,
-            // ...response.data,
-            // ...response.data,
-            // ...response.data,
+            ...reports,
+            // ...reports,
+            // ...reports,
+            // ...reports,
           ]),
         );
       } catch (error) {

@@ -185,6 +185,20 @@ function haversineDistance(lon1, lat1, lon2, lat2) {
     return R * c;
 }
 
+// Swaps incident_point coordinates between [lng,lat] and [lat,lng].
+// Call before submit (internal [lng,lat] → stored [lat,lng]) and after fetch (stored [lat,lng] → display [lng,lat]).
+export function swapAnnotationPointCoords(annotations) {
+    if (!annotations?.incident_point?.geometry?.coordinates) return annotations;
+    const [a, b] = annotations.incident_point.geometry.coordinates;
+    return {
+        ...annotations,
+        incident_point: {
+            ...annotations.incident_point,
+            geometry: { ...annotations.incident_point.geometry, coordinates: [b, a] },
+        },
+    };
+}
+
 /**
  * Categorizes an array of report objects based on proximity and time rules.
  * Returns an object with match groups as keys and arrays of items as values.

@@ -40,6 +40,7 @@ import { MobileFormDrawer } from "./MobileFormDrawer";
 import { DateTimePicker } from "@mantine/dates";
 import api from "./api";
 import { savePendingReport } from "./map/utils/pendingReports";
+import { swapAnnotationPointCoords } from "./utils";
 import { DamageDateSelector } from "./DamageDateSelector";
 
 const NATURE_OF_CRISIS_OPTIONS = [
@@ -268,7 +269,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     formData.append("electricity_condition", values.electricity_condition);
     formData.append("health_services_rating", values.health_services_rating);
     formData.append("pressing_need", values.pressing_need.join(", "));
-    formData.append("annotations", JSON.stringify(values.annotations ?? {}));
+    formData.append("annotations", JSON.stringify(swapAnnotationPointCoords(values.annotations) ?? {}));
 
     values.photos.forEach((photoObj) => {
       formData.append("photos", photoObj.file);
