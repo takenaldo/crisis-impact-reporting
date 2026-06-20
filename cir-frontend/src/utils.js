@@ -202,10 +202,6 @@ export function getCategorizeReports(reports, distanceThreshold = 100, timeRange
             try {
                 const rep1 = reports[i];
                 const rep2 = reports[j];
-                console.log(rep1.id)
-                console.log("rep1", rep1.id)
-
-                console.log(rep1.annotations?.incident_point?.geometry?.coordinates)
 
                 const [lon1, lat1] = rep1.annotations?.incident_point?.geometry?.coordinates;
                 const [lon2, lat2] = rep2.annotations?.incident_point?.geometry?.coordinates;
@@ -260,7 +256,7 @@ export function getCategorizeReports(reports, distanceThreshold = 100, timeRange
 
         // 5. Build the desired output object
         const categorizedResults = {
-            "no_match": [] // Initialize an array for all items that don't match anything
+            "No Match": [] // Initialize an array for all items that don't match anything
         };
         let groupIdx = 1;
 
@@ -269,11 +265,11 @@ export function getCategorizeReports(reports, distanceThreshold = 100, timeRange
 
             if (items.length > 1) {
                 // Create a new key for this match group and assign the array of items
-                categorizedResults[`match_group_${groupIdx}`] = items;
+                categorizedResults[`Match group ${groupIdx}`] = items;
                 groupIdx++;
             } else {
                 // Push solitary items into the centralized no_match array
-                categorizedResults["no_match"].push(items[0]);
+                categorizedResults["No Match"].push(items[0]);
             }
         }
 

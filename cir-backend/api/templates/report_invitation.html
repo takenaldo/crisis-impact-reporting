@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Call for Damage Reports</title>
+    <!-- Importing typography from the design system -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Base styles mimicking standard email client resets */
+        body, table, td, a {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #E6F4F1; /* Mint - calm surfaces */
+            font-family: 'Poppins', Arial, sans-serif;
+            color: #0D3B66; /* Navy - body copy */
+        }
+        .email-wrapper {
+            width: 100%;
+            background-color: #E6F4F1;
+            padding: 40px 20px;
+            box-sizing: border-box;
+        }
+        .email-card {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 16px; /* Mimics the rounded cards in the image */
+            padding: 40px;
+            box-shadow: 0 4px 12px rgba(13, 59, 102, 0.08);
+        }
+        .info-badge {
+            display: inline-block;
+            background-color: #F4A261; /* Amber - Medium severity/Action needed */
+            color: #ffffff;
+            font-family: 'Montserrat', Arial, sans-serif;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            padding: 6px 12px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+        }
+        h1 {
+            font-family: 'Montserrat', Arial, sans-serif;
+            font-weight: 700;
+            color: #0D3B66; /* Navy - Authority, trust */
+            margin-top: 0;
+            margin-bottom: 16px;
+            font-size: 24px;
+            line-height: 1.3;
+        }
+        p {
+            font-family: 'Poppins', Arial, sans-serif;
+            font-weight: 400;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            color: #0D3B66;
+        }
+        .cta-container {
+            text-align: center;
+            margin: 36px 0;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #009C9A; /* Teal - Verified, action */
+            color: #ffffff;
+            font-family: 'Poppins', Arial, sans-serif;
+            font-weight: 500;
+            text-decoration: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        .cta-button:hover {
+            background-color: #008280;
+        }
+        .footer {
+            margin-top: 40px;
+            border-top: 2px solid #E6F4F1; /* Mint divider */
+            padding-top: 24px;
+            font-size: 13px;
+            color: #0D3B66;
+            opacity: 0.8;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-card">
+            <!-- Action Indicator -->
+            <span class="info-badge">Data Collection Active</span>
+            
+            <!-- Heading -->
+            <h1>We Need Your Crisis Impact Reports</h1>
+            
+            <!-- Body Content -->
+            <p>Hello ,</p>
+            <p>A crisis event has been registered in your surrounding area. To build a highly accurate, real-time map of the structural damage, we are relying on your on-the-ground observations.</p>
+            <p>Please submit any photos, descriptions, and geolocation data of the damage you are seeing. Your reports go directly to our <strong>Responders</strong> for triaging hotspots and provide our <strong>Analysts</strong> with the vital patterns needed to generate insights for the UNDP Crisis Impact Reporting initiative.</p>
+            
+            <!-- Call to Action -->
+            <div class="cta-container">
+                <a href="{{info.url}}" class="cta-button" target="_blank">Submit Impact Report</a>
+            </div>
+            
+            <!-- Footer -->
+            <div class="footer">
+                Thank you for contributing.<br>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
