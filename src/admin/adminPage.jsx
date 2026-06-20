@@ -209,8 +209,15 @@ export function HeaderCardPage({ selectedDateRange }) {
       }
     };
 
-    fetchCrises();
+    if (selectedDateRange) {
+      fetchCrises();
+    }
   }, [selectedDateRange]);
+
+  // Safe extractions to prevent crash while waiting for the API response
+  const totalReports = crisesReportList?.total_reports ?? 0;
+  const damageSeverityEntries = Object.entries(crisesReportList?.damage_severity || {});
+  const infrastructureEntries = Object.entries(crisesReportList?.infrastructure_type || {});
   return (
 
     <Grid mb="lg">
