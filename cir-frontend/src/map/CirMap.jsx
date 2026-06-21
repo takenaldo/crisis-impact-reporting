@@ -264,7 +264,14 @@ function MapController({
     const key = center.join(",");
     if (prevRef.current === key) return;
     prevRef.current = key;
-    map.flyTo(center, zoom ?? 16, { duration: 1 });
+    const size = map.getSize();
+    if (size.x > 0 && size.y > 0) {
+      map.flyTo(center, zoom ?? 16, { duration: 1 });
+    } else {
+      // Map has no size yet (e.g. inside a modal during CSS animation).
+      // Defer until invalidateSize() fires the resize event.
+      map.once("resize", () => map.flyTo(center, zoom ?? 16, { duration: 1 }));
+    }
   }, [center, zoom, map]);
 
   useEffect(() => {
@@ -308,16 +315,23 @@ function AutoLocate({ onLocated }) {
 
   useEffect(() => {
     const onFound = (e) => {
-      map.flyTo(e.latlng, 15, { duration: 1 });
+      const size = map.getSize();
+      if (size.x > 0 && size.y > 0) {
+        map.flyTo(e.latlng, 15, { duration: 1 });
+      } else {
+        map.once("resize", () => map.flyTo(e.latlng, 15, { duration: 1 }));
+      }
       setGpsPin([e.latlng.lat, e.latlng.lng]);
       setDraggable(false);
       if (onLocated)
         onLocated({ latitude: e.latlng.lat, longitude: e.latlng.lng }, true);
     };
     const onError = () => {
-      // GPS unavailable place draggable pin at current map center so user
-      // can zoom/pan and drag it to their location manually.
+      // GPS unavailable fall back to a draggable pin at the current map center.
+      // Guard against NaN: map.getCenter() returns NaN if the container has no
+      // size yet (e.g. rendered inside a modal during its CSS open animation).
       const c = map.getCenter();
+      if (isNaN(c.lat) || isNaN(c.lng)) return;
       setGpsPin([c.lat, c.lng]);
       setDraggable(true);
       if (onLocated) onLocated({ latitude: c.lat, longitude: c.lng }, false);
@@ -384,8 +398,13 @@ function UserLocationMarker({ userLocation }) {
 }
 
 // ── LocationPicker: tap to pin, writes into Mantine form ──────────────────
-function LocationPicker({ form, onPinChanged }) {
-  const [pin, setPin] = useState(null);
+function LocationPicker({ form, onPinChanged, initialPin }) {
+  const [pin, setPin] = useState(initialPin ?? null);
+
+  useEffect(() => {
+    if (initialPin) setPin(initialPin);
+  }, [initialPin]);
+
   useMapEvents({
     click(e) {
       const { lat, lng } = e.latlng;
@@ -397,7 +416,7 @@ function LocationPicker({ form, onPinChanged }) {
       if (onPinChanged) onPinChanged({ lat, lng });
     },
   });
-  return pin ? <Marker position={pin} icon={navyPinIcon()} /> : null;
+  return pin ? <Marker position={pin} icon={tealPulsingIcon()} /> : null;
 }
 
 // ── ReportMarkers: colored circles for damage reports ─────────────────────
@@ -887,6 +906,8 @@ export default function CirMap({
   locationPicker = false,
   selectEnabled = true, // set false to disable click-to-pin
   form, // Mantine form object
+  onPinChanged, // ({lat, lng}) => void  called on every click-to-pin
+  initialPin, // [lat, lng] to pre-place the pin on mount
 
   // GPS auto-locate on mount
   autoLocate = false,
@@ -1032,7 +1053,7 @@ export default function CirMap({
           <UserLocationMarker userLocation={effectiveUserLocation} />
         )}
 
-        {locationPicker && selectEnabled && <LocationPicker form={form} />}
+        {locationPicker && selectEnabled && <LocationPicker form={form} onPinChanged={onPinChanged} initialPin={initialPin} />}
 
         {reports && <ReportMarkers reports={reports} />}
 
