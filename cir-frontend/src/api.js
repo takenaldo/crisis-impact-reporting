@@ -1,9 +1,11 @@
 import axios from 'axios';
+import { SERVER_IP } from './constants';
 
 // Create a custom axios instance
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api/',
+  baseURL: `${SERVER_IP}/api/`,
 });
+
 
 // Request Interceptor: Automatically attach the JWT to every outgoing request
 api.interceptors.request.use(
@@ -31,7 +33,7 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem('refresh_token');
 
         // Call DRF refresh endpoint
-        const response = await axios.post('http://127.0.0.1:8000/api/token/refresh/', {
+        const response = await axios.post(`${SERVER_IP}/api/token/refresh/`, {
           refresh: refreshToken,
         });
 

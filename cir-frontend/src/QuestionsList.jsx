@@ -91,11 +91,11 @@ const QuestionsList = () => {
       <Text ff="Poppins" size="lg" fw={600} c="dark.4" px="xs">
         Surveys In Your Area
       </Text>
-      {/* <QuestionGroupModal
+      <QuestionGroupModal
         opened={true}
         reportID={"dd0abd64-0863-4178-b33b-fbb926fb6ad0"}
-      /> */}
-      {/* <QuestionForm /> */}
+      />
+
 
       {reportGroups.length === 0 ? (
         <Text ff="Poppins" size="sm" c="dimmed" px="xs">

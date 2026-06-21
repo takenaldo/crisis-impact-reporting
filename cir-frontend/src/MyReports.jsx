@@ -40,11 +40,6 @@ const MyReports = () => {
   return (
     <Box h={"100%"}>
       <Stack gap={10}>
-        <QuestionGroupModal
-          opened={true}
-          reportID={"0718155d-3a7c-41f1-a025-af49afeb6246"}
-        />
-
         {reports.map((report) => (
           <ReportCard
             key={report.id}
