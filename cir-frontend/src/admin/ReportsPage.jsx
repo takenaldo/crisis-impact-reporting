@@ -303,7 +303,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                   handleActionModalTrigger(e, selectedReport);
                 }}
               >
-                Add Questions Pipeline
+                Add Survery Questions
               </Button>
             </Box>
           </Stack>
