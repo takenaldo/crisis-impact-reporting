@@ -253,7 +253,7 @@ function MapController({
   onRecenter,
 }) {
   const map = useMap();
-  const prevRef = useRef(null);
+  const prevRef = useRef(center ? center.join(",") : null);
 
   useEffect(() => {
     if (onMapReady) onMapReady(map);
