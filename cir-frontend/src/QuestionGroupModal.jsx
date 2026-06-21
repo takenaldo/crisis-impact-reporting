@@ -4,6 +4,7 @@ import {
   Button,
   Text,
   NumberInput,
+  TextInput,
   Stack,
   Group,
   SimpleGrid,
@@ -11,11 +12,11 @@ import {
   Divider,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { IconCheck, IconMapPin, IconPlus, IconHelpCircle } from "@tabler/icons-react";
+import { IconCheck, IconMapPin, IconPlus, IconHelpCircle, IconLock } from "@tabler/icons-react";
 import QuestionForm from "./QuestionForm";
 import api from "./api";
 
-export function QuestionGroupModal({ opened, onClose, reportID }) {
+export function QuestionGroupModal({ opened, onClose, report }) {
   const [showQuestionAddModal, setShowQuestionAddModal] = useState(false);
 
   const form = useForm({
@@ -23,42 +24,46 @@ export function QuestionGroupModal({ opened, onClose, reportID }) {
       latitude: "",
       longitude: "",
       distance_threshold_in_km: "",
-      impact_report_id: reportID || "",
+      impact_report_id: "",
       duration: 2,
       questions: [],
     },
     validate: {
-      latitude: (value) =>
-        value === "" || value < -90 || value > 90 ? "Invalid Latitude" : null,
-      longitude: (value) =>
-        value === "" || value < -180 || value > 180 ? "Invalid Longitude" : null,
       distance_threshold_in_km: (value) =>
         value === "" || value < 0 ? "Must be a positive number" : null,
     },
   });
 
-  // Sync state cleanly whenever a different row/report is chosen
+  // Re-sync form fields dynamically whenever a different report object is loaded
   useEffect(() => {
-    if (opened) {
+    if (opened && report) {
       form.reset();
-      form.setFieldValue("impact_report_id", reportID || "");
+
+      // Fallback strings to read both flat or nested location models safely
+      const lat = report?.annotations?.incident_point?.geometry?.coordinates[0] ?? "";
+      const lng = report?.annotations?.incident_point?.geometry?.coordinates[1] ?? "";
+
+      form.setValues({
+        impact_report_id: report?.id || "",
+        latitude: lat !== "" ? String(lat) : "",
+        longitude: lng !== "" ? String(lng) : "",
+        distance_threshold_in_km: "",
+        duration: 2,
+        questions: [],
+      });
     }
-  }, [reportID, opened]);
+  }, [report, opened]);
 
   const handleSubmit = async (values) => {
     try {
-      const response = await api.post(
-        "impact-reports/attach_questions_to_report/",
-        values
-      );
-      console.log("Configuration saved successfully:", response.data);
+      await api.post("impact-reports/attach_questions_to_report/", values);
       onClose();
     } catch (error) {
       console.error("Failed to save configuration:", error);
     }
   };
 
-  // Modern UI layout styling configuration
+  // Standard styling context configurations
   const labelStyle = {
     label: {
       color: "#0D3B66",
@@ -67,9 +72,25 @@ export function QuestionGroupModal({ opened, onClose, reportID }) {
       fontSize: "13px",
       marginBottom: "4px",
     },
+    input: {
+      fontFamily: "Poppins, sans-serif",
+    },
     error: {
       fontFamily: "Poppins, sans-serif",
       fontSize: "11px",
+    },
+  };
+
+  // Dedicated explicit styling configuration override for Locked Read-Only Layout Fields
+  const readOnlyFieldStyle = {
+    ...labelStyle,
+    input: {
+      backgroundColor: "#F1F3F5",
+      color: "#495057",
+      cursor: "not-allowed",
+      border: "1px solid #CED4DA",
+      fontFamily: "Poppins, sans-serif",
+      fontWeight: 500,
     },
   };
 
@@ -119,44 +140,51 @@ export function QuestionGroupModal({ opened, onClose, reportID }) {
             style={{
               backgroundColor: "#F4F9F9",
               borderRadius: "10px",
-              border: "1px dashed #009C9A"
+              border: "1px dashed #009C9A",
             }}
           >
             <Group justify="space-between">
               <Box>
                 <Text size="xs" c="dimmed" fw={700} style={{ letterSpacing: "0.5px" }}>
-                  Define precise geographical boundaries, and operational question  for  Reporters.
+                  TARGET IMPACT REPORT
+                </Text>
+                <Text size="sm" fw={600} c="#0D3B66" mt={2}>
+                  {report?.infrastructure_name || "N/A"} 
                 </Text>
               </Box>
+              <IconHelpCircle size={20} color="#009C9A" opacity={0.7} />
             </Group>
           </Box>
 
+          <Text size="xs" c="dimmed" style={{ marginTop: "-8px" }}>
+            Define precise geographical boundaries, and operational questions for Reporters.
+          </Text>
 
-          {/* Location Parameter Grid */}
+          {/* Read-Only Location Parameter Text Field Rows */}
           <SimpleGrid cols={2} spacing="md">
-            <NumberInput
+            <TextInput
               label="Latitude"
-              placeholder="0.000000"
-              decimalScale={6}
-              leftSection={<IconMapPin size="1rem" color="#009C9A" />}
-              withAsterisk
-              styles={labelStyle}
+              placeholder="Locked"
+              readOnly
+              leftSection={<IconMapPin size="1rem" color="#7a92a3" />}
+              rightSection={<IconLock size="0.85rem" color="#adb5bd" />}
+              styles={readOnlyFieldStyle}
               radius="md"
               {...form.getInputProps("latitude")}
             />
-            <NumberInput
+            <TextInput
               label="Longitude"
-              placeholder="0.000000"
-              decimalScale={6}
-              leftSection={<IconMapPin size="1rem" color="#009C9A" />}
-              withAsterisk
-              styles={labelStyle}
+              placeholder="Locked"
+              readOnly
+              leftSection={<IconMapPin size="1rem" color="#7a92a3" />}
+              rightSection={<IconLock size="0.85rem" color="#adb5bd" />}
+              styles={readOnlyFieldStyle}
               radius="md"
               {...form.getInputProps("longitude")}
             />
           </SimpleGrid>
 
-          {/* Threshold & Scope Parameters */}
+          {/* Editable Metrics Input Section */}
           <SimpleGrid cols={2} spacing="md">
             <NumberInput
               label="Distance Threshold (km)"
@@ -196,7 +224,7 @@ export function QuestionGroupModal({ opened, onClose, reportID }) {
                   style={{
                     backgroundColor: "#E6F4F1",
                     borderRadius: "6px",
-                    border: "1px solid #009C9A"
+                    border: "1px solid #009C9A",
                   }}
                 >
                   <Text size="xs" fw={700} c="#009C9A">

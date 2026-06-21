@@ -310,7 +310,7 @@ export function HeaderCardPage({ selectedDateRange }) {
           urls.getReportsByDate + selectedDateRange
         );
         console.log("+++++++++++++++++++++" + response.data);
-        // setCrisesReportList(response.data);
+         setCrisesReportList(response.data);
         console.log("Fetched crises:", response.data);
       } catch (error) {
         console.error("Error fetching crises:", error);

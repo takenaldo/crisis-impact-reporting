@@ -1,44 +1,36 @@
 import React, { useEffect, useState } from "react";
 import {
   Container,
-  Grid,
   Card,
   Text,
   Group,
   Button,
   ActionIcon,
-  Badge,
-  TextInput,
-  Avatar,
   Box,
   Divider,
   Select,
   Table,
-  ThemeIcon,
-  Anchor,
+  Avatar,
   Stack,
   Pagination,
+  Drawer,
+  Badge,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
-  IconSearch,
-  IconCalendar,
   IconDownload,
   IconBell,
   IconMapPin,
-  IconEye,
-  IconFileText,
-  IconClock,
-  IconCircleCheck,
-  IconDeviceMobile,
-  IconAlertTriangle,
   IconChevronDown,
   IconPlus,
+  IconCalendar,
+  IconInfoCircle,
 } from "@tabler/icons-react";
-import { timeAgo, COLORS, SEVERITY_CONFIG } from "../utils";
+import { getNearestCity } from "offline-geocode-city";
+import { COLORS, SEVERITY_CONFIG } from "../utils";
 import { HeaderCardPage } from "./adminPage";
 import api from "../api";
-import { QuestionGroupModal } from "../QuestionGroupModal"; // Make sure path is correct
+import { QuestionGroupModal } from "../QuestionGroupModal";
 
 export function ReportsPage() {
   const dateOptions = [
@@ -49,77 +41,29 @@ export function ReportsPage() {
     { 365: "This year" },
   ];
 
-  const formattedData = (dateOptions || []).map((item) => {
+  const formattedData = dateOptions.map((item) => {
     const [key, text] = Object.entries(item)[0] || ["7", "Last 7 days"];
-    return {
-      value: String(key),
-      label: text,
-    };
+    return { value: String(key), label: text };
   });
 
-  const [selectedDateRange, setSelectedDateRange] = useState(
-    formattedData[2]?.value || "7",
-  );
+  const [selectedDateRange, setSelectedDateRange] = useState(formattedData[2]?.value || "7");
   const [crisesReportList, setCrisesReportList] = useState([]);
+
   useEffect(() => {
     const fetchCrises = async () => {
       try {
         const response = await api.get("/impact-reports/");
         const incomingData = Array.isArray(response.data)
           ? response.data
-          : (response.data?.results || []);
-
+          : response.data?.results || [];
         setCrisesReportList(incomingData);
       } catch (error) {
         console.error("Error fetching crises:", error);
         setCrisesReportList([]);
       }
     };
-
     fetchCrises();
   }, []);
-
-  // --- CSV Export ---
-  const handleExportCSV = () => {
-    if (!crisesReportList || crisesReportList.length === 0) {
-      alert("No data available to export");
-      return;
-    }
-    const titleHeaders = [["UNDP - Crisis Impact Reports Data"]];
-    const tableHeaders = ["INFRASTRUCTURE NAME", "INFRASTRUCTURE TYPE", "LOCATION", "SEVERITY", "UPDATED"];
-    const rows = crisesReportList.map((row) => [
-      row?.infrastructure_name || "N/A",
-      row?.infrastructure_type || "N/A",
-      row?.location?.city || "N/A",
-      row?.damage_severity || "Low",
-      row?.damage_datetime ? `${displayDate(row.damage_datetime)} at ${displayTime(row.damage_datetime)}` : "N/A",
-    ]);
-
-    const escapeCSVField = (value) => {
-      const stringValue = value === null || value === undefined ? "" : String(value);
-      if (stringValue.includes(",") || stringValue.includes('"') || stringValue.includes("\n")) {
-        return `"${stringValue.replace(/"/g, '""')}"`;
-      }
-      return stringValue;
-    };
-
-    const csvContent = [
-      ...titleHeaders.map(fields => fields.map(escapeCSVField).join(",")),
-      tableHeaders.join(","),
-      ...rows.map(row => row.map(escapeCSVField).join(",")),
-    ].join("\n");
-
-    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    const filename = `UNDP_Crisis_Report_${new Date().toISOString().split("T")[0]}.csv`;
-    link.setAttribute("href", url);
-    link.setAttribute("download", filename);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   return (
     <Box bg={COLORS.lightBackground} minHeight="100vh" py="md" px="lg">
@@ -132,7 +76,7 @@ export function ReportsPage() {
 
           <Group gap="md">
             <Select
-              placeholder={"Select date range"}
+              placeholder="Select date range"
               defaultValue={selectedDateRange}
               data={formattedData}
               onChange={(value) => setSelectedDateRange(value)}
@@ -140,7 +84,7 @@ export function ReportsPage() {
               radius="md"
               w={130}
             />
-            <Button bg={COLORS.primaryTeal} leftSection={<IconDownload size={16} />} radius="md" onClick={handleExportCSV}>
+            <Button bg={COLORS.primaryTeal} leftSection={<IconDownload size={16} />} radius="md">
               Export
             </Button>
             <ActionIcon variant="default" size="lg" radius="md">
@@ -169,24 +113,62 @@ export function ReportDataTablePage({ crisesReportList }) {
   const [selectedSeverity, setSelectedSeverity] = useState(null);
   const [selectedRegion, setSelectedRegion] = useState(null);
 
-  // Modal Controller States
+  // Modal disclosures for Question System Configuration Modal
   const [opened, { open, close }] = useDisclosure(false);
-  const [selectedReportId, setSelectedReportId] = useState(null);
+
+  // Drawer disclosures for the Side-Detail panel View
+  const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
+
+  const [selectedReport, setSelectedReport] = useState(null);
 
   const ITEMS_PER_PAGE = 10;
+
+  // Safe wrapper parsing methodology logic to safely resolve getNearestCity object types
+  const renderValidatedCity = (report) => {
+    const coords = report?.annotations?.incident_point?.geometry?.coordinates;
+
+    let lng = coords?.[1];
+    let lat = coords?.[0];
+
+    if (lat === undefined || lng === undefined) {
+      lat = report?.location?.latitude ?? report?.latitude;
+      lng = report?.location?.longitude ?? report?.longitude;
+    }
+
+    const parsedLat = parseFloat(lat);
+    const parsedLng = parseFloat(lng);
+
+    if (isNaN(parsedLat) || isNaN(parsedLng) || parsedLat < -90 || parsedLat > 90 || parsedLng < -180 || parsedLng > 180) {
+      const DEFAULT_LAT = 8.9806;
+      const DEFAULT_LNG = 38.7578;
+      const fallbackResult = getNearestCity(DEFAULT_LNG, DEFAULT_LAT);
+      return fallbackResult?.cityName || "Addis Ababa (Default)";
+    }
+
+    const result = getNearestCity(parsedLng, parsedLat);
+    return result?.cityName || "Unknown Region";
+  };
+
+  // Triggers whenever a table row line block item is focused
+  const handleRowClickTrigger = (report) => {
+    setSelectedReport(report);
+    openDrawer();
+  };
+
+  // Dedicated workflow execution button mapping anchor override
+  const handleActionModalTrigger = (e, report) => {
+    e.stopPropagation(); // Stops row drawer panel collection framework from overlaying
+    setSelectedReport(report);
+    open();
+  };
 
   const dynamicSeverities = Array.from(
     new Set((crisesReportList || []).map((row) => row?.damage_severity).filter(Boolean))
   );
 
   const dynamicRegions = Array.from(
-    new Set((crisesReportList || []).map((row) => row?.location?.city == null ? "" : row?.location?.city).filter(Boolean))
+    new Set((crisesReportList || []).map((row) => row?.location?.city).filter(Boolean))
   );
-
-  const handleActionTrigger = (row) => {
-    setSelectedReportId(row?.id);
-    open();
-  };
 
   const filteredData = (crisesReportList || []).filter((row) => {
     const matchesSeverity = selectedSeverity ? row?.damage_severity?.toLowerCase() === selectedSeverity.toLowerCase() : true;
@@ -221,32 +203,32 @@ export function ReportDataTablePage({ crisesReportList }) {
           </Table.Thead>
           <Table.Tbody>
             {paginatedData.length > 0 ? (
-              paginatedData.map((row) => (
-                <Table.Tr key={row?.id} onClick={() => handleActionTrigger(row)} style={{ cursor: "pointer" }}>
+              paginatedData.map((report) => (
+                <Table.Tr key={report?.id} onClick={() => handleRowClickTrigger(report)} style={{ cursor: "pointer" }}>
                   <Table.Td>
                     <Stack gap={2}>
-                      <Text size="sm" fw={700} c={COLORS.darkBlue}>{row?.infrastructure_name || "N/A"}</Text>
-                      <Text size="xs" c="dimmed">{row?.infrastructure_type.includes("(") ? row?.infrastructure_type.split("(")[0] : row?.infrastructure_type}</Text>
+                      <Text size="sm" fw={700} c={COLORS.darkBlue}>{report?.infrastructure_name || "N/A"}</Text>
+                      <Text size="xs" c="dimmed">{report?.infrastructure_type?.includes("(") ? report?.infrastructure_type.split("(")[0] : report?.infrastructure_type}</Text>
                     </Stack>
                   </Table.Td>
                   <Table.Td>
                     <Group gap={4} c="dimmed">
-                      <IconMapPin size={14} /><Text size="sm">{row?.location?.city || "N/A"}</Text>
+                      <IconMapPin size={14} />
+                      <Text size="sm">{renderValidatedCity(report)}</Text>
                     </Group>
                   </Table.Td>
                   <Table.Td>
-                    <Text size="sm" c={SEVERITY_CONFIG[row?.damage_severity?.toLowerCase()] === undefined ? SEVERITY_CONFIG["no_Damage"].color : SEVERITY_CONFIG[row?.damage_severity?.toLowerCase()]?.color}>
-                      {row?.damage_severity}
+                    <Text size="sm" c={SEVERITY_CONFIG[report?.damage_severity?.toLowerCase()]?.color || "gray"}>
+                      {report?.damage_severity}
                     </Text>
                   </Table.Td>
-                  <Table.Td ta="right">{row?.damage_datetime ? `${displayDate(row.damage_datetime)} at ${displayTime(row.damage_datetime)}` : "N/A"}</Table.Td>
+                  <Table.Td ta="right">
+                    {report?.damage_datetime ? new Date(report.damage_datetime).toLocaleDateString() : "N/A"}
+                  </Table.Td>
                   <Table.Td ta="right">
                     <Button
                       size="xs" variant="light" color="teal" radius="md" leftSection={<IconPlus size={12} />}
-                      onClick={(e) => {
-                        e.stopPropagation(); // Stops parent row click event handler duplication
-                        handleActionTrigger(row);
-                      }}
+                      onClick={(e) => handleActionModalTrigger(e, report)}
                     >
                       Add Question
                     </Button>
@@ -254,7 +236,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                 </Table.Tr>
               ))
             ) : (
-              <Table.Tr><Table.Td colSpan={5} ta="center" py="xl"><Text c="dimmed" size="sm">No records found matching filters.</Text></Table.Td></Table.Tr>
+              <Table.Tr><Table.Td colSpan={5} ta="center" py="xl"><Text c="dimmed" size="sm">No records found.</Text></Table.Td></Table.Tr>
             )}
           </Table.Tbody>
         </Table>
@@ -266,15 +248,74 @@ export function ReportDataTablePage({ crisesReportList }) {
         </Group>
       )}
 
-      {/* Renders your customized question submission logic blueprint setup hook */}
+      {/* Dynamic Row Detail Inspector Side-Drawer Interface */}
+      <Drawer
+        opened={drawerOpened}
+        onClose={closeDrawer}
+        title={<Text style={{ color: COLORS.darkBlue, fontWeight: 700, fontSize: "18px" }}>Impact Incident Deep View</Text>}
+        position="right"
+        size="md"
+        padding="xl"
+      >
+        {selectedReport && (
+          <Stack gap="lg" pt="md">
+            <Box p="md" style={{ backgroundColor: "#F8FAFC", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
+              <Text size="xs" c="dimmed" fw={700} lts={1}>INFRASTRUCTURE NAME</Text>
+              <Text size="lg" fw={700} c={COLORS.darkBlue} mt={2}>{selectedReport?.infrastructure_name || "N/A"}</Text>
+              <Text size="xs" c="dimmed" mt={4}>Type: {selectedReport?.infrastructure_type || "General Asset Structure"}</Text>
+            </Box>
+
+            <Group justify="space-between" wrap="nowrap">
+              <Box>
+                <Group gap={6} c="dimmed" mb={4}><IconMapPin size={14} /><Text size="xs" fw={700} lts={0.5}>GEOGRAPHIC CITY</Text></Group>
+                <Text size="sm" fw={600} c="#334155">{renderValidatedCity(selectedReport)}</Text>
+              </Box>
+              <Box ta="right">
+                <Text size="xs" c="dimmed" fw={700} lts={0.5} mb={4}>DAMAGE SEVERITY</Text>
+                <Badge color={SEVERITY_CONFIG[selectedReport?.damage_severity?.toLowerCase()]?.color || "gray"} size="md" radius="sm">
+                  {selectedReport?.damage_severity || "Unknown"}
+                </Badge>
+              </Box>
+            </Group>
+
+            <Divider color="#F1F5F9" />
+
+            <Stack gap="xs">
+              <Group gap={6} c="dimmed"><IconCalendar size={14} /><Text size="xs" fw={700}>TIMESTAMP LOGGED</Text></Group>
+              <Text size="sm" c="#334155">
+                {selectedReport?.damage_datetime ? new Date(selectedReport.damage_datetime).toLocaleString() : "No timestamp associated"}
+              </Text>
+            </Stack>
+
+            <Stack gap="xs">
+              <Group gap={6} c="dimmed"><IconInfoCircle size={14} /><Text size="xs" fw={700}>CRISIS LOCATION</Text></Group>
+              <Text size="sm" c="#475569" style={{ lineHeight: 1.5 }}>
+                {renderValidatedCity(selectedReport)} <code style={{ backgroundColor: "#F1F5F9", padding: "2px 6px", borderRadius: "4px" }}>[{selectedReport?.annotations?.incident_point?.geometry?.coordinates[0].toFixed(3)}, {selectedReport?.annotations?.incident_point?.geometry?.coordinates[1].toFixed(3)}]</code>
+
+              </Text>
+            </Stack>
+
+            <Box mt="xl">
+              <Button
+                fullWidth color="teal" variant="light" radius="md" leftSection={<IconPlus size={16} />}
+                onClick={(e) => {
+                  closeDrawer();
+                  handleActionModalTrigger(e, selectedReport);
+                }}
+              >
+                Add Questions Pipeline
+              </Button>
+            </Box>
+          </Stack>
+        )}
+      </Drawer>
+
+      {/* Main configuration questionnaire workflow injection modal overlay context structure */}
       <QuestionGroupModal
         opened={opened}
         onClose={close}
-        reportID={selectedReportId}
+        report={selectedReport}
       />
     </Card>
   );
 }
-
-const displayDate = (d) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
-const displayTime = (d) => d ? new Date(d).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }) : "";

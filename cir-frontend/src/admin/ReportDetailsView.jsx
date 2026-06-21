@@ -4,9 +4,7 @@ import {
   Box,
   Button,
   Card,
-  Container,
   Divider,
-  Drawer,
   Group,
   Image,
   Modal,
@@ -28,14 +26,26 @@ import {
   IconExternalLink,
   IconClock,
   IconBuilding,
+  IconPhotoOff,
 } from "@tabler/icons-react";
 
 import { timeAgo } from "../utils";
-import QuestionsTabView from "../QuestionsTabView";
+import QuestionsTabViewView from "../QuestionsTabView";
 import SurveyTabView from "../SurveyTabView";
 import { SERVER_IP } from "../constants";
-import { PDFViewer } from "@react-pdf/renderer";
 import EnterprisePDFViewer from "./ReportDocument";
+
+// Professional UI theme parser for damage status mapping
+const getSeverityTheme = (severity) => {
+  const norm = String(severity).toLowerCase();
+  if (norm.includes("crit") || norm.includes("high") || norm.includes("major")) {
+    return { color: "var(--mantine-color-red-filled)", bg: "rgba(250, 82, 82, 0.12)", border: "rgba(250, 82, 82, 0.2)" };
+  }
+  if (norm.includes("mod") || norm.includes("med")) {
+    return { color: "var(--mantine-color-orange-filled)", bg: "rgba(253, 126, 20, 0.12)", border: "rgba(253, 126, 20, 0.2)" };
+  }
+  return { color: "var(--mantine-color-gray-7)", bg: "rgba(134, 142, 150, 0.12)", border: "rgba(134, 142, 150, 0.2)" };
+};
 
 export default function ReportDetailsView({ report }) {
   const [showMore, setShowMore] = useState(true);
@@ -47,364 +57,344 @@ export default function ReportDetailsView({ report }) {
     setShowMore((prev) => !prev);
   };
 
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-
-  const handlePrevPhoto = (maxItems) => {
-    setCurrentPhotoIndex((prev) => (prev === 0 ? maxItems - 1 : prev - 1));
-  };
-
-  const handleNextPhoto = (maxItems) => {
-    setCurrentPhotoIndex((prev) => (prev === maxItems - 1 ? 0 : prev + 1));
-  };
+  const severityTheme = getSeverityTheme(report?.damage_severity);
 
   return (
     <>
-      {/* 
-        MODAL AT TOP: 
-        Placed at the top level of the component hierarchy using a Fragment.
-        yOffset places it at the visual top of the browser screen. 
-      */}
-
+      {/* Export Report PDF Modal Container */}
       <Modal
         opened={showPDF}
         onClose={() => setShowPDF(false)}
         size="xl"
-        yOffset="2vh"
-        zIndex={99999} // <--- MOVE THIS HERE AND MAKE IT HUGE
+        yOffset="4vh"
+        zIndex={99999}
         title={
-          <Text fw={600} ff="Poppins">
-            Export Report PDF
+          <Text fw={600} ff="Poppins" fz="md" c="var(--color-teal)">
+            Export Report PDF File
           </Text>
         }
         overlayProps={{
-          backgroundOpacity: 0.55,
-          blur: 3,
+          backgroundOpacity: 0.4,
+          blur: 4,
         }}
+        radius="lg"
       >
-        <Box h="80vh" w="100%">
+        <Box h="76vh" w="100%">
           <EnterprisePDFViewer jsonData={report} />
         </Box>
       </Modal>
 
+      {/* Main Report Panel Dashboard */}
       <Card
         key={report?.id}
-        shadow="md"
+        shadow="sm"
         padding={0}
         radius="lg"
         withBorder
         style={{
-          borderColor: "#E2E8F0",
+          borderColor: "#EAECEF",
           borderTop: "4px solid #009C9A",
           backgroundColor: "#ffffff",
         }}
       >
         <Stack gap={0}>
-          <Box p="lg">
-            <Stack gap="md">
-              {/* Header: Title and Type */}
-              <Group justify="space-between" align="flex-start" wrap="nowrap">
-                <Box style={{ flex: 1 }}>
+          <Box p="xl">
+            <Stack gap="lg">
+
+              {/* Header Context Section */}
+              <Stack gap="xs">
+                <Group justify="space-between" align="flex-start" wrap="nowrap">
                   <Text
-                    size="xl"
+                    size="lg"
                     fw={800}
                     c="var(--color-teal)"
                     ff="Montserrat"
-                    lh={1.2}
-                    tt="uppercase"
+                    lh={1.25}
+                    style={{ letterSpacing: "-0.01em" }}
                   >
-                    Damage Report on{" "}
-                    {report?.infrastructure_name ||
-                      "UnIdentified Infrastructure"}
+                    DAMAGE REPORT: {report?.infrastructure_name || "UNIDENTIFIED INFRASTRUCTURE"}
                   </Text>
-                </Box>
-              </Group>
+                </Group>
 
-              <Group gap="xs" mt="xs">
-                <Group gap={6} wrap="nowrap">
+                {/* Subtitle Badges Row */}
+                <Group gap="xs" align="center">
                   <Badge
-                    color="var(--color-teal)"
-                    variant="light"
-                    size="xs"
+                    variant="filled"
+                    size="sm"
                     radius="sm"
-                    ff="Poppins"
+                    style={{
+                      textTransform: "none",
+                      fontWeight: 600,
+                      letterSpacing: "0.02em",
+                      backgroundColor: severityTheme.bg,
+                      color: severityTheme.color,
+                      border: `1px solid ${severityTheme.border}`,
+                    }}
                   >
                     {report?.damage_severity || "Unknown Severity"}
                   </Badge>
+
                   {report?.debris && (
                     <Badge
                       color="var(--color-teal)"
                       variant="light"
-                      size="xs"
+                      size="sm"
                       radius="sm"
                       ff="Poppins"
+                      style={{ textTransform: "none", fontWeight: 500 }}
                     >
-                      Debris
+                      Debris Detected
                     </Badge>
                   )}
+
+                  <Divider orientation="vertical" h={14} color="#EAECEF" />
+
+                  <Group gap={4} wrap="nowrap" c="dimmed">
+                    <IconBuilding size={14} color="var(--color-teal)" />
+                    <Text size="xs" fw={500} ff="Poppins" style={{ letterSpacing: "0.01em" }}>
+                      {report?.infrastructure_type || "Infrastructure"}
+                    </Text>
+                  </Group>
                 </Group>
-              </Group>
+              </Stack>
 
-              <Group justify="space-between" align="flex-start" wrap="nowrap">
-                <IconBuilding size={16} color="var(--color-teal)" />
-                <Box style={{ flex: 1 }}>
-                  <Text
-                    size="xs"
-                    c="dark.3"
-                    ff="Poppins"
-                    mb={4}
-                    style={{ letterSpacing: "0.5px" }}
-                  >
-                    {report?.infrastructure_type || "Infrastructure"}
-                  </Text>
-                </Box>
-              </Group>
-
-              {/* Description */}
+              {/* Dynamic Description Window */}
               {report?.description ? (
-                <Text size="sm" c="#334155" lh={1.6} ff="Poppins" mt="xs">
+                <Text size="sm" c="#475569" lh={1.65} ff="Poppins">
                   {report?.description}
                 </Text>
               ) : (
-                <Text
-                  size="sm"
-                  c="var(--color-gray)"
-                  lh={1.6}
-                  ff="Poppins"
-                  mt="xs"
-                  fs={"italic"}
-                >
-                  No detailed description provided for this report.
-                </Text>
+                <Paper p="sm" bg="#F8FAFC" radius="md" withBorder style={{ borderStyle: "dashed" }}>
+                  <Text size="sm" c="dimmed" lh={1.6} ff="Poppins" fs="italic" ta="center">
+                    No detailed structural analysis description provided for this entry.
+                  </Text>
+                </Paper>
               )}
 
-              {/* Location & Date Information Strip */}
+              {/* Geographic Spatial Information Block */}
               <Stack gap="xs">
                 <Paper
                   withBorder
-                  p={{ base: "md", sm: "lg" }}
-                  radius="lg"
-                  shadow="sm"
-                  bg="#E6F4F1"
-                  style={{ borderColor: "#E9ECEF" }}
+                  p="md"
+                  radius="md"
+                  bg="var(--mantine-color-gray-0)"
+                  style={{ borderColor: "#EAECEF", transition: "border-color 0.2s" }}
+                  styles={{
+                    root: {
+                      "&:hover": { borderColor: "var(--color-teal)" }
+                    }
+                  }}
                 >
-                  <Group wrap="nowrap" align="flex-start" gap="md">
-                    <ThemeIcon
-                      color="#009C9A"
-                      variant="light"
-                      size="lg"
-                      radius="xl"
-                    >
-                      <IconMapPin size={20} />
-                    </ThemeIcon>
-
-                    <Box style={{ flex: 1, minWidth: 0 }}>
-                      <Text
-                        size="xs"
-                        c="dimmed"
-                        tt="uppercase"
-                        fw={700}
-                        style={{
-                          fontFamily: "Montserrat, sans-serif",
-                          letterSpacing: "0.5px",
-                        }}
-                        mb={2}
+                  <Group wrap="nowrap" align="center" justify="space-between" gap="md">
+                    <Group wrap="nowrap" gap="sm" style={{ flex: 1, minWidth: 0 }}>
+                      <ThemeIcon
+                        color="#009C9A"
+                        variant="light"
+                        size={38}
+                        radius="md"
                       >
-                        Location
-                      </Text>
+                        <IconMapPin size={18} />
+                      </ThemeIcon>
 
-                      <Group gap="xs" align="center">
-                        <Text
-                          size="sm"
-                          c="#0D3B66"
-                          fw={600}
-                          style={{
-                            fontFamily: "Poppins, sans-serif",
-                            lineHeight: 1.2,
-                          }}
-                        >
-                          {report.annotations?.incident_point?.geometry.coordinates[0].toFixed(
-                            3,
-                          ) || "N/A"}
-                          ,{" "}
-                          {report.annotations?.incident_point?.geometry.coordinates[1].toFixed(
-                            3,
-                          ) || "N/A"}
+                      <Box style={{ flex: 1, minWidth: 0 }}>
+                        <Group gap={6} align="baseline">
+                          <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: "0.05em" }}>
+                            Coordinates:
+                          </Text>
+                          <Text size="xs" c="#0D3B66" fw={700} ff="Poppins">
+                            {report.annotations?.incident_point?.geometry.coordinates[0]?.toFixed(4) || "N/A"}
+                            , {report.annotations?.incident_point?.geometry.coordinates[1]?.toFixed(4) || "N/A"}
+                          </Text>
+                        </Group>
+
+                        <Text size="xs" c="dark.3" fw={500} mt={2} lineClamp={1} ff="Poppins">
+                          {[
+                            report?.location?.city,
+                            report?.location?.state_province,
+                            report?.location?.country,
+                          ]
+                            .filter(Boolean)
+                            .join(", ") || "Unknown Regional Address"}
                         </Text>
-                      </Group>
-
-                      <Text
-                        size="xs"
-                        c="dimmed"
-                        mt={4}
-                        lineClamp={2}
-                        style={{ fontFamily: "Poppins, sans-serif" }}
-                      >
-                        {[
-                          report?.location?.city,
-                          report?.location?.state_province,
-                          report?.location?.country,
-                        ]
-                          .filter(Boolean)
-                          .join(", ") || "Unknown Address"}
-                      </Text>
-                    </Box>
+                      </Box>
+                    </Group>
 
                     {report?.location?.infrastructure_latitude &&
                       report?.location?.infrastructure_longitude && (
                         <ActionIcon
-                          variant="light"
+                          variant="white"
                           color="#009C9A"
                           size="lg"
                           radius="md"
-                          aria-label="View on map"
+                          aria-label="View on external map dashboard"
+                          style={{ border: "1px solid #EAECEF" }}
                         >
-                          <IconExternalLink size={20} stroke={2} />
+                          <IconExternalLink size={18} stroke={1.8} />
                         </ActionIcon>
                       )}
                   </Group>
                 </Paper>
 
-                <Group gap={6} justify="flex-end" px="sm">
-                  <IconClock size={14} color="#868E96" stroke={2} />
-                  <Text
-                    size="xs"
-                    c="dimmed"
-                    fw={500}
-                    style={{ fontFamily: "Poppins, sans-serif" }}
-                  >
+                {/* Dispatch / Capture Timestamp */}
+                <Group gap={4} justify="flex-end" px={4}>
+                  <IconClock size={13} color="var(--mantine-color-gray-5)" stroke={2} />
+                  <Text size="xs" c="dimmed" fw={500} ff="Poppins">
                     Reported{" "}
                     {report?.damage_datetime
                       ? timeAgo(report?.damage_datetime)
-                      : "at unknown time"}
+                      : "at unknown interval"}
                   </Text>
                 </Group>
               </Stack>
             </Stack>
           </Box>
 
-          <Box px="lg" pb="md">
+          {/* Action Trigger Interface */}
+          <Box px="xl" pb="lg">
             <Button
               color="#009C9A"
               variant="light"
               fullWidth
+              size="sm"
+              radius="md"
+              fw={600}
               onClick={() => setShowPDF(true)}
+              styles={{
+                root: {
+                  transition: "background-color 0.15s, transform 0.1s",
+                  "&:active": { transform: "scale(0.99)" }
+                }
+              }}
             >
-              Show PDF Report
+              Generate & Show PDF Document
             </Button>
           </Box>
 
-          {/* Expandable Media & Questions Section */}
+          {/* Tabular Analysis Window Extension */}
           {showMore && (
-            <Box px="lg" pb="lg" animate={{ opacity: 1 }} transition="fade">
-              <Divider mb="md" color="#E2E8F0" />
+            <Box px="xl" pb="xl">
+              <Divider mb="lg" color="#EAECEF" />
               <Tabs
                 defaultValue="Photos"
                 variant="pills"
-                radius="xl"
+                radius="md"
                 color="#009C9A"
               >
-                <Tabs.List grow>
-                  <Tabs.Tab value="Photos" fw={600} ff="Poppins" fz="sm">
+                <Tabs.List grow style={{ backgroundColor: "#F8FAFC", padding: "4px", borderRadius: "8px" }}>
+                  <Tabs.Tab value="Photos" fw={600} ff="Poppins" fz="xs" py={6}>
                     Photos ({report?.photos?.length || 0})
                   </Tabs.Tab>
-                  <Tabs.Tab value="Questions" fw={600} ff="Poppins" fz="sm">
-                    Questions
+                  <Tabs.Tab value="Questions" fw={600} ff="Poppins" fz="xs" py={6}>
+                    Structural Metrics
                   </Tabs.Tab>
-                  <Tabs.Tab value="Surveys" fw={600} ff="Poppins" fz="sm">
-                    Surveys
+                  <Tabs.Tab value="Surveys" fw={600} ff="Poppins" fz="xs" py={6}>
+                    Field Surveys
                   </Tabs.Tab>
                 </Tabs.List>
 
-                <Tabs.Panel value="Photos" pt="lg">
+                {/* Media Capture Subpanel */}
+                <Tabs.Panel value="Photos" pt="md">
                   {report?.photos?.length > 0 ? (
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                       {report?.photos.map((p, index) => (
-                        <Stack gap={"xs"} key={index}>
-                          <Image
-                            src={`${SERVER_IP}${p.image}`}
-                            alt={p.description || "Damage photo"}
-                            radius="md"
-                            fallbackSrc="https://placehold.co/600x400?text=Image+Not+Found"
-                            style={{ border: "1px solid #E2E8F0" }}
-                          />
-                          <Text size="sm" c="dimmed" ta="center">
-                            {p.description}
-                          </Text>
-                        </Stack>
+                        <Paper key={index} withBorder p="xs" radius="md" bg="#FCFDFD" style={{ borderColor: "#EAECEF" }}>
+                          <Stack gap="xs">
+                            <Image
+                              src={`${SERVER_IP}${p.image}`}
+                              alt={p.description || "Damage site visual baseline evidence"}
+                              radius="sm"
+                              h={180}
+                              fit="cover"
+                              fallbackSrc="https://placehold.co/600x400?text=Evidence+Asset+Missing"
+                            />
+                            {p.description && (
+                              <Text size="xs" c="dark.3" fw={500} ta="center" ff="Poppins" lineClamp={1}>
+                                {p.description}
+                              </Text>
+                            )}
+                          </Stack>
+                        </Paper>
                       ))}
                     </SimpleGrid>
                   ) : (
-                    <Paper withBorder p="xl" radius="md" bg="#F8FAFC">
-                      <Text
-                        size="sm"
-                        c="dimmed"
-                        fs="italic"
-                        ta="center"
-                        ff="Poppins"
-                      >
-                        No visual evidence attached to this report.
-                      </Text>
+                    <Paper withBorder p="xl" radius="md" bg="#F8FAFC" style={{ borderStyle: "dashed" }}>
+                      <Stack align="center" gap="xs" c="dimmed">
+                        <IconPhotoOff size={28} stroke={1.5} />
+                        <Text size="xs" ff="Poppins" fs="italic" ta="center">
+                          No visual digital evidence metadata attached to this dynamic log.
+                        </Text>
+                      </Stack>
                     </Paper>
                   )}
                 </Tabs.Panel>
 
-                <Tabs.Panel value="Questions" pt="lg">
-                  <ScrollArea h={350} type="auto" offsetScrollbars>
-                    <QuestionsTabView
-                      impactReportId={report?.id}
-                      natureOfCrisis={report?.nature_of_crisis}
-                      report={report}
-                    />
+                {/* Form Processing Subpanels */}
+                <Tabs.Panel value="Questions" pt="md">
+                  <ScrollArea h={320} type="auto" offsetScrollbars>
+                    <Box pr="sm">
+                      <QuestionsTabViewView
+                        impactReportId={report?.id}
+                        natureOfCrisis={report?.nature_of_crisis}
+                        report={report}
+                      />
+                    </Box>
                   </ScrollArea>
                 </Tabs.Panel>
 
-                <Tabs.Panel value="Surveys" pt="lg">
-                  <ScrollArea h={350} type="auto" offsetScrollbars>
-                    <SurveyTabView
-                      impactReportId={report?.id}
-                      natureOfCrisis={report?.nature_of_crisis}
-                      report={report}
-                    />
+                <Tabs.Panel value="Surveys" pt="md">
+                  <ScrollArea h={320} type="auto" offsetScrollbars>
+                    <Box pr="sm">
+                      <SurveyTabView
+                        impactReportId={report?.id}
+                        natureOfCrisis={report?.nature_of_crisis}
+                        report={report}
+                      />
+                    </Box>
                   </ScrollArea>
                 </Tabs.Panel>
               </Tabs>
             </Box>
           )}
 
-          {/* Interactive Footer Toggle */}
+          {/* Collapsible Action Footer Segment */}
           <UnstyledButton
             onClick={toggleShowMore}
             style={{
               width: "100%",
-              padding: "16px",
-              borderTop: "1px solid #E2E8F0",
+              padding: "14px xl",
+              borderTop: "1px solid #EAECEF",
               backgroundColor: showMore ? "#F8FAFC" : "#ffffff",
               borderBottomLeftRadius: "var(--mantine-radius-lg)",
               borderBottomRightRadius: "var(--mantine-radius-lg)",
-              transition: "background-color 0.2s ease",
+              transition: "background-color 0.15s ease",
+            }}
+            styles={{
+              root: {
+                "&:hover": { backgroundColor: "var(--mantine-color-gray-0)" }
+              }
             }}
           >
-            <Group justify="space-between" align="center" wrap="nowrap">
-              <Group gap="xs">
-                <ThemeIcon color="gray" variant="subtle" size="sm">
-                  <IconUserFilled size={16} />
+            <Group justify="space-between" align="center" wrap="nowrap" px="xl" py="xs">
+              <Group gap="xs" style={{ minWidth: 0 }}>
+                <ThemeIcon color="var(--mantine-color-gray-5)" variant="subtle" size="sm">
+                  <IconUserFilled size={15} />
                 </ThemeIcon>
-                <Text size="sm" fw={600} c="#64748B" ff="Poppins">
-                  {" "}
-                  <Text component="span" c="#0D3B66">
-                    {report?.reported_by?.user || report?.anonymous_reported_by}
+                <Text size="xs" fw={600} c="dimmed" ff="Poppins" lineClamp={1}>
+                  Operator:{" "}
+                  <Text component="span" c="#0D3B66" fw={700}>
+                    {report?.reported_by?.user || report?.anonymous_reported_by || "Anonymous Field Officer"}
                   </Text>
                 </Text>
               </Group>
 
-              <Group gap={4}>
-                <Text size="sm" fw={600} c="#009C9A" ff="Poppins">
-                  {showMore ? "Hide Details" : "View Media & Details"}
+              <Group gap={4} style={{ flexShrink: 0 }}>
+                <Text size="xs" fw={700} c="#009C9A" ff="Poppins" style={{ letterSpacing: "0.02em" }}>
+                  {showMore ? "Collapse Context" : "Expand Matrix Data"}
                 </Text>
                 {showMore ? (
-                  <IconChevronUp size={20} color="#009C9A" />
+                  <IconChevronUp size={16} color="#009C9A" stroke={2.5} />
                 ) : (
-                  <IconChevronDown size={20} color="#009C9A" />
+                  <IconChevronDown size={16} color="#009C9A" stroke={2.5} />
                 )}
               </Group>
             </Group>
