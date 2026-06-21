@@ -15,6 +15,8 @@ import {
   Pagination,
   Drawer,
   Badge,
+  Title,
+  SimpleGrid,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
@@ -25,9 +27,11 @@ import {
   IconPlus,
   IconCalendar,
   IconInfoCircle,
+  IconUser,
+  IconAlertTriangle,
 } from "@tabler/icons-react";
 import { getNearestCity } from "offline-geocode-city";
-import { COLORS, SEVERITY_CONFIG } from "../utils";
+import { COLORS, SEVERITY_CONFIG, timeAgo } from "../utils";
 import { HeaderCardPage } from "./adminPage";
 import api from "../api";
 import { QuestionGroupModal } from "../QuestionGroupModal";
@@ -66,40 +70,51 @@ export function ReportsPage() {
   }, []);
 
   return (
-    <Box bg={COLORS.lightBackground} minHeight="100vh" py="md" px="lg">
+    <Box bg={COLORS.lightBackground} style={{ minHeight: "100vh" }} py="md" px="lg">
       <Container size="xl">
-        <Group justify="space-between" mb="xl">
-          <Group>
-            <Text size="xs" c="dimmed" fw={700} lts={1}>UNDP</Text>
-            <Text size="xl" fw={700} c={COLORS.darkBlue} style={{ marginTop: -5 }}>Reports</Text>
-          </Group>
+        {/* Professional Top Header */}
+        <Card shadow="sm" withBorder radius="lg" mb="xl" p="lg">
+          <Group justify="space-between" align="center">
+            <Group>
+              <Text size="xs" c="dimmed" fw={700} lts={1}>UNDP</Text>
+              <Title order={3} fw={700} c={COLORS.darkBlue} style={{ marginTop: -4 }}>
+                Impact Reports
+              </Title>
+            </Group>
 
-          <Group gap="md">
-            <Select
-              placeholder="Select date range"
-              defaultValue={selectedDateRange}
-              data={formattedData}
-              onChange={(value) => setSelectedDateRange(value)}
-              rightSection={<IconChevronDown size={14} />}
-              radius="md"
-              w={130}
-            />
-            <Button bg={COLORS.primaryTeal} leftSection={<IconDownload size={16} />} radius="md">
-              Export
-            </Button>
-            <ActionIcon variant="default" size="lg" radius="md">
-              <IconBell size={18} stroke={1.5} />
-            </ActionIcon>
-            <Divider orientation="vertical" />
-            <Group gap="xs">
-              <Avatar color="blue" radius="xl">KS</Avatar>
-              <Box>
-                <Text size="sm" fw={600}>Karim S.</Text>
-                <Text size="xs" c="dimmed">Responder - KE</Text>
-              </Box>
+            <Group gap="md">
+              <Select
+                placeholder="Select date range"
+                defaultValue={selectedDateRange}
+                data={formattedData}
+                onChange={(value) => setSelectedDateRange(value)}
+                rightSection={<IconChevronDown size={14} />}
+                radius="md"
+                w={160}
+                size="sm"
+              />
+              <Button
+                bg={COLORS.primaryTeal}
+                leftSection={<IconDownload size={16} />}
+                radius="md"
+                size="sm"
+              >
+                Export Reports
+              </Button>
+              <ActionIcon variant="default" size="lg" radius="md">
+                <IconBell size={18} stroke={1.5} />
+              </ActionIcon>
+              <Divider orientation="vertical" />
+              <Group gap="xs">
+                <Avatar color="blue" radius="xl">KS</Avatar>
+                <Box>
+                  <Text size="sm" fw={600}>Karim S.</Text>
+                  <Text size="xs" c="dimmed">Responder - KE</Text>
+                </Box>
+              </Group>
             </Group>
           </Group>
-        </Group>
+        </Card>
 
         <HeaderCardPage />
         <ReportDataTablePage crisesReportList={crisesReportList} />
@@ -113,20 +128,14 @@ export function ReportDataTablePage({ crisesReportList }) {
   const [selectedSeverity, setSelectedSeverity] = useState(null);
   const [selectedRegion, setSelectedRegion] = useState(null);
 
-  // Modal disclosures for Question System Configuration Modal
   const [opened, { open, close }] = useDisclosure(false);
-
-  // Drawer disclosures for the Side-Detail panel View
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
-
   const [selectedReport, setSelectedReport] = useState(null);
 
   const ITEMS_PER_PAGE = 10;
 
-  // Safe wrapper parsing methodology logic to safely resolve getNearestCity object types
   const renderValidatedCity = (report) => {
     const coords = report?.annotations?.incident_point?.geometry?.coordinates;
-
     let lng = coords?.[1];
     let lat = coords?.[0];
 
@@ -149,15 +158,27 @@ export function ReportDataTablePage({ crisesReportList }) {
     return result?.cityName || "Unknown Region";
   };
 
-  // Triggers whenever a table row line block item is focused
+  const safeString = (value) => {
+    if (value == null) return "N/A";
+    if (typeof value === "string") return value;
+    if (typeof value === "number") return value.toString();
+    if (typeof value === "object") {
+      if (value?.user?.full_name) return value.user.full_name;
+      if (value?.name) return value.name;
+      if (value?.username) return value.username;
+      if (value?.full_name) return value.full_name;
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
+
   const handleRowClickTrigger = (report) => {
     setSelectedReport(report);
     openDrawer();
   };
 
-  // Dedicated workflow execution button mapping anchor override
   const handleActionModalTrigger = (e, report) => {
-    e.stopPropagation(); // Stops row drawer panel collection framework from overlaying
+    e.stopPropagation();
     setSelectedReport(report);
     open();
   };
@@ -181,53 +202,94 @@ export function ReportDataTablePage({ crisesReportList }) {
   const paginatedData = filteredData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   return (
-    <Card padding="lg" radius="lg" shadow="xs">
+    <Card padding="xl" radius="lg" shadow="sm" withBorder>
       <Group justify="space-between" mb="xl">
-        <Box><Text fw={700} size="lg" c={COLORS.darkBlue}>Recent Reports</Text></Box>
-        <Group gap="xs">
-          <Select placeholder="All severities" data={dynamicSeverities} value={selectedSeverity} onChange={(v) => { setSelectedSeverity(v); setActivePage(1); }} clearable w={140} radius="md" size="xs" />
-          <Select placeholder="All regions" data={dynamicRegions} value={selectedRegion} onChange={(v) => { setSelectedRegion(v); setActivePage(1); }} clearable w={140} radius="md" size="xs" />
+        <Title order={4} fw={700} c={COLORS.darkBlue}>Recent Reports</Title>
+        <Group gap="sm">
+          <Select
+            placeholder="All severities"
+            data={dynamicSeverities}
+            value={selectedSeverity}
+            onChange={(v) => { setSelectedSeverity(v); setActivePage(1); }}
+            clearable
+            w={160}
+            radius="md"
+            size="sm"
+          />
+          <Select
+            placeholder="All regions"
+            data={dynamicRegions}
+            value={selectedRegion}
+            onChange={(v) => { setSelectedRegion(v); setActivePage(1); }}
+            clearable
+            w={160}
+            radius="md"
+            size="sm"
+          />
         </Group>
       </Group>
 
-      <Table.ScrollContainer minWidth={800}>
-        <Table verticalSpacing="md" horizontalSpacing="md" highlightOnHover>
+      <Table.ScrollContainer minWidth={900}>
+        <Table verticalSpacing="md" horizontalSpacing="lg" highlightOnHover>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th><Text size="xs" c="dimmed" fw={700}>INFRASTRUCTURE NAME</Text></Table.Th>
-              <Table.Th><Text size="xs" c="dimmed" fw={700}>LOCATION</Text></Table.Th>
-              <Table.Th><Text size="xs" c="dimmed" fw={700}>SEVERITY</Text></Table.Th>
-              <Table.Th ta="right"><Text size="xs" c="dimmed" fw={700}>Updated</Text></Table.Th>
-              <Table.Th ta="right"><Text size="xs" c="dimmed" fw={700}>ACTIONS</Text></Table.Th>
+              <Table.Th><Text size="xs" c="dimmed" fw={700} tt="uppercase">Infrastructure</Text></Table.Th>
+              <Table.Th><Text size="xs" c="dimmed" fw={700} tt="uppercase">Location</Text></Table.Th>
+              <Table.Th><Text size="xs" c="dimmed" fw={700} tt="uppercase">Severity</Text></Table.Th>
+              <Table.Th ta="right"><Text size="xs" c="dimmed" fw={700} tt="uppercase">Updated</Text></Table.Th>
+              <Table.Th ta="right" w={140}><Text size="xs" c="dimmed" fw={700} tt="uppercase">Actions</Text></Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {paginatedData.length > 0 ? (
               paginatedData.map((report) => (
-                <Table.Tr key={report?.id} onClick={() => handleRowClickTrigger(report)} style={{ cursor: "pointer" }}>
+                <Table.Tr
+                  key={report?.id}
+                  onClick={() => handleRowClickTrigger(report)}
+                  style={{ cursor: "pointer" }}
+                >
                   <Table.Td>
-                    <Stack gap={2}>
-                      <Text size="sm" fw={700} c={COLORS.darkBlue}>{report?.infrastructure_name || "N/A"}</Text>
-                      <Text size="xs" c="dimmed">{report?.infrastructure_type?.includes("(") ? report?.infrastructure_type.split("(")[0] : report?.infrastructure_type}</Text>
+                    <Stack gap={3}>
+                      <Text size="sm" fw={600} c={COLORS.darkBlue}>
+                        {report?.infrastructure_name || "N/A"}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        {report?.infrastructure_type?.includes("(")
+                          ? report?.infrastructure_type.split("(")[0]
+                          : report?.infrastructure_type || "—"}
+                      </Text>
                     </Stack>
                   </Table.Td>
                   <Table.Td>
-                    <Group gap={4} c="dimmed">
-                      <IconMapPin size={14} />
+                    <Group gap={6} wrap="nowrap">
+                      <IconMapPin size={16} color="#64748b" />
                       <Text size="sm">{renderValidatedCity(report)}</Text>
                     </Group>
                   </Table.Td>
                   <Table.Td>
-                    <Text size="sm" c={SEVERITY_CONFIG[report?.damage_severity?.toLowerCase()]?.color || "gray"}>
-                      {report?.damage_severity}
+                    <Badge
+                      color={SEVERITY_CONFIG[report?.damage_severity?.toLowerCase()]?.color || "gray"}
+                      variant="light"
+                      radius="md"
+                      size="md"
+                    >
+                      {report?.damage_severity || "Unknown"}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td ta="right">
+                    <Text size="sm" c="dimmed">
+                      {report?.damage_datetime
+                        ? new Date(report.damage_datetime).toLocaleDateString()
+                        : "N/A"}
                     </Text>
                   </Table.Td>
                   <Table.Td ta="right">
-                    {report?.damage_datetime ? new Date(report.damage_datetime).toLocaleDateString() : "N/A"}
-                  </Table.Td>
-                  <Table.Td ta="right">
                     <Button
-                      size="xs" variant="light" color="teal" radius="md" leftSection={<IconPlus size={12} />}
+                      size="xs"
+                      variant="light"
+                      color="teal"
+                      radius="md"
+                      leftSection={<IconPlus size={14} />}
                       onClick={(e) => handleActionModalTrigger(e, report)}
                     >
                       Add Question
@@ -236,7 +298,11 @@ export function ReportDataTablePage({ crisesReportList }) {
                 </Table.Tr>
               ))
             ) : (
-              <Table.Tr><Table.Td colSpan={5} ta="center" py="xl"><Text c="dimmed" size="sm">No records found.</Text></Table.Td></Table.Tr>
+              <Table.Tr>
+                <Table.Td colSpan={5} ta="center" py="xl">
+                  <Text c="dimmed" size="sm">No records found.</Text>
+                </Table.Td>
+              </Table.Tr>
             )}
           </Table.Tbody>
         </Table>
@@ -244,78 +310,192 @@ export function ReportDataTablePage({ crisesReportList }) {
 
       {totalPages > 1 && (
         <Group justify="flex-end" mt="xl">
-          <Pagination total={totalPages} value={activePage} onChange={setActivePage} radius="md" withEdges />
+          <Pagination
+            total={totalPages}
+            value={activePage}
+            onChange={setActivePage}
+            radius="md"
+            withEdges
+            size="sm"
+          />
         </Group>
       )}
 
-      {/* Dynamic Row Detail Inspector Side-Drawer Interface */}
+      {/* Enhanced Professional Detail Drawer */}
       <Drawer
         opened={drawerOpened}
         onClose={closeDrawer}
-        title={<Text style={{ color: COLORS.darkBlue, fontWeight: 700, fontSize: "18px" }}>Impact Incident Deep View</Text>}
         position="right"
-        size="md"
-        padding="xl"
+        size="lg"
+        padding={0}
+        title={null}
       >
         {selectedReport && (
-          <Stack gap="lg" pt="md">
-            <Box p="md" style={{ backgroundColor: "#F8FAFC", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
-              <Text size="xs" c="dimmed" fw={700} lts={1}>INFRASTRUCTURE NAME</Text>
-              <Text size="lg" fw={700} c={COLORS.darkBlue} mt={2}>{selectedReport?.infrastructure_name || "N/A"}</Text>
-              <Text size="xs" c="dimmed" mt={4}>Type: {selectedReport?.infrastructure_type || "General Asset Structure"}</Text>
-            </Box>
-
-            <Group justify="space-between" wrap="nowrap">
-              <Box>
-                <Group gap={6} c="dimmed" mb={4}><IconMapPin size={14} /><Text size="xs" fw={700} lts={0.5}>GEOGRAPHIC CITY</Text></Group>
-                <Text size="sm" fw={600} c="#334155">{renderValidatedCity(selectedReport)}</Text>
-              </Box>
-              <Box ta="right">
-                <Text size="xs" c="dimmed" fw={700} lts={0.5} mb={4}>DAMAGE SEVERITY</Text>
-                <Badge color={SEVERITY_CONFIG[selectedReport?.damage_severity?.toLowerCase()]?.color || "gray"} size="md" radius="sm">
+          <Box style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+            {/* Header */}
+            <Box p="xl" style={{ borderBottom: "1px solid #e2e8f0", backgroundColor: "#fff" }}>
+              <Group justify="space-between" align="center">
+                <Box>
+                  <Title order={4} c={COLORS.darkBlue}>Impact Incident Details</Title>
+                  <Text size="xs" c="dimmed" mt={4}>
+                    {timeAgo(selectedReport.damage_datetime)}
+                  </Text>
+                </Box>
+                <Badge
+                  color={SEVERITY_CONFIG[selectedReport?.damage_severity?.toLowerCase()]?.color || "gray"}
+                  size="lg"
+                  radius="md"
+                  variant="filled"
+                >
                   {selectedReport?.damage_severity || "Unknown"}
                 </Badge>
-              </Box>
-            </Group>
-
-            <Divider color="#F1F5F9" />
-
-            <Stack gap="xs">
-              <Group gap={6} c="dimmed"><IconCalendar size={14} /><Text size="xs" fw={700}>TIMESTAMP LOGGED</Text></Group>
-              <Text size="sm" c="#334155">
-                {selectedReport?.damage_datetime ? new Date(selectedReport.damage_datetime).toLocaleString() : "No timestamp associated"}
-              </Text>
-            </Stack>
-
-            <Stack gap="xs">
-              <Group gap={6} c="dimmed"><IconInfoCircle size={14} /><Text size="xs" fw={700}>CRISIS LOCATION</Text></Group>
-              <Text size="sm" c="#475569" style={{ lineHeight: 1.5 }}>
-                {renderValidatedCity(selectedReport)} <code style={{ backgroundColor: "#F1F5F9", padding: "2px 6px", borderRadius: "4px" }}>[{selectedReport?.annotations?.incident_point?.geometry?.coordinates[0].toFixed(3)}, {selectedReport?.annotations?.incident_point?.geometry?.coordinates[1].toFixed(3)}]</code>
-
-              </Text>
-            </Stack>
-
-            <Box mt="xl">
-              <Button
-                fullWidth color="teal" variant="light" radius="md" leftSection={<IconPlus size={16} />}
-                onClick={(e) => {
-                  closeDrawer();
-                  handleActionModalTrigger(e, selectedReport);
-                }}
-              >
-                Add Survery Questions
-              </Button>
+              </Group>
             </Box>
-          </Stack>
+
+            <Box p="xl" style={{ flex: 1, overflow: "auto" }}>
+              <Stack gap="xl">
+                {/* Infrastructure */}
+                <Card withBorder radius="md" padding="lg" bg="#f8fafc">
+                  <Text size="xs" c="dimmed" fw={700} tt="uppercase" mb={8}>Infrastructure Asset</Text>
+                  <Text size="xl" fw={700} c={COLORS.darkBlue}>
+                    {selectedReport?.infrastructure_name || "Unnamed Asset"}
+                  </Text>
+                  <Text size="sm" c="dimmed" mt={4}>
+                    {selectedReport?.infrastructure_type || "General Infrastructure"}
+                  </Text>
+                </Card>
+
+                <SimpleGrid cols={2} spacing="lg">
+                  {/* Location */}
+                  <Card withBorder radius="md" padding="lg">
+                    <Group gap={8} mb={12}>
+                      <IconMapPin size={20} color="#64748b" />
+                      <Text size="xs" fw={700} c="dimmed" tt="uppercase">Location</Text>
+                    </Group>
+                    <Text size="lg" fw={600} mb={6}>
+                      {renderValidatedCity(selectedReport)}
+                    </Text>
+                    <Text size="sm" style={{ fontFamily: "monospace", color: "#475569" }}>
+                      {selectedReport?.annotations?.incident_point?.geometry?.coordinates?.[0]?.toFixed(4) || "—"},&nbsp;
+                      {selectedReport?.annotations?.incident_point?.geometry?.coordinates?.[1]?.toFixed(4) || "—"}
+                    </Text>
+                  </Card>
+
+                  {/* Reported By */}
+                  <Card withBorder radius="md" padding="lg">
+                    <Group gap={8} mb={12}>
+                      <IconUser size={20} color="#64748b" />
+                      <Text size="xs" fw={700} c="dimmed" tt="uppercase">Reported By</Text>
+                    </Group>
+                    <Text size="sm" fw={600}>
+                      {safeString(selectedReport?.reported_by.user)}
+                    </Text>
+                    <Text size="xs" c="dimmed" mt={4}>
+                      {selectedReport?.organization || "UNDP Local Team"}
+                    </Text>
+                  </Card>
+                </SimpleGrid>
+
+                <Divider />
+
+                {/* Impact Assessment */}
+                <Box>
+                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="md">Impact Assessment</Text>
+                  <Stack gap="md">
+                    {selectedReport?.damage_description && (
+                      <Box>
+                        <Text size="xs" c="dimmed" fw={700} mb={6}>Damage Description</Text>
+                        <Text size="sm" style={{ lineHeight: 1.6 }}>
+                          {selectedReport.damage_description}
+                        </Text>
+                      </Box>
+                    )}
+
+                    {selectedReport?.impact_notes && (
+                      <Box>
+                        <Text size="xs" c="dimmed" fw={700} mb={6}>Impact Notes</Text>
+                        <Text size="sm" style={{ lineHeight: 1.6 }}>
+                          {selectedReport.impact_notes}
+                        </Text>
+                      </Box>
+                    )}
+
+                    <SimpleGrid cols={2} spacing="md">
+                      {selectedReport?.affected_population && (
+                        <Box>
+                          <Text size="xs" c="dimmed" fw={700}>Affected Population</Text>
+                          <Text size="lg" fw={700} c={COLORS.darkBlue}>
+                            {selectedReport.affected_population}
+                          </Text>
+                        </Box>
+                      )}
+                      {selectedReport?.estimated_cost && (
+                        <Box>
+                          <Text size="xs" c="dimmed" fw={700}>Estimated Cost</Text>
+                          <Text size="lg" fw={700} c={COLORS.darkBlue}>
+                            ${selectedReport.estimated_cost}
+                          </Text>
+                        </Box>
+                      )}
+                    </SimpleGrid>
+                  </Stack>
+                </Box>
+
+                <Divider />
+
+                {/* Technical Details */}
+                <Box>
+                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="md">Technical Details</Text>
+                  <Stack gap="xs">
+                    <Group justify="space-between">
+                      <Text size="sm" c="dimmed">Timestamp Logged</Text>
+                      <Text size="sm">
+                        {selectedReport?.damage_datetime
+                          ? new Date(selectedReport.damage_datetime).toLocaleString()
+                          : "N/A"}
+                      </Text>
+                    </Group>
+
+                    {selectedReport?.status && (
+                      <Group justify="space-between">
+                        <Text size="sm" c="dimmed">Current Status</Text>
+                        <Badge color="blue" variant="light">{safeString(selectedReport.status)}</Badge>
+                      </Group>
+                    )}
+
+                    {selectedReport?.annotations?.incident_point && (
+                      <Group justify="space-between" align="flex-start">
+                        <Text size="sm" c="dimmed">Incident Point</Text>
+                        <Text size="sm" style={{ fontFamily: "monospace", textAlign: "right" }}>
+                          {JSON.stringify(selectedReport.annotations.incident_point.geometry.coordinates)}
+                        </Text>
+                      </Group>
+                    )}
+                  </Stack>
+                </Box>
+
+                <Button
+                  fullWidth
+                  color="teal"
+                  variant="light"
+                  radius="md"
+                  size="md"
+                  leftSection={<IconPlus size={18} />}
+                  mt="xl"
+                  onClick={(e) => {
+                    closeDrawer();
+                    handleActionModalTrigger(e, selectedReport);
+                  }}
+                >
+                  Add Survey Questions
+                </Button>
+              </Stack>
+            </Box>
+          </Box>
         )}
       </Drawer>
 
-      {/* Main configuration questionnaire workflow injection modal overlay context structure */}
-      <QuestionGroupModal
-        opened={opened}
-        onClose={close}
-        report={selectedReport}
-      />
+      <QuestionGroupModal opened={opened} onClose={close} report={selectedReport} />
     </Card>
   );
 }
