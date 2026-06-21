@@ -28,13 +28,14 @@ import {
   IconBuilding,
 } from "@tabler/icons-react";
 
-import { timeAgo } from "../utils";
-
+import { timeAgo, swapAnnotationPointCoords } from "../utils";
+import CirMap from "../map/CirMap";
 import QuestionsTabView from "../QuestionsTabView";
 import SurveyTabView from "../SurveyTabView";
 
 export default function ReportDetailsView({ report }) {
   const [showMore, setShowMore] = useState(true);
+  const [showMapView, setShowMapView] = useState(false);
 
   const toggleShowMore = (e) => {
     e.preventDefault();
@@ -259,19 +260,40 @@ export default function ReportDetailsView({ report }) {
                         size="lg"
                         radius="md"
                         aria-label="View on map"
-                        onClick={() => {
-                          // setShowMapView(true);
-                          // setLocation([
-                          //   report?.location?.infrastructure_latitude,
-                          //   report?.location?.infrastructure_longitude,
-                          // ]);
-                        }}
+                        onClick={() => setShowMapView((v) => !v)}
                       >
                         <IconExternalLink size={20} stroke={2} />
                       </ActionIcon>
                     )}
                 </Group>
               </Paper>
+
+              {showMapView &&
+                report?.location?.infrastructure_latitude &&
+                report?.location?.infrastructure_longitude && (
+                  <Box
+                    style={{
+                      height: 300,
+                      borderRadius: 8,
+                      overflow: "hidden",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <CirMap
+                      center={[
+                        report.location.infrastructure_latitude,
+                        report.location.infrastructure_longitude,
+                      ]}
+                      zoom={14}
+                      height="300px"
+                      annotations={
+                        report.annotations
+                          ? swapAnnotationPointCoords(report.annotations)
+                          : undefined
+                      }
+                    />
+                  </Box>
+                )}
 
               {/* <Paper
                 withBorder
