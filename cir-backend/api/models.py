@@ -154,7 +154,6 @@ class ImpactReport(models.Model):
     damage_datetime = models.DateTimeField(
         blank=True, null=True, help_text="Date and time when the incident occurred. If unknown, this can be left blank.")
 
-
     electricity_condition = models.CharField(
         max_length=20,
         choices=ElectrictyDamageLevel.choices,

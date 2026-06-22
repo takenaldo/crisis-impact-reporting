@@ -25,7 +25,7 @@ import {
 
 import { ReportsPage } from "./ReportsPage";
 import { SettingsPage } from "./settingPage";
-import { TeamsPage } from "./TeamsPage";
+import { AccountsPage } from "./AccountsPage";
 import { AnalyticsPage } from "./analyticsPage";
 import { DashboardPage } from "./adminPage";
 import { CrisisMapPage } from "./crisisMap";
@@ -47,7 +47,7 @@ const navItems = [
   { label: "Crisis Map", icon: IconMap },
   { label: "Reports", icon: IconFileText },
   { label: "Analytics", icon: IconChartBar },
-  { label: "Teams", icon: IconUsers },
+  { label: "Accounts", icon: IconUsers },
   { label: "Settings", icon: IconSettings },
 ];
 
@@ -65,8 +65,8 @@ export function CrisisImpactAdminDashboard() {
         return <ReportsPage />;
       case "Analytics":
         return <AnalyticsPage />;
-      case "Teams":
-        return <TeamsPage />;
+      case "Accounts":
+        return <AccountsPage />;
       case "Settings":
         return <SettingsPage />;
       default:

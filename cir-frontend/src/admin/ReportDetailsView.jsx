@@ -29,7 +29,8 @@ import {
   IconPhotoOff,
 } from "@tabler/icons-react";
 
-import { timeAgo } from "../utils";
+import { timeAgo, swapAnnotationPointCoords } from "../utils";
+import CirMap from "../map/CirMap";
 import QuestionsTabViewView from "../QuestionsTabView";
 import SurveyTabView from "../SurveyTabView";
 import { SERVER_IP } from "../constants";
@@ -49,6 +50,7 @@ const getSeverityTheme = (severity) => {
 
 export default function ReportDetailsView({ report }) {
   const [showMore, setShowMore] = useState(true);
+  const [showMapView, setShowMapView] = useState(false);
   const [showPDF, setShowPDF] = useState(false);
 
   const toggleShowMore = (e) => {
@@ -226,6 +228,7 @@ export default function ReportDetailsView({ report }) {
                           color="#009C9A"
                           size="lg"
                           radius="md"
+                          onClick={() => setShowMapView((v) => !v)}
                           aria-label="View on external map dashboard"
                           style={{ border: "1px solid #EAECEF" }}
                         >
@@ -234,6 +237,33 @@ export default function ReportDetailsView({ report }) {
                       )}
                   </Group>
                 </Paper>
+
+              {showMapView &&
+                report?.location?.infrastructure_latitude &&
+                report?.location?.infrastructure_longitude && (
+                  <Box
+                    style={{
+                      height: 300,
+                      borderRadius: 8,
+                      overflow: "hidden",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <CirMap
+                      center={[
+                        report.location.infrastructure_latitude,
+                        report.location.infrastructure_longitude,
+                      ]}
+                      zoom={14}
+                      height="300px"
+                      annotations={
+                        report.annotations
+                          ? swapAnnotationPointCoords(report.annotations)
+                          : undefined
+                      }
+                    />
+                  </Box>
+                )}
 
                 {/* Dispatch / Capture Timestamp */}
                 <Group gap={4} justify="flex-end" px={4}>
