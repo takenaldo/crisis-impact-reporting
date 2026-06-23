@@ -35,6 +35,10 @@ import {
   IconFolderFilled,
   IconReport,
   IconReportSearch,
+  IconAlarm,
+  IconMessageCircleExclamation,
+  IconXxx,
+  IconAlertTriangle,
 } from "@tabler/icons-react";
 import {
   MapContainer,
@@ -310,7 +314,7 @@ export function HeaderCardPage({ selectedDateRange }) {
           urls.getReportsByDate + selectedDateRange
         );
         console.log("+++++++++++++++++++++" + response.data);
-         setCrisesReportList(response.data);
+        setCrisesReportList(response.data);
         console.log("Fetched crises:", response.data);
       } catch (error) {
         console.error("Error fetching crises:", error);
@@ -383,7 +387,7 @@ export function HeaderCardPage({ selectedDateRange }) {
                 bg="#EEF4FC"
                 c="#2B6CB0"
               >
-                <IconFolder
+                <IconAlertTriangle
                   size={20}
                   color={
                     SEVERITY_CONFIG[severity.toLowerCase()] == undefined

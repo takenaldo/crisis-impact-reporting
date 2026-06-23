@@ -99,6 +99,26 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
         ser = ImpactReportSerializer(data=data)
         ser.is_valid(raise_exception=True)
         report: ImpactReport = ser.save()
+        
+        
+        # 1. Grab the annotations safely
+        annotations = report.annotations or {}
+
+        incident_point = annotations.get("incident_point") or {}
+        geometry = incident_point.get("geometry") or {}
+        coords = geometry.get("coordinates")
+
+        if coords and isinstance(coords, list) and len(coords) == 2:
+            # 2. Perform the swap
+            geometry["coordinates"] = [coords[1], coords[0]]
+            
+            # 3. REASSIGN the modified dict back to the report object
+            report.annotations = annotations
+            
+            # 4. Save the object
+            # report.save()
+            report.save(update_fields=['annotations'])
+
 
         if annotations_raw:
             try:
@@ -124,43 +144,47 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
         # send survey invitation mai;l for users in the surrounding of the impact
         users_to_receive_survey_email = []
         for user in User.objects.all():
-            if user.email:
-                
-                if not user.location.latitude or not user.location.longitude:
-                    continue
-                            
-                try:
-                    # TODO: lat lng are swapped by mistake, 
-                    report_lat = report.annotations['incident_point']['geometry']['coordinates'][1]; 
-                    report_lng = report.annotations['incident_point']['geometry']['coordinates'][0];
-
+            try:
+                if user.email:
                     
-                except Exception as e:
-                    continue
-                
-                distance_threshold_in_km = 100 # KM
-                
-                # TODO: change this to annotation latlng
-                # Skip if missing necessary geospatial data
-                if report_lat is None or report_lng is None or distance_threshold_in_km is None:
-                    continue
-                
-                    
-                # Convert degrees to radians
-                lat1, lon1 = math.radians(user.location.latitude), math.radians(user.location.longitude)
-                lat2, lon2 = math.radians(report_lat), math.radians(report_lng)
-                
-                dlat = lat2 - lat1
-                dlon = lon2 - lon1
-                
-                # Haversine formula
-                a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
-                c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-                distance = 6371 * c 
+                        
+                    if not user.location.latitude or not user.location.longitude:
+                        continue
+                                
+                    try:
+                        # TODO: lat lng are swapped by mistake, 
+                        report_lat = report.annotations['incident_point']['geometry']['coordinates'][1]; 
+                        report_lng = report.annotations['incident_point']['geometry']['coordinates'][0];
 
-                # Check if user is within the specific question's allowed threshold
-                if distance <= distance_threshold_in_km:
-                    users_to_receive_survey_email.append(user)
+                        
+                    except Exception as e:
+                        continue
+                    
+                    distance_threshold_in_km = 100 # KM
+                    
+                    # TODO: change this to annotation latlng
+                    # Skip if missing necessary geospatial data
+                    if report_lat is None or report_lng is None or distance_threshold_in_km is None:
+                        continue
+                    
+                        
+                    # Convert degrees to radians
+                    lat1, lon1 = math.radians(user.location.latitude), math.radians(user.location.longitude)
+                    lat2, lon2 = math.radians(report_lat), math.radians(report_lng)
+                    
+                    dlat = lat2 - lat1
+                    dlon = lon2 - lon1
+                    
+                    # Haversine formula
+                    a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+                    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+                    distance = 6371 * c 
+
+                    # Check if user is within the specific question's allowed threshold
+                    if distance <= distance_threshold_in_km:
+                        users_to_receive_survey_email.append(user)
+            except:
+                continue
 
         if len(users_to_receive_survey_email) > 0:                
             for u in users_to_receive_survey_email:      

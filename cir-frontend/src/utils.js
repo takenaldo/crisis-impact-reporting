@@ -74,10 +74,10 @@ export const CRISIS_CONFIG = {
 
 export const SEVERITY_CONFIG = {
     complete: { label: "Critical", color: "red", bg: "red" },
-    partial: { label: "High", color: "#e67e22", bg: "#fdebd0" },
-    minimal: { label: "Medium", color: "#f0b400", bg: "#fef9e7" },
-    low: { label: "Low", color: "#27ae60", bg: "#e9f7ef" },
-    no_Damage: { label: "Low", color: "#27ae60", bg: "#e9f7ef" },
+    partial: { label: "High", color: "var(--color-red-orange)", bg: "#fdebd0" },
+    minimal: { label: "Medium", color: "var(--color-amber)", bg: "#fef9e7" },
+    low: { label: "Low", color: "var(--color-navy)", bg: "#e9f7ef" },
+    no_Damage: { label: "Low", color: "var(--color-teal)", bg: "#e9f7ef" },
 
 };
 
@@ -235,9 +235,110 @@ export function swapAnnotationPointCoords(annotations) {
  * Categorizes an array of report objects based on proximity and time rules.
  * Returns an object with match groups as keys and arrays of items as values.
  */
+// export function getCategorizeReports(reports, distanceThreshold = 100, timeRangeThresholdHrs = 48) {
+
+
+
+//     const n = reports.length;
+//     const edges = [];
+
+//     // 1. Compare all items against each other to find matches
+//     for (let i = 0; i < n; i++) {
+//         for (let j = i + 1; j < n; j++) {
+//             try {
+//                 const rep1 = reports[i];
+//                 const rep2 = reports[j];
+
+//                 const [lon1, lat1] = rep1.annotations?.incident_point?.geometry?.coordinates;
+//                 const [lon2, lat2] = rep2.annotations?.incident_point?.geometry?.coordinates;
+
+//                 if (!lon1 || !lat2 || !lon2 || !lat2)
+//                     continue;
+
+
+//                 const dt1 = new Date(rep1.damage_datetime);
+//                 const dt2 = new Date(rep2.damage_datetime);
+
+//                 const distanceKm = haversineDistance(lon1, lat1, lon2, lat2);
+//                 const timeDiffHours = Math.abs(dt1 - dt2) / (1000 * 60 * 60);
+
+//                 console.log(rep1.id, rep2.id, distanceKm, timeDiffHours);
+//                 console.log("==============================")
+
+
+//                 // 2. Check if both rules are met (<= 10km AND <= 48 hours)
+//                 if (distanceKm <= distanceThreshold && timeDiffHours <= timeRangeThresholdHrs) {
+//                     edges.push([i, j]);
+//                 }
+//             }
+//             catch (error) {
+//                 continue
+//             }
+
+//         }
+
+//         // 3. Group interconnected matches using Union-Find algorithm
+//         const parent = Array.from({ length: n }, (_, i) => i);
+
+//         function find(i) {
+//             if (parent[i] === i) return i;
+//             parent[i] = find(parent[i]);
+//             return parent[i];
+//         }
+
+//         for (const [u, v] of edges) {
+//             const rootU = find(u);
+//             const rootV = find(v);
+//             if (rootU !== rootV) {
+//                 parent[rootU] = rootV;
+//             }
+//         }
+
+//         // 4. Collect items into their respective groups
+//         const groups = {};
+//         for (let i = 0; i < n; i++) {
+//             const root = find(i);
+//             if (!groups[root]) {
+//                 groups[root] = [];
+//             }
+//             groups[root].push(reports[i]);
+//         }
+
+//         // 5. Build the desired output object
+//         const categorizedResults = {
+//             "No Match": [] // Initialize an array for all items that don't match anything
+//         };
+//         let groupIdx = 1;
+
+//         for (const root in groups) {
+//             const items = groups[root];
+
+//             if (items.length > 1) {
+//                 // Create a new key for this match group and assign the array of items
+//                 categorizedResults[`Match group ${groupIdx}`] = items;
+//                 groupIdx++;
+//             } else {
+//                 // Push solitary items into the centralized no_match array
+//                 categorizedResults["No Match"].push(items[0]);
+//             }
+//         }
+
+//         console.log(categorizedResults);
+
+
+//         return categorizedResults;
+//     }
+
+// }
+
+// --- Example Usage ---
+// const processedData = categorizeReports(jsonData);
+// console.log(JSON.stringify(processedData, null, 2));
+
+
+
 export function getCategorizeReports(reports, distanceThreshold = 100, timeRangeThresholdHrs = 48) {
-
-
+    if (!reports || reports.length === 0) return { "No Match": [] };
 
     const n = reports.length;
     const edges = [];
@@ -249,12 +350,22 @@ export function getCategorizeReports(reports, distanceThreshold = 100, timeRange
                 const rep1 = reports[i];
                 const rep2 = reports[j];
 
-                const [lon1, lat1] = rep1.annotations?.incident_point?.geometry?.coordinates;
-                const [lon2, lat2] = rep2.annotations?.incident_point?.geometry?.coordinates;
+                // Safely extract coordinates. Default to empty array if path is undefined
+                const coords1 = rep1.annotations?.incident_point?.geometry?.coordinates || [];
+                const coords2 = rep2.annotations?.incident_point?.geometry?.coordinates || [];
 
-                if (!lon1 || !lat2 || !lon2 || !lat2)
+                const [lon1, lat1] = coords1;
+                const [lon2, lat2] = coords2;
+
+                // Fixed Validation: checking all four coordinate values
+                if (lon1 === undefined || lat1 === undefined || lon2 === undefined || lat2 === undefined) {
                     continue;
+                }
 
+                // Check for valid dates
+                if (!rep1.damage_datetime || !rep2.damage_datetime) {
+                    continue;
+                }
 
                 const dt1 = new Date(rep1.damage_datetime);
                 const dt2 = new Date(rep2.damage_datetime);
@@ -262,71 +373,67 @@ export function getCategorizeReports(reports, distanceThreshold = 100, timeRange
                 const distanceKm = haversineDistance(lon1, lat1, lon2, lat2);
                 const timeDiffHours = Math.abs(dt1 - dt2) / (1000 * 60 * 60);
 
-                // 2. Check if both rules are met (<= 10km AND <= 48 hours)
+                // console.log(rep1.id, rep2.id, distanceKm, timeDiffHours);
+                // console.log("==============================");
+
+                // 2. Check if both rules are met
                 if (distanceKm <= distanceThreshold && timeDiffHours <= timeRangeThresholdHrs) {
                     edges.push([i, j]);
                 }
             }
             catch (error) {
-                continue
-            }
-
-        }
-
-        // 3. Group interconnected matches using Union-Find algorithm
-        const parent = Array.from({ length: n }, (_, i) => i);
-
-        function find(i) {
-            if (parent[i] === i) return i;
-            parent[i] = find(parent[i]);
-            return parent[i];
-        }
-
-        for (const [u, v] of edges) {
-            const rootU = find(u);
-            const rootV = find(v);
-            if (rootU !== rootV) {
-                parent[rootU] = rootV;
+                console.error("Error comparing records:", error);
+                continue;
             }
         }
+    }
+    // ---> CRITICAL FIX: The bracket closing the 'i' loop must be here <---
+    // In your code, this bracket was missing, pushing steps 3, 4, and 5 inside the loop!
 
-        // 4. Collect items into their respective groups
-        const groups = {};
-        for (let i = 0; i < n; i++) {
-            const root = find(i);
-            if (!groups[root]) {
-                groups[root] = [];
-            }
-            groups[root].push(reports[i]);
-        }
+    // 3. Group interconnected matches using Union-Find algorithm
+    const parent = Array.from({ length: n }, (_, i) => i);
 
-        // 5. Build the desired output object
-        const categorizedResults = {
-            "No Match": [] // Initialize an array for all items that don't match anything
-        };
-        let groupIdx = 1;
-
-        for (const root in groups) {
-            const items = groups[root];
-
-            if (items.length > 1) {
-                // Create a new key for this match group and assign the array of items
-                categorizedResults[`Match group ${groupIdx}`] = items;
-                groupIdx++;
-            } else {
-                // Push solitary items into the centralized no_match array
-                categorizedResults["No Match"].push(items[0]);
-            }
-        }
-
-        console.log(categorizedResults);
-
-
-        return categorizedResults;
+    function find(i) {
+        if (parent[i] === i) return i;
+        parent[i] = find(parent[i]);
+        return parent[i];
     }
 
-}
+    for (const [u, v] of edges) {
+        const rootU = find(u);
+        const rootV = find(v);
+        if (rootU !== rootV) {
+            parent[rootU] = rootV;
+        }
+    }
 
-// --- Example Usage ---
-// const processedData = categorizeReports(jsonData);
-// console.log(JSON.stringify(processedData, null, 2));
+    // 4. Collect items into their respective groups
+    const groups = {};
+    for (let i = 0; i < n; i++) {
+        const root = find(i);
+        if (!groups[root]) {
+            groups[root] = [];
+        }
+        groups[root].push(reports[i]);
+    }
+
+    // 5. Build the desired output object
+    const categorizedResults = {
+        "No Match": []
+    };
+    let groupIdx = 1;
+
+    for (const root in groups) {
+        const items = groups[root];
+
+        if (items.length > 1) {
+            categorizedResults[`Match group ${groupIdx}`] = items;
+            groupIdx++;
+        } else {
+            categorizedResults["No Match"].push(items[0]);
+        }
+    }
+
+    // console.log("Final Categories:", categorizedResults);
+    return categorizedResults;
+}
