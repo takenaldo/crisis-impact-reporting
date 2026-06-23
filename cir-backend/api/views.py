@@ -11,10 +11,10 @@ from datetime import timedelta
 # Avoid doing this if possible
 from django.contrib.auth import get_user_model
 
-from .models import QuestionGroup, Question2,ImpactReport, Photo, Answer
+from .models import QuestionGroup, Question2, ImpactReport, Photo, Answer, Location
 from .serializers import ImpactReportSerializer
 from .serializers import InfrastructureLocationSerializer
-from .serializers import UserSerializer
+from .serializers import UserSerializer, UserAdminSerializer
 from .serializers import QuestionSerializer
 from .serializers import AnswerMinimalSerializer
 from .serializers import AnswerSerializer
@@ -99,6 +99,26 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
         ser = ImpactReportSerializer(data=data)
         ser.is_valid(raise_exception=True)
         report: ImpactReport = ser.save()
+        
+        
+        # 1. Grab the annotations safely
+        annotations = report.annotations or {}
+
+        incident_point = annotations.get("incident_point") or {}
+        geometry = incident_point.get("geometry") or {}
+        coords = geometry.get("coordinates")
+
+        if coords and isinstance(coords, list) and len(coords) == 2:
+            # 2. Perform the swap
+            geometry["coordinates"] = [coords[1], coords[0]]
+            
+            # 3. REASSIGN the modified dict back to the report object
+            report.annotations = annotations
+            
+            # 4. Save the object
+            # report.save()
+            report.save(update_fields=['annotations'])
+
 
         if annotations_raw:
             try:
@@ -124,43 +144,47 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
         # send survey invitation mai;l for users in the surrounding of the impact
         users_to_receive_survey_email = []
         for user in User.objects.all():
-            if user.email:
-                
-                if not user.location.latitude or not user.location.longitude:
-                    continue
-                            
-                try:
-                    # TODO: lat lng are swapped by mistake, 
-                    report_lat = report.annotations['incident_point']['geometry']['coordinates'][1]; 
-                    report_lng = report.annotations['incident_point']['geometry']['coordinates'][0];
-
+            try:
+                if user.email:
                     
-                except Exception as e:
-                    continue
-                
-                distance_threshold_in_km = 100 # KM
-                
-                # TODO: change this to annotation latlng
-                # Skip if missing necessary geospatial data
-                if report_lat is None or report_lng is None or distance_threshold_in_km is None:
-                    continue
-                
-                    
-                # Convert degrees to radians
-                lat1, lon1 = math.radians(user.location.latitude), math.radians(user.location.longitude)
-                lat2, lon2 = math.radians(report_lat), math.radians(report_lng)
-                
-                dlat = lat2 - lat1
-                dlon = lon2 - lon1
-                
-                # Haversine formula
-                a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
-                c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-                distance = 6371 * c 
+                        
+                    if not user.location.latitude or not user.location.longitude:
+                        continue
+                                
+                    try:
+                        # TODO: lat lng are swapped by mistake, 
+                        report_lat = report.annotations['incident_point']['geometry']['coordinates'][1]; 
+                        report_lng = report.annotations['incident_point']['geometry']['coordinates'][0];
 
-                # Check if user is within the specific question's allowed threshold
-                if distance <= distance_threshold_in_km:
-                    users_to_receive_survey_email.append(user)
+                        
+                    except Exception as e:
+                        continue
+                    
+                    distance_threshold_in_km = 100 # KM
+                    
+                    # TODO: change this to annotation latlng
+                    # Skip if missing necessary geospatial data
+                    if report_lat is None or report_lng is None or distance_threshold_in_km is None:
+                        continue
+                    
+                        
+                    # Convert degrees to radians
+                    lat1, lon1 = math.radians(user.location.latitude), math.radians(user.location.longitude)
+                    lat2, lon2 = math.radians(report_lat), math.radians(report_lng)
+                    
+                    dlat = lat2 - lat1
+                    dlon = lon2 - lon1
+                    
+                    # Haversine formula
+                    a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+                    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+                    distance = 6371 * c 
+
+                    # Check if user is within the specific question's allowed threshold
+                    if distance <= distance_threshold_in_km:
+                        users_to_receive_survey_email.append(user)
+            except:
+                continue
 
         if len(users_to_receive_survey_email) > 0:                
             for u in users_to_receive_survey_email:      
@@ -187,12 +211,27 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
 
 
 
-    @action(detail=False, methods=["GET"], url_name= "get_user_reports")
-    def get_user_reports(seld, request):
+    @action(detail=False, methods=["GET"], url_name="get_user_reports")
+    def get_user_reports(self, request):
         """
-        Returns all reports created by a user
+        Returns all reports created by the currently authenticated user.
         """
         queryset = ImpactReport.objects.filter(reported_by__pk=request.user.pk)
+        serializer = ImpactReportSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["GET"], url_name="get_reports_by_user_id")
+    def get_reports_by_user_id(self, request):
+        """
+        Admin: returns all reports for a given user_id query param.
+        """
+        user_id = request.query_params.get('user_id')
+        if not user_id:
+            return Response(
+                {"error": "user_id query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        queryset = ImpactReport.objects.filter(reported_by__pk=user_id)
         serializer = ImpactReportSerializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -370,13 +409,53 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["POST"], url_name="create_account")
     def create_account(self, request):
-        
-        serializer = UserSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        u = serializer.save()
-        u.set_password(request.data.get('password'))
-        u.save()
+        data = request.data.copy()
+
+        location_fields = {
+            'latitude': data.pop('location_latitude', None),
+            'longitude': data.pop('location_longitude', None),
+            'name': data.pop('location_name', None),
+            'description': data.pop('location_description', None),
+            'country': data.pop('location_country', None),
+            'state_province': data.pop('location_state_province', None),
+            'city': data.pop('location_city', None),
+            'street_address': data.pop('location_street_address', None),
+        }
+        location_values = {k: v for k, v in location_fields.items() if v not in (None, '', [])}
+
+        with transaction.atomic():
+            if location_values:
+                location = Location.objects.create(**location_values)
+                data['location_id'] = str(location.id)
+
+            serializer = UserSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            u = serializer.save()
+            u.set_password(request.data.get('password'))
+            u.save()
+
         return Response(serializer.data)
+
+    @action(detail=False, methods=["GET"], url_name="user_list_for_admin")
+    def user_list_for_admin(self, request):
+        queryset = User.objects.annotate(
+            report_count=Count('impactreport')
+        ).order_by('date_joined')
+        serializer = UserAdminSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["POST"], url_name="set_active")
+    def set_active(self, request, pk=None):
+        user = self.get_object()
+        is_active = request.data.get('is_active')
+        if is_active is None:
+            return Response(
+                {"error": "is_active field is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        user.is_active = bool(is_active)
+        user.save(update_fields=['is_active'])
+        return Response({"id": str(user.pk), "is_active": user.is_active})
 
 
 class QuestionsViewSet(viewsets.ModelViewSet):

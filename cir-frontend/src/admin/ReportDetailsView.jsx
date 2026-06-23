@@ -29,7 +29,8 @@ import {
   IconPhotoOff,
 } from "@tabler/icons-react";
 
-import { timeAgo } from "../utils";
+import { timeAgo, swapAnnotationPointCoords } from "../utils";
+import CirMap from "../map/CirMap";
 import QuestionsTabViewView from "../QuestionsTabView";
 import SurveyTabView from "../SurveyTabView";
 import { SERVER_IP } from "../constants";
@@ -38,17 +39,34 @@ import EnterprisePDFViewer from "./ReportDocument";
 // Professional UI theme parser for damage status mapping
 const getSeverityTheme = (severity) => {
   const norm = String(severity).toLowerCase();
-  if (norm.includes("crit") || norm.includes("high") || norm.includes("major")) {
-    return { color: "var(--mantine-color-red-filled)", bg: "rgba(250, 82, 82, 0.12)", border: "rgba(250, 82, 82, 0.2)" };
+  if (
+    norm.includes("crit") ||
+    norm.includes("high") ||
+    norm.includes("major")
+  ) {
+    return {
+      color: "var(--mantine-color-red-filled)",
+      bg: "rgba(250, 82, 82, 0.12)",
+      border: "rgba(250, 82, 82, 0.2)",
+    };
   }
   if (norm.includes("mod") || norm.includes("med")) {
-    return { color: "var(--mantine-color-orange-filled)", bg: "rgba(253, 126, 20, 0.12)", border: "rgba(253, 126, 20, 0.2)" };
+    return {
+      color: "var(--mantine-color-orange-filled)",
+      bg: "rgba(253, 126, 20, 0.12)",
+      border: "rgba(253, 126, 20, 0.2)",
+    };
   }
-  return { color: "var(--mantine-color-gray-7)", bg: "rgba(134, 142, 150, 0.12)", border: "rgba(134, 142, 150, 0.2)" };
+  return {
+    color: "var(--mantine-color-gray-7)",
+    bg: "rgba(134, 142, 150, 0.12)",
+    border: "rgba(134, 142, 150, 0.2)",
+  };
 };
 
 export default function ReportDetailsView({ report }) {
   const [showMore, setShowMore] = useState(true);
+  const [showMapView, setShowMapView] = useState(false);
   const [showPDF, setShowPDF] = useState(false);
 
   const toggleShowMore = (e) => {
@@ -96,11 +114,11 @@ export default function ReportDetailsView({ report }) {
           borderTop: "4px solid #009C9A",
           backgroundColor: "#ffffff",
         }}
+        h={"100vh"}
       >
         <Stack gap={0}>
           <Box p="xl">
             <Stack gap="lg">
-
               {/* Header Context Section */}
               <Stack gap="xs">
                 <Group justify="space-between" align="flex-start" wrap="nowrap">
@@ -112,7 +130,9 @@ export default function ReportDetailsView({ report }) {
                     lh={1.25}
                     style={{ letterSpacing: "-0.01em" }}
                   >
-                    DAMAGE REPORT: {report?.infrastructure_name || "UNIDENTIFIED INFRASTRUCTURE"}
+                    DAMAGE REPORT:{" "}
+                    {report?.infrastructure_name ||
+                      "UNIDENTIFIED INFRASTRUCTURE"}
                   </Text>
                 </Group>
 
@@ -151,7 +171,12 @@ export default function ReportDetailsView({ report }) {
 
                   <Group gap={4} wrap="nowrap" c="dimmed">
                     <IconBuilding size={14} color="var(--color-teal)" />
-                    <Text size="xs" fw={500} ff="Poppins" style={{ letterSpacing: "0.01em" }}>
+                    <Text
+                      size="xs"
+                      fw={500}
+                      ff="Poppins"
+                      style={{ letterSpacing: "0.01em" }}
+                    >
                       {report?.infrastructure_type || "Infrastructure"}
                     </Text>
                   </Group>
@@ -164,9 +189,23 @@ export default function ReportDetailsView({ report }) {
                   {report?.description}
                 </Text>
               ) : (
-                <Paper p="sm" bg="#F8FAFC" radius="md" withBorder style={{ borderStyle: "dashed" }}>
-                  <Text size="sm" c="dimmed" lh={1.6} ff="Poppins" fs="italic" ta="center">
-                    No detailed structural analysis description provided for this entry.
+                <Paper
+                  p="sm"
+                  bg="#F8FAFC"
+                  radius="md"
+                  withBorder
+                  style={{ borderStyle: "dashed" }}
+                >
+                  <Text
+                    size="sm"
+                    c="dimmed"
+                    lh={1.6}
+                    ff="Poppins"
+                    fs="italic"
+                    ta="center"
+                  >
+                    No detailed structural analysis description provided for
+                    this entry.
                   </Text>
                 </Paper>
               )}
@@ -178,15 +217,27 @@ export default function ReportDetailsView({ report }) {
                   p="md"
                   radius="md"
                   bg="var(--mantine-color-gray-0)"
-                  style={{ borderColor: "#EAECEF", transition: "border-color 0.2s" }}
+                  style={{
+                    borderColor: "#EAECEF",
+                    transition: "border-color 0.2s",
+                  }}
                   styles={{
                     root: {
-                      "&:hover": { borderColor: "var(--color-teal)" }
-                    }
+                      "&:hover": { borderColor: "var(--color-teal)" },
+                    },
                   }}
                 >
-                  <Group wrap="nowrap" align="center" justify="space-between" gap="md">
-                    <Group wrap="nowrap" gap="sm" style={{ flex: 1, minWidth: 0 }}>
+                  <Group
+                    wrap="nowrap"
+                    align="center"
+                    justify="space-between"
+                    gap="md"
+                  >
+                    <Group
+                      wrap="nowrap"
+                      gap="sm"
+                      style={{ flex: 1, minWidth: 0 }}
+                    >
                       <ThemeIcon
                         color="#009C9A"
                         variant="light"
@@ -198,16 +249,34 @@ export default function ReportDetailsView({ report }) {
 
                       <Box style={{ flex: 1, minWidth: 0 }}>
                         <Group gap={6} align="baseline">
-                          <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: "0.05em" }}>
+                          <Text
+                            size="xs"
+                            c="dimmed"
+                            tt="uppercase"
+                            fw={700}
+                            style={{ letterSpacing: "0.05em" }}
+                          >
                             Coordinates:
                           </Text>
                           <Text size="xs" c="#0D3B66" fw={700} ff="Poppins">
-                            {report.annotations?.incident_point?.geometry.coordinates[0]?.toFixed(4) || "N/A"}
-                            , {report.annotations?.incident_point?.geometry.coordinates[1]?.toFixed(4) || "N/A"}
+                            {report.annotations?.incident_point?.geometry.coordinates[0]?.toFixed(
+                              4
+                            ) || "N/A"}
+                            ,{" "}
+                            {report.annotations?.incident_point?.geometry.coordinates[1]?.toFixed(
+                              4
+                            ) || "N/A"}
                           </Text>
                         </Group>
 
-                        <Text size="xs" c="dark.3" fw={500} mt={2} lineClamp={1} ff="Poppins">
+                        <Text
+                          size="xs"
+                          c="dark.3"
+                          fw={500}
+                          mt={2}
+                          lineClamp={1}
+                          ff="Poppins"
+                        >
                           {[
                             report?.location?.city,
                             report?.location?.state_province,
@@ -226,6 +295,7 @@ export default function ReportDetailsView({ report }) {
                           color="#009C9A"
                           size="lg"
                           radius="md"
+                          onClick={() => setShowMapView((v) => !v)}
                           aria-label="View on external map dashboard"
                           style={{ border: "1px solid #EAECEF" }}
                         >
@@ -235,9 +305,40 @@ export default function ReportDetailsView({ report }) {
                   </Group>
                 </Paper>
 
+                {showMapView &&
+                  report?.location?.infrastructure_latitude &&
+                  report?.location?.infrastructure_longitude && (
+                    <Box
+                      style={{
+                        height: 300,
+                        borderRadius: 8,
+                        overflow: "hidden",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    >
+                      <CirMap
+                        center={[
+                          report.location.infrastructure_latitude,
+                          report.location.infrastructure_longitude,
+                        ]}
+                        zoom={14}
+                        height="300px"
+                        annotations={
+                          report.annotations
+                            ? swapAnnotationPointCoords(report.annotations)
+                            : undefined
+                        }
+                      />
+                    </Box>
+                  )}
+
                 {/* Dispatch / Capture Timestamp */}
                 <Group gap={4} justify="flex-end" px={4}>
-                  <IconClock size={13} color="var(--mantine-color-gray-5)" stroke={2} />
+                  <IconClock
+                    size={13}
+                    color="var(--mantine-color-gray-5)"
+                    stroke={2}
+                  />
                   <Text size="xs" c="dimmed" fw={500} ff="Poppins">
                     Reported{" "}
                     {report?.damage_datetime
@@ -262,8 +363,8 @@ export default function ReportDetailsView({ report }) {
               styles={{
                 root: {
                   transition: "background-color 0.15s, transform 0.1s",
-                  "&:active": { transform: "scale(0.99)" }
-                }
+                  "&:active": { transform: "scale(0.99)" },
+                },
               }}
             >
               Generate & Show PDF Document
@@ -280,52 +381,70 @@ export default function ReportDetailsView({ report }) {
                 radius="md"
                 color="#009C9A"
               >
-                <Tabs.List grow style={{ backgroundColor: "#F8FAFC", padding: "4px", borderRadius: "8px" }}>
+                <Tabs.List
+                  grow
+                  style={{
+                    backgroundColor: "#F8FAFC",
+                    padding: "4px",
+                    borderRadius: "8px",
+                  }}
+                >
                   <Tabs.Tab value="Photos" fw={600} ff="Poppins" fz="xs" py={6}>
                     Photos ({report?.photos?.length || 0})
                   </Tabs.Tab>
-                  <Tabs.Tab value="Questions" fw={600} ff="Poppins" fz="xs" py={6}>
+                  <Tabs.Tab
+                    value="Questions"
+                    fw={600}
+                    ff="Poppins"
+                    fz="xs"
+                    py={6}
+                  >
                     Structural Metrics
                   </Tabs.Tab>
-                  <Tabs.Tab value="Surveys" fw={600} ff="Poppins" fz="xs" py={6}>
+                  <Tabs.Tab
+                    value="Surveys"
+                    fw={600}
+                    ff="Poppins"
+                    fz="xs"
+                    py={6}
+                  >
                     Field Surveys
                   </Tabs.Tab>
                 </Tabs.List>
 
-                {/* Media Capture Subpanel */}
-                <Tabs.Panel value="Photos" pt="md">
-                  {report?.photos?.length > 0 ? (
-                    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-                      {report?.photos.map((p, index) => (
-                        <Paper key={index} withBorder p="xs" radius="md" bg="#FCFDFD" style={{ borderColor: "#EAECEF" }}>
-                          <Stack gap="xs">
+                <Tabs.Panel value="Photos" pt="lg">
+                  <ScrollArea h={350} type="auto" offsetScrollbars>
+                    {report?.photos?.length > 0 ? (
+                      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                        {report?.photos.map((p, index) => (
+                          <Stack gap={"xs"} key={index}>
                             <Image
                               src={`${SERVER_IP}${p.image}`}
-                              alt={p.description || "Damage site visual baseline evidence"}
-                              radius="sm"
-                              h={180}
-                              fit="cover"
-                              fallbackSrc="https://placehold.co/600x400?text=Evidence+Asset+Missing"
+                              alt={p.description || "Damage photo"}
+                              radius="md"
+                              fallbackSrc="https://placehold.co/600x400?text=Image+Not+Found"
+                              style={{ border: "1px solid #E2E8F0" }}
                             />
-                            {p.description && (
-                              <Text size="xs" c="dark.3" fw={500} ta="center" ff="Poppins" lineClamp={1}>
-                                {p.description}
-                              </Text>
-                            )}
+                            <Text size="sm" c="dimmed" ta="center">
+                              {p.description}
+                            </Text>
                           </Stack>
-                        </Paper>
-                      ))}
-                    </SimpleGrid>
-                  ) : (
-                    <Paper withBorder p="xl" radius="md" bg="#F8FAFC" style={{ borderStyle: "dashed" }}>
-                      <Stack align="center" gap="xs" c="dimmed">
-                        <IconPhotoOff size={28} stroke={1.5} />
-                        <Text size="xs" ff="Poppins" fs="italic" ta="center">
-                          No visual digital evidence metadata attached to this dynamic log.
+                        ))}
+                      </SimpleGrid>
+                    ) : (
+                      <Paper withBorder p="xl" radius="md" bg="#F8FAFC">
+                        <Text
+                          size="sm"
+                          c="dimmed"
+                          fs="italic"
+                          ta="center"
+                          ff="Poppins"
+                        >
+                          No visual evidence attached to this report.
                         </Text>
-                      </Stack>
-                    </Paper>
-                  )}
+                      </Paper>
+                    )}
+                  </ScrollArea>
                 </Tabs.Panel>
 
                 {/* Form Processing Subpanels */}
@@ -370,25 +489,43 @@ export default function ReportDetailsView({ report }) {
             }}
             styles={{
               root: {
-                "&:hover": { backgroundColor: "var(--mantine-color-gray-0)" }
-              }
+                "&:hover": { backgroundColor: "var(--mantine-color-gray-0)" },
+              },
             }}
           >
-            <Group justify="space-between" align="center" wrap="nowrap" px="xl" py="xs">
+            <Group
+              justify="space-between"
+              align="center"
+              wrap="nowrap"
+              px="xl"
+              py="xs"
+            >
               <Group gap="xs" style={{ minWidth: 0 }}>
-                <ThemeIcon color="var(--mantine-color-gray-5)" variant="subtle" size="sm">
+                <ThemeIcon
+                  color="var(--mantine-color-gray-5)"
+                  variant="subtle"
+                  size="sm"
+                >
                   <IconUserFilled size={15} />
                 </ThemeIcon>
                 <Text size="xs" fw={600} c="dimmed" ff="Poppins" lineClamp={1}>
                   Operator:{" "}
                   <Text component="span" c="#0D3B66" fw={700}>
-                    {report?.reported_by?.user || report?.anonymous_reported_by || "Anonymous Field Officer"}
+                    {report?.reported_by?.user ||
+                      report?.anonymous_reported_by ||
+                      "Anonymous Field Officer"}
                   </Text>
                 </Text>
               </Group>
 
               <Group gap={4} style={{ flexShrink: 0 }}>
-                <Text size="xs" fw={700} c="#009C9A" ff="Poppins" style={{ letterSpacing: "0.02em" }}>
+                <Text
+                  size="xs"
+                  fw={700}
+                  c="#009C9A"
+                  ff="Poppins"
+                  style={{ letterSpacing: "0.02em" }}
+                >
                   {showMore ? "Collapse Context" : "Expand Matrix Data"}
                 </Text>
                 {showMore ? (

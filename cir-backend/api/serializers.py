@@ -16,15 +16,30 @@ class LocationSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     location = LocationSerializer(read_only=True)
     location_id = serializers.PrimaryKeyRelatedField(
-        queryset=Location.objects.all(), 
-        source='location', 
+        queryset=Location.objects.all(),
+        source='location',
         write_only=True,
         required=False
         )
+    is_active = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'job_title', 'organization', 'location', 'location_id']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'job_title', 'organization', 'location', 'location_id', 'is_active']
+
+
+class UserAdminSerializer(serializers.ModelSerializer):
+    location = LocationSerializer(read_only=True)
+    is_active = serializers.BooleanField(read_only=True)
+    report_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'job_title', 'organization', 'pseudonym',
+            'location', 'is_active', 'date_joined', 'last_login', 'report_count',
+        ]
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):

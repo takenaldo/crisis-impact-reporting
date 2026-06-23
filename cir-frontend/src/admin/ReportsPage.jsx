@@ -50,7 +50,9 @@ export function ReportsPage() {
     return { value: String(key), label: text };
   });
 
-  const [selectedDateRange, setSelectedDateRange] = useState(formattedData[2]?.value || "7");
+  const [selectedDateRange, setSelectedDateRange] = useState(
+    formattedData[2]?.value || "7"
+  );
   const [crisesReportList, setCrisesReportList] = useState([]);
 
   useEffect(() => {
@@ -60,6 +62,7 @@ export function ReportsPage() {
         const incomingData = Array.isArray(response.data)
           ? response.data
           : response.data?.results || [];
+
         setCrisesReportList(incomingData);
       } catch (error) {
         console.error("Error fetching crises:", error);
@@ -68,6 +71,66 @@ export function ReportsPage() {
     };
     fetchCrises();
   }, []);
+
+  // --- CSV Export ---
+  const handleExportCSV = () => {
+    if (!crisesReportList || crisesReportList.length === 0) {
+      alert("No data available to export");
+      return;
+    }
+    const titleHeaders = [["UNDP - Crisis Impact Reports Data"]];
+    const tableHeaders = [
+      "INFRASTRUCTURE NAME",
+      "INFRASTRUCTURE TYPE",
+      "LOCATION",
+      "SEVERITY",
+      "UPDATED",
+    ];
+    const rows = crisesReportList.map((row) => [
+      row?.infrastructure_name || "N/A",
+      row?.infrastructure_type || "N/A",
+      row?.location?.city || "N/A",
+      row?.damage_severity || "Low",
+      row?.damage_datetime
+        ? `${displayDate(row.damage_datetime)} at ${displayTime(
+          row.damage_datetime
+        )}`
+        : "N/A",
+    ]);
+
+    const escapeCSVField = (value) => {
+      const stringValue =
+        value === null || value === undefined ? "" : String(value);
+      if (
+        stringValue.includes(",") ||
+        stringValue.includes('"') ||
+        stringValue.includes("\n")
+      ) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      }
+      return stringValue;
+    };
+
+    const csvContent = [
+      ...titleHeaders.map((fields) => fields.map(escapeCSVField).join(",")),
+      tableHeaders.join(","),
+      ...rows.map((row) => row.map(escapeCSVField).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([new Uint8Array([0xef, 0xbb, 0xbf]), csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const filename = `UNDP_Crisis_Report_${new Date().toISOString().split("T")[0]
+      }.csv`;
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <Box bg={COLORS.lightBackground} style={{ minHeight: "100vh" }} py="md" px="lg">
@@ -147,7 +210,14 @@ export function ReportDataTablePage({ crisesReportList }) {
     const parsedLat = parseFloat(lat);
     const parsedLng = parseFloat(lng);
 
-    if (isNaN(parsedLat) || isNaN(parsedLng) || parsedLat < -90 || parsedLat > 90 || parsedLng < -180 || parsedLng > 180) {
+    if (
+      isNaN(parsedLat) ||
+      isNaN(parsedLng) ||
+      parsedLat < -90 ||
+      parsedLat > 90 ||
+      parsedLng < -180 ||
+      parsedLng > 180
+    ) {
       const DEFAULT_LAT = 8.9806;
       const DEFAULT_LNG = 38.7578;
       const fallbackResult = getNearestCity(DEFAULT_LNG, DEFAULT_LAT);
@@ -184,22 +254,37 @@ export function ReportDataTablePage({ crisesReportList }) {
   };
 
   const dynamicSeverities = Array.from(
-    new Set((crisesReportList || []).map((row) => row?.damage_severity).filter(Boolean))
+    new Set(
+      (crisesReportList || [])
+        .map((row) => row?.damage_severity)
+        .filter(Boolean)
+    )
   );
 
   const dynamicRegions = Array.from(
-    new Set((crisesReportList || []).map((row) => row?.location?.city).filter(Boolean))
+    new Set(
+      (crisesReportList || [])
+        .map((row) => (row?.location?.city == null ? "" : row?.location?.city))
+        .filter(Boolean)
+    )
   );
 
   const filteredData = (crisesReportList || []).filter((row) => {
-    const matchesSeverity = selectedSeverity ? row?.damage_severity?.toLowerCase() === selectedSeverity.toLowerCase() : true;
-    const matchesRegion = selectedRegion ? row?.location?.city?.toLowerCase() === selectedRegion.toLowerCase() : true;
+    const matchesSeverity = selectedSeverity
+      ? row?.damage_severity?.toLowerCase() === selectedSeverity.toLowerCase()
+      : true;
+    const matchesRegion = selectedRegion
+      ? row?.location?.city?.toLowerCase() === selectedRegion.toLowerCase()
+      : true;
     return matchesSeverity && matchesRegion;
   });
 
   const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
   const startIndex = (activePage - 1) * ITEMS_PER_PAGE;
-  const paginatedData = filteredData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedData = filteredData.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
 
   return (
     <Card padding="xl" radius="lg" shadow="sm" withBorder>
@@ -307,7 +392,6 @@ export function ReportDataTablePage({ crisesReportList }) {
           </Table.Tbody>
         </Table>
       </Table.ScrollContainer>
-
       {totalPages > 1 && (
         <Group justify="flex-end" mt="xl">
           <Pagination
@@ -319,10 +403,7 @@ export function ReportDataTablePage({ crisesReportList }) {
             size="sm"
           />
         </Group>
-      )}
-
-      {/* Enhanced Professional Detail Drawer */}
-      <Drawer
+      )} <Drawer
         opened={drawerOpened}
         onClose={closeDrawer}
         position="right"
@@ -346,12 +427,10 @@ export function ReportDataTablePage({ crisesReportList }) {
                   size="lg"
                   radius="md"
                   variant="filled"
-                >
-                  {selectedReport?.damage_severity || "Unknown"}
+                >{selectedReport?.damage_severity || "Unknown"}
                 </Badge>
               </Group>
             </Box>
-
             <Box p="xl" style={{ flex: 1, overflow: "auto" }}>
               <Stack gap="xl">
                 {/* Infrastructure */}
@@ -364,7 +443,6 @@ export function ReportDataTablePage({ crisesReportList }) {
                     {selectedReport?.infrastructure_type || "General Infrastructure"}
                   </Text>
                 </Card>
-
                 <SimpleGrid cols={2} spacing="lg">
                   {/* Location */}
                   <Card withBorder radius="md" padding="lg">
@@ -380,7 +458,6 @@ export function ReportDataTablePage({ crisesReportList }) {
                       {selectedReport?.annotations?.incident_point?.geometry?.coordinates?.[1]?.toFixed(4) || "—"}
                     </Text>
                   </Card>
-
                   {/* Reported By */}
                   <Card withBorder radius="md" padding="lg">
                     <Group gap={8} mb={12}>
@@ -395,11 +472,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                     </Text>
                   </Card>
                 </SimpleGrid>
-
-                <Divider />
-
-                {/* Impact Assessment */}
-                <Box>
+                <Divider />  <Box>
                   <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="md">Impact Assessment</Text>
                   <Stack gap="md">
                     {selectedReport?.damage_description && (
@@ -410,7 +483,6 @@ export function ReportDataTablePage({ crisesReportList }) {
                         </Text>
                       </Box>
                     )}
-
                     {selectedReport?.impact_notes && (
                       <Box>
                         <Text size="xs" c="dimmed" fw={700} mb={6}>Impact Notes</Text>
@@ -419,7 +491,6 @@ export function ReportDataTablePage({ crisesReportList }) {
                         </Text>
                       </Box>
                     )}
-
                     <SimpleGrid cols={2} spacing="md">
                       {selectedReport?.affected_population && (
                         <Box>
@@ -440,9 +511,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                     </SimpleGrid>
                   </Stack>
                 </Box>
-
                 <Divider />
-
                 {/* Technical Details */}
                 <Box>
                   <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="md">Technical Details</Text>
@@ -455,14 +524,12 @@ export function ReportDataTablePage({ crisesReportList }) {
                           : "N/A"}
                       </Text>
                     </Group>
-
                     {selectedReport?.status && (
                       <Group justify="space-between">
                         <Text size="sm" c="dimmed">Current Status</Text>
                         <Badge color="blue" variant="light">{safeString(selectedReport.status)}</Badge>
                       </Group>
                     )}
-
                     {selectedReport?.annotations?.incident_point && (
                       <Group justify="space-between" align="flex-start">
                         <Text size="sm" c="dimmed">Incident Point</Text>
@@ -473,7 +540,6 @@ export function ReportDataTablePage({ crisesReportList }) {
                     )}
                   </Stack>
                 </Box>
-
                 <Button
                   fullWidth
                   color="teal"
@@ -494,8 +560,23 @@ export function ReportDataTablePage({ crisesReportList }) {
           </Box>
         )}
       </Drawer>
-
       <QuestionGroupModal opened={opened} onClose={close} report={selectedReport} />
     </Card>
   );
 }
+const displayDate = (d) =>
+  d
+    ? new Date(d).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
+    : "";
+const displayTime = (d) =>
+  d
+    ? new Date(d).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })
+    : "";
