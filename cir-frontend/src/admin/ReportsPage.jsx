@@ -223,22 +223,16 @@ export function ReportDataTablePage({ crisesReportList }) {
       const fallbackResult = getNearestCity(DEFAULT_LNG, DEFAULT_LAT);
       return fallbackResult?.cityName || "Addis Ababa (Default)";
     }
-
     const result = getNearestCity(parsedLng, parsedLat);
     return result?.cityName || "Unknown Region";
   };
-
   const safeString = (value) => {
-    if (value == null) return "N/A";
+    console.log("=============log====================");
+    console.log(value);
+    console.log("=============log====================");
+    if (value == null) return "";
     if (typeof value === "string") return value;
-    if (typeof value === "number") return value.toString();
-    if (typeof value === "object") {
-      if (value?.user?.full_name) return value.user.full_name;
-      if (value?.name) return value.name;
-      if (value?.username) return value.username;
-      if (value?.full_name) return value.full_name;
-      return JSON.stringify(value);
-    }
+
     return String(value);
   };
 
@@ -246,7 +240,6 @@ export function ReportDataTablePage({ crisesReportList }) {
     setSelectedReport(report);
     openDrawer();
   };
-
   const handleActionModalTrigger = (e, report) => {
     e.stopPropagation();
     setSelectedReport(report);
