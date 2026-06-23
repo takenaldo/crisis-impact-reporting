@@ -276,7 +276,7 @@ export function CrisisMapPage() {
                         zIndexOffset={9999}
                         icon={createNumberedIcon(
                           items.length,
-                          selectedMatchGroup === key
+                          selectedMatchGroup === key,
                         )}
                         // icon={createCustomCrisisIcon(items.length)}
                         eventHandlers={{
@@ -363,7 +363,7 @@ export function CrisisMapPage() {
                                           setSelectedReport(reportItem);
                                         }}
                                       />
-                                    )
+                                    ),
                                   )}
                                 </Stack>
                               </>
@@ -375,7 +375,7 @@ export function CrisisMapPage() {
                   )}
 
                   {selectedReport && (
-                    <ScrollArea type="auto" h={450}>
+                    <ScrollArea type="auto" h={"80vh"}>
                       <ReportDetailsView report={selectedReport} />
                     </ScrollArea>
                   )}

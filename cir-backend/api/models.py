@@ -127,8 +127,8 @@ class ImpactReport(models.Model):
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    photos = models.ManyToManyField(Photo)
-    description = models.TextField(max_length=255, blank=True, null=True)
+    photos = models.ManyToManyField(Photo, blank=True)
+    description = models.TextField( blank=True, null=True)
     infrastructure_name = models.CharField(
         max_length=255, blank=True, null=True)
     infrastructure_type = models.CharField(max_length=255, blank=True, null=True,
@@ -136,7 +136,7 @@ class ImpactReport(models.Model):
                                            )
 
     infrastructure_description = models.TextField(
-        max_length=255, blank=True, null=True)
+        blank=True, null=True)
 
     damage_severity = models.CharField(
         max_length=255, choices=DamageSeverity.choices, blank=True, null=True)
@@ -165,7 +165,7 @@ class ImpactReport(models.Model):
         default=HealthServicesRatingLevel.UNKNOWN
     )
 
-    pressing_need = models.TextField(default="")
+    pressing_need = models.TextField(default="", blank=True, null=True)
     
     
     reported_by = models.ForeignKey(
@@ -185,7 +185,7 @@ class ImpactReport(models.Model):
     quality_score = models.IntegerField(default=0, blank=True, null=True)
 
     def __str__(self):
-        return "Impact Report " + str(self.infrastructure_name) + str(self.infrastructure_type) + "--> " + str(self.annotations['incident_point'])
+        return "Impact Report " + str(self.infrastructure_name) + str(self.infrastructure_type) + "--> " 
 
 
 class Question(models.Model):

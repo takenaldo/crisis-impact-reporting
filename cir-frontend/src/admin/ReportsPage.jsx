@@ -46,7 +46,9 @@ export function ReportsPage() {
     return { value: String(key), label: text };
   });
 
-  const [selectedDateRange, setSelectedDateRange] = useState(formattedData[2]?.value || "7");
+  const [selectedDateRange, setSelectedDateRange] = useState(
+    formattedData[2]?.value || "7"
+  );
   const [crisesReportList, setCrisesReportList] = useState([]);
 
   useEffect(() => {
@@ -56,6 +58,7 @@ export function ReportsPage() {
         const incomingData = Array.isArray(response.data)
           ? response.data
           : response.data?.results || [];
+
         setCrisesReportList(incomingData);
       } catch (error) {
         console.error("Error fetching crises:", error);
@@ -65,13 +68,83 @@ export function ReportsPage() {
     fetchCrises();
   }, []);
 
+  // --- CSV Export ---
+  const handleExportCSV = () => {
+    if (!crisesReportList || crisesReportList.length === 0) {
+      alert("No data available to export");
+      return;
+    }
+    const titleHeaders = [["UNDP - Crisis Impact Reports Data"]];
+    const tableHeaders = [
+      "INFRASTRUCTURE NAME",
+      "INFRASTRUCTURE TYPE",
+      "LOCATION",
+      "SEVERITY",
+      "UPDATED",
+    ];
+    const rows = crisesReportList.map((row) => [
+      row?.infrastructure_name || "N/A",
+      row?.infrastructure_type || "N/A",
+      row?.location?.city || "N/A",
+      row?.damage_severity || "Low",
+      row?.damage_datetime
+        ? `${displayDate(row.damage_datetime)} at ${displayTime(
+            row.damage_datetime
+          )}`
+        : "N/A",
+    ]);
+
+    const escapeCSVField = (value) => {
+      const stringValue =
+        value === null || value === undefined ? "" : String(value);
+      if (
+        stringValue.includes(",") ||
+        stringValue.includes('"') ||
+        stringValue.includes("\n")
+      ) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      }
+      return stringValue;
+    };
+
+    const csvContent = [
+      ...titleHeaders.map((fields) => fields.map(escapeCSVField).join(",")),
+      tableHeaders.join(","),
+      ...rows.map((row) => row.map(escapeCSVField).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([new Uint8Array([0xef, 0xbb, 0xbf]), csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const filename = `UNDP_Crisis_Report_${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <Box bg={COLORS.lightBackground} minHeight="100vh" py="md" px="lg">
       <Container size="xl">
         <Group justify="space-between" mb="xl">
           <Group>
-            <Text size="xs" c="dimmed" fw={700} lts={1}>UNDP</Text>
-            <Text size="xl" fw={700} c={COLORS.darkBlue} style={{ marginTop: -5 }}>Reports</Text>
+            <Text size="xs" c="dimmed" fw={700} lts={1}>
+              UNDP
+            </Text>
+            <Text
+              size="xl"
+              fw={700}
+              c={COLORS.darkBlue}
+              style={{ marginTop: -5 }}
+            >
+              Reports
+            </Text>
           </Group>
 
           <Group gap="md">
@@ -84,7 +157,12 @@ export function ReportsPage() {
               radius="md"
               w={130}
             />
-            <Button bg={COLORS.primaryTeal} leftSection={<IconDownload size={16} />} radius="md">
+            <Button
+              bg={COLORS.primaryTeal}
+              leftSection={<IconDownload size={16} />}
+              radius="md"
+              onClick={handleExportCSV}
+            >
               Export
             </Button>
             <ActionIcon variant="default" size="lg" radius="md">
@@ -92,10 +170,16 @@ export function ReportsPage() {
             </ActionIcon>
             <Divider orientation="vertical" />
             <Group gap="xs">
-              <Avatar color="blue" radius="xl">KS</Avatar>
+              <Avatar color="blue" radius="xl">
+                KS
+              </Avatar>
               <Box>
-                <Text size="sm" fw={600}>Karim S.</Text>
-                <Text size="xs" c="dimmed">Responder - KE</Text>
+                <Text size="sm" fw={600}>
+                  Karim S.
+                </Text>
+                <Text size="xs" c="dimmed">
+                  Responder - KE
+                </Text>
               </Box>
             </Group>
           </Group>
@@ -117,7 +201,8 @@ export function ReportDataTablePage({ crisesReportList }) {
   const [opened, { open, close }] = useDisclosure(false);
 
   // Drawer disclosures for the Side-Detail panel View
-  const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
+  const [drawerOpened, { open: openDrawer, close: closeDrawer }] =
+    useDisclosure(false);
 
   const [selectedReport, setSelectedReport] = useState(null);
 
@@ -138,7 +223,14 @@ export function ReportDataTablePage({ crisesReportList }) {
     const parsedLat = parseFloat(lat);
     const parsedLng = parseFloat(lng);
 
-    if (isNaN(parsedLat) || isNaN(parsedLng) || parsedLat < -90 || parsedLat > 90 || parsedLng < -180 || parsedLng > 180) {
+    if (
+      isNaN(parsedLat) ||
+      isNaN(parsedLng) ||
+      parsedLat < -90 ||
+      parsedLat > 90 ||
+      parsedLng < -180 ||
+      parsedLng > 180
+    ) {
       const DEFAULT_LAT = 8.9806;
       const DEFAULT_LNG = 38.7578;
       const fallbackResult = getNearestCity(DEFAULT_LNG, DEFAULT_LAT);
@@ -163,30 +255,73 @@ export function ReportDataTablePage({ crisesReportList }) {
   };
 
   const dynamicSeverities = Array.from(
-    new Set((crisesReportList || []).map((row) => row?.damage_severity).filter(Boolean))
+    new Set(
+      (crisesReportList || [])
+        .map((row) => row?.damage_severity)
+        .filter(Boolean)
+    )
   );
 
   const dynamicRegions = Array.from(
-    new Set((crisesReportList || []).map((row) => row?.location?.city).filter(Boolean))
+    new Set(
+      (crisesReportList || [])
+        .map((row) => (row?.location?.city == null ? "" : row?.location?.city))
+        .filter(Boolean)
+    )
   );
 
   const filteredData = (crisesReportList || []).filter((row) => {
-    const matchesSeverity = selectedSeverity ? row?.damage_severity?.toLowerCase() === selectedSeverity.toLowerCase() : true;
-    const matchesRegion = selectedRegion ? row?.location?.city?.toLowerCase() === selectedRegion.toLowerCase() : true;
+    const matchesSeverity = selectedSeverity
+      ? row?.damage_severity?.toLowerCase() === selectedSeverity.toLowerCase()
+      : true;
+    const matchesRegion = selectedRegion
+      ? row?.location?.city?.toLowerCase() === selectedRegion.toLowerCase()
+      : true;
     return matchesSeverity && matchesRegion;
   });
 
   const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
   const startIndex = (activePage - 1) * ITEMS_PER_PAGE;
-  const paginatedData = filteredData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedData = filteredData.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
 
   return (
     <Card padding="lg" radius="lg" shadow="xs">
       <Group justify="space-between" mb="xl">
-        <Box><Text fw={700} size="lg" c={COLORS.darkBlue}>Recent Reports</Text></Box>
+        <Box>
+          <Text fw={700} size="lg" c={COLORS.darkBlue}>
+            Recent Reports
+          </Text>
+        </Box>
         <Group gap="xs">
-          <Select placeholder="All severities" data={dynamicSeverities} value={selectedSeverity} onChange={(v) => { setSelectedSeverity(v); setActivePage(1); }} clearable w={140} radius="md" size="xs" />
-          <Select placeholder="All regions" data={dynamicRegions} value={selectedRegion} onChange={(v) => { setSelectedRegion(v); setActivePage(1); }} clearable w={140} radius="md" size="xs" />
+          <Select
+            placeholder="All severities"
+            data={dynamicSeverities}
+            value={selectedSeverity}
+            onChange={(v) => {
+              setSelectedSeverity(v);
+              setActivePage(1);
+            }}
+            clearable
+            w={140}
+            radius="md"
+            size="xs"
+          />
+          <Select
+            placeholder="All regions"
+            data={dynamicRegions}
+            value={selectedRegion}
+            onChange={(v) => {
+              setSelectedRegion(v);
+              setActivePage(1);
+            }}
+            clearable
+            w={140}
+            radius="md"
+            size="xs"
+          />
         </Group>
       </Group>
 
@@ -194,41 +329,102 @@ export function ReportDataTablePage({ crisesReportList }) {
         <Table verticalSpacing="md" horizontalSpacing="md" highlightOnHover>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th><Text size="xs" c="dimmed" fw={700}>INFRASTRUCTURE NAME</Text></Table.Th>
-              <Table.Th><Text size="xs" c="dimmed" fw={700}>LOCATION</Text></Table.Th>
-              <Table.Th><Text size="xs" c="dimmed" fw={700}>SEVERITY</Text></Table.Th>
-              <Table.Th ta="right"><Text size="xs" c="dimmed" fw={700}>Updated</Text></Table.Th>
-              <Table.Th ta="right"><Text size="xs" c="dimmed" fw={700}>ACTIONS</Text></Table.Th>
+              <Table.Th>
+                <Text size="xs" c="dimmed" fw={700}>
+                  INFRASTRUCTURE NAME
+                </Text>
+              </Table.Th>
+              <Table.Th>
+                <Text size="xs" c="dimmed" fw={700}>
+                  LOCATION
+                </Text>
+              </Table.Th>
+              <Table.Th>
+                <Text size="xs" c="dimmed" fw={700}>
+                  SEVERITY
+                </Text>
+              </Table.Th>
+              <Table.Th ta="right">
+                <Text size="xs" c="dimmed" fw={700}>
+                  Updated
+                </Text>
+              </Table.Th>
+              <Table.Th ta="right">
+                <Text size="xs" c="dimmed" fw={700}>
+                  ACTIONS
+                </Text>
+              </Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {paginatedData.length > 0 ? (
               paginatedData.map((report) => (
-                <Table.Tr key={report?.id} onClick={() => handleRowClickTrigger(report)} style={{ cursor: "pointer" }}>
+                <Table.Tr
+                  key={report?.id}
+                  onClick={() => handleActionTrigger(report)}
+                  style={{ cursor: "pointer" }}
+                >
                   <Table.Td>
                     <Stack gap={2}>
-                      <Text size="sm" fw={700} c={COLORS.darkBlue}>{report?.infrastructure_name || "N/A"}</Text>
-                      <Text size="xs" c="dimmed">{report?.infrastructure_type?.includes("(") ? report?.infrastructure_type.split("(")[0] : report?.infrastructure_type}</Text>
+                      <Text size="sm" fw={700} c={COLORS.darkBlue}>
+                        {report?.infrastructure_name || "N/A"}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        {report?.infrastructure_type.includes("(")
+                          ? report?.infrastructure_type.split("(")[0]
+                          : report?.infrastructure_type}
+                      </Text>
                     </Stack>
                   </Table.Td>
                   <Table.Td>
                     <Group gap={4} c="dimmed">
                       <IconMapPin size={14} />
-                      <Text size="sm">{renderValidatedCity(report)}</Text>
+                      <Text size="sm">
+                        {report?.annotations?.incident_point?.geometry?.coordinates[0].toFixed(
+                          3
+                        )}
+                        {report?.annotations?.incident_point?.geometry?.coordinates[1].toFixed(
+                          3
+                        )}
+
+                        {/* {report?.location?.city || "Not geolocated"} */}
+                      </Text>
                     </Group>
                   </Table.Td>
                   <Table.Td>
-                    <Text size="sm" c={SEVERITY_CONFIG[report?.damage_severity?.toLowerCase()]?.color || "gray"}>
+                    <Text
+                      size="sm"
+                      c={
+                        SEVERITY_CONFIG[
+                          report?.damage_severity?.toLowerCase()
+                        ] === undefined
+                          ? SEVERITY_CONFIG["no_Damage"].color
+                          : SEVERITY_CONFIG[
+                              report?.damage_severity?.toLowerCase()
+                            ]?.color
+                      }
+                    >
                       {report?.damage_severity}
                     </Text>
                   </Table.Td>
                   <Table.Td ta="right">
-                    {report?.damage_datetime ? new Date(report.damage_datetime).toLocaleDateString() : "N/A"}
+                    {report?.damage_datetime
+                      ? `${displayDate(
+                          report.damage_datetime
+                        )} at ${displayTime(report.damage_datetime)}`
+                      : "N/A"}
                   </Table.Td>
                   <Table.Td ta="right">
                     <Button
-                      size="xs" variant="light" color="teal" radius="md" leftSection={<IconPlus size={12} />}
-                      onClick={(e) => handleActionModalTrigger(e, report)}
+                      size="xs"
+                      variant="light"
+                      color="teal"
+                      radius="md"
+                      leftSection={<IconPlus size={12} />}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Stops parent row click event handler duplication
+                        handleActionTrigger(report);
+                      }}
                     >
                       Add Question
                     </Button>
@@ -236,7 +432,13 @@ export function ReportDataTablePage({ crisesReportList }) {
                 </Table.Tr>
               ))
             ) : (
-              <Table.Tr><Table.Td colSpan={5} ta="center" py="xl"><Text c="dimmed" size="sm">No records found.</Text></Table.Td></Table.Tr>
+              <Table.Tr>
+                <Table.Td colSpan={5} ta="center" py="xl">
+                  <Text c="dimmed" size="sm">
+                    No records found matching filters.
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
             )}
           </Table.Tbody>
         </Table>
@@ -244,7 +446,13 @@ export function ReportDataTablePage({ crisesReportList }) {
 
       {totalPages > 1 && (
         <Group justify="flex-end" mt="xl">
-          <Pagination total={totalPages} value={activePage} onChange={setActivePage} radius="md" withEdges />
+          <Pagination
+            total={totalPages}
+            value={activePage}
+            onChange={setActivePage}
+            radius="md"
+            withEdges
+          />
         </Group>
       )}
 
@@ -252,27 +460,69 @@ export function ReportDataTablePage({ crisesReportList }) {
       <Drawer
         opened={drawerOpened}
         onClose={closeDrawer}
-        title={<Text style={{ color: COLORS.darkBlue, fontWeight: 700, fontSize: "18px" }}>Impact Incident Deep View</Text>}
+        title={
+          <Text
+            style={{
+              color: COLORS.darkBlue,
+              fontWeight: 700,
+              fontSize: "18px",
+            }}
+          >
+            Impact Incident Deep View
+          </Text>
+        }
         position="right"
         size="md"
         padding="xl"
       >
         {selectedReport && (
           <Stack gap="lg" pt="md">
-            <Box p="md" style={{ backgroundColor: "#F8FAFC", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
-              <Text size="xs" c="dimmed" fw={700} lts={1}>INFRASTRUCTURE NAME</Text>
-              <Text size="lg" fw={700} c={COLORS.darkBlue} mt={2}>{selectedReport?.infrastructure_name || "N/A"}</Text>
-              <Text size="xs" c="dimmed" mt={4}>Type: {selectedReport?.infrastructure_type || "General Asset Structure"}</Text>
+            <Box
+              p="md"
+              style={{
+                backgroundColor: "#F8FAFC",
+                borderRadius: "12px",
+                border: "1px solid #E2E8F0",
+              }}
+            >
+              <Text size="xs" c="dimmed" fw={700} lts={1}>
+                INFRASTRUCTURE NAME
+              </Text>
+              <Text size="lg" fw={700} c={COLORS.darkBlue} mt={2}>
+                {selectedReport?.infrastructure_name || "N/A"}
+              </Text>
+              <Text size="xs" c="dimmed" mt={4}>
+                Type:{" "}
+                {selectedReport?.infrastructure_type ||
+                  "General Asset Structure"}
+              </Text>
             </Box>
 
             <Group justify="space-between" wrap="nowrap">
               <Box>
-                <Group gap={6} c="dimmed" mb={4}><IconMapPin size={14} /><Text size="xs" fw={700} lts={0.5}>GEOGRAPHIC CITY</Text></Group>
-                <Text size="sm" fw={600} c="#334155">{renderValidatedCity(selectedReport)}</Text>
+                <Group gap={6} c="dimmed" mb={4}>
+                  <IconMapPin size={14} />
+                  <Text size="xs" fw={700} lts={0.5}>
+                    GEOGRAPHIC CITY
+                  </Text>
+                </Group>
+                <Text size="sm" fw={600} c="#334155">
+                  {renderValidatedCity(selectedReport)}
+                </Text>
               </Box>
               <Box ta="right">
-                <Text size="xs" c="dimmed" fw={700} lts={0.5} mb={4}>DAMAGE SEVERITY</Text>
-                <Badge color={SEVERITY_CONFIG[selectedReport?.damage_severity?.toLowerCase()]?.color || "gray"} size="md" radius="sm">
+                <Text size="xs" c="dimmed" fw={700} lts={0.5} mb={4}>
+                  DAMAGE SEVERITY
+                </Text>
+                <Badge
+                  color={
+                    SEVERITY_CONFIG[
+                      selectedReport?.damage_severity?.toLowerCase()
+                    ]?.color || "gray"
+                  }
+                  size="md"
+                  radius="sm"
+                >
                   {selectedReport?.damage_severity || "Unknown"}
                 </Badge>
               </Box>
@@ -281,23 +531,55 @@ export function ReportDataTablePage({ crisesReportList }) {
             <Divider color="#F1F5F9" />
 
             <Stack gap="xs">
-              <Group gap={6} c="dimmed"><IconCalendar size={14} /><Text size="xs" fw={700}>TIMESTAMP LOGGED</Text></Group>
+              <Group gap={6} c="dimmed">
+                <IconCalendar size={14} />
+                <Text size="xs" fw={700}>
+                  TIMESTAMP LOGGED
+                </Text>
+              </Group>
               <Text size="sm" c="#334155">
-                {selectedReport?.damage_datetime ? new Date(selectedReport.damage_datetime).toLocaleString() : "No timestamp associated"}
+                {selectedReport?.damage_datetime
+                  ? new Date(selectedReport.damage_datetime).toLocaleString()
+                  : "No timestamp associated"}
               </Text>
             </Stack>
 
             <Stack gap="xs">
-              <Group gap={6} c="dimmed"><IconInfoCircle size={14} /><Text size="xs" fw={700}>CRISIS LOCATION</Text></Group>
+              <Group gap={6} c="dimmed">
+                <IconInfoCircle size={14} />
+                <Text size="xs" fw={700}>
+                  CRISIS LOCATION
+                </Text>
+              </Group>
               <Text size="sm" c="#475569" style={{ lineHeight: 1.5 }}>
-                {renderValidatedCity(selectedReport)} <code style={{ backgroundColor: "#F1F5F9", padding: "2px 6px", borderRadius: "4px" }}>[{selectedReport?.annotations?.incident_point?.geometry?.coordinates[0].toFixed(3)}, {selectedReport?.annotations?.incident_point?.geometry?.coordinates[1].toFixed(3)}]</code>
-
+                {renderValidatedCity(selectedReport)}{" "}
+                <code
+                  style={{
+                    backgroundColor: "#F1F5F9",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                  }}
+                >
+                  [
+                  {selectedReport?.annotations?.incident_point?.geometry?.coordinates[0].toFixed(
+                    3
+                  )}
+                  ,{" "}
+                  {selectedReport?.annotations?.incident_point?.geometry?.coordinates[1].toFixed(
+                    3
+                  )}
+                  ]
+                </code>
               </Text>
             </Stack>
 
             <Box mt="xl">
               <Button
-                fullWidth color="teal" variant="light" radius="md" leftSection={<IconPlus size={16} />}
+                fullWidth
+                color="teal"
+                variant="light"
+                radius="md"
+                leftSection={<IconPlus size={16} />}
                 onClick={(e) => {
                   closeDrawer();
                   handleActionModalTrigger(e, selectedReport);
@@ -319,3 +601,20 @@ export function ReportDataTablePage({ crisesReportList }) {
     </Card>
   );
 }
+
+const displayDate = (d) =>
+  d
+    ? new Date(d).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "";
+const displayTime = (d) =>
+  d
+    ? new Date(d).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
+    : "";

@@ -92,6 +92,8 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     return mapping[label];
   }
 
+  userLocation = null;
+
   const form = useForm({
     initialValues: {
       crisis_id: id || null,
@@ -286,7 +288,10 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     formData.append("electricity_condition", values.electricity_condition);
     formData.append("health_services_rating", values.health_services_rating);
     formData.append("pressing_need", values.pressing_need.join(", "));
-    formData.append("annotations", JSON.stringify(swapAnnotationPointCoords(values.annotations) ?? {}));
+    formData.append(
+      "annotations",
+      JSON.stringify(swapAnnotationPointCoords(values.annotations) ?? {}),
+    );
 
     values.photos.forEach((photoObj) => {
       formData.append("photos", photoObj.file);

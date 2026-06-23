@@ -98,7 +98,7 @@ const SurveyTabView = ({ report, impactReportId }) => {
       p={{ base: "sm", sm: "md" }}
       bg={COLORS.bg}
     >
-      {console.log(getCategorizeReports(example))}
+      {/* {console.log(getCategorizeReports(example))} */}
 
       <Box>
         <Text
