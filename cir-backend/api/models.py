@@ -10,7 +10,6 @@ from django.db import models
 
 from .constants import CardinalDirection, DamageSeverity, HealthServicesRatingLevel, ElectrictyDamageLevel
 from .utils import generate_pseudonym
-# User = get_user_model()
 
 
 def get_timestamp_path(instance, filename):
@@ -19,8 +18,6 @@ def get_timestamp_path(instance, filename):
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     filename = f"{timestamp}.{ext}"
     return os.path.join('', filename)
-
-
 
 
 class Photo(models.Model):
@@ -92,43 +89,40 @@ class Location(models.Model):
         return self.country + " - " + self.state_province + " - " + self.city + " - " + self.street_address if self.country and self.state_province and self.city and self.street_address else self.name or self.description or "Location"
 
 
-
-
 class CIRUser(AbstractUser):
-    location = models.ForeignKey(Location, on_delete=models.RESTRICT, blank=True, null=True)
+    location = models.ForeignKey(
+        Location, on_delete=models.RESTRICT, blank=True, null=True)
     job_title = models.CharField(max_length=100)
     organization = models.CharField(max_length=100)
     pseudonym = models.CharField(max_length=50, blank=True, null=True)
-    
+
     def save(self, *args, **kwargs):
         if not self.pseudonym:
             new_pseudo = generate_pseudonym()
-            
+
             # Ensure uniqueness
             while CIRUser.objects.filter(pseudonym=new_pseudo).exists():
                 new_pseudo += str(random.randint(1, 1000))
-                
+
             self.pseudonym = new_pseudo
-            
+
         super().save(*args, **kwargs)
-    
+
     def __str__(self):
         return self.username
-
-
 
 
 class ImpactReport(models.Model):
     """
     Model representing an impact report submitted by a user. This includes information about the damage to infrastructure, the nature of the crisis, 
     and the location of the incident. Each ImpactReport can be linked to multiple photos and one location. 
-    
+
     Additionally, each ImpactReport can be linked to a Crisis to indicate that it is part of a larger crisis event.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     photos = models.ManyToManyField(Photo, blank=True)
-    description = models.TextField( blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
     infrastructure_name = models.CharField(
         max_length=255, blank=True, null=True)
     infrastructure_type = models.CharField(max_length=255, blank=True, null=True,
@@ -143,7 +137,6 @@ class ImpactReport(models.Model):
 
     debris = models.BooleanField(
         default=False, help_text="Indicates if there is debris present at the site.")
-
 
     location = models.ForeignKey(
         InfrastructureLocation, on_delete=models.CASCADE, blank=True, null=True)
@@ -166,8 +159,7 @@ class ImpactReport(models.Model):
     )
 
     pressing_need = models.TextField(default="", blank=True, null=True)
-    
-    
+
     reported_by = models.ForeignKey(
         get_user_model(),
         null=True,
@@ -175,17 +167,18 @@ class ImpactReport(models.Model):
         on_delete=models.RESTRICT
     )
 
-    anonymous_reported_by = models.CharField(max_length=20, blank=True, null=True, help_text="A pseudoname for anonymous users")
+    anonymous_reported_by = models.CharField(
+        max_length=20, blank=True, null=True, help_text="A pseudoname for anonymous users")
 
     annotations = models.JSONField(
         blank=True, null=True,
         help_text="GeoJSON annotation data drawn on the map by the reporter (polygon, radius, point, direction, position)."
     )
-    
+
     quality_score = models.IntegerField(default=0, blank=True, null=True)
 
     def __str__(self):
-        return "Impact Report " + str(self.infrastructure_name) + str(self.infrastructure_type) + "--> " 
+        return "Impact Report " + str(self.infrastructure_name) + str(self.infrastructure_type) + "--> "
 
 
 class Question(models.Model):
@@ -203,20 +196,21 @@ class Question(models.Model):
 
     def __str__(self):
         return self.text
-    
+
+
 class QuestionGroup(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    
+
     latitude = models.FloatField()
     longitude = models.FloatField()
-    
+
     distance_threshold_in_km = models.FloatField()
-    
+
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
 
-
-    impact_report = models.ForeignKey(ImpactReport, on_delete=models.CASCADE, default=None, null=True, blank=True)
+    impact_report = models.ForeignKey(
+        ImpactReport, on_delete=models.CASCADE, default=None, null=True, blank=True)
 
 
 class Question2(models.Model):
@@ -229,9 +223,8 @@ class Question2(models.Model):
     is_multiple_choice = models.BooleanField(
         default=False, help_text="Indicates whether the question is a multiple choice question or not.")
 
-
-    question_group= models.ForeignKey(QuestionGroup, on_delete=models.SET_NULL, blank=True, null=True)
-
+    question_group = models.ForeignKey(
+        QuestionGroup, on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self):
         return self.question
@@ -251,6 +244,5 @@ class Answer(models.Model):
         on_delete=models.RESTRICT
     )
 
-    
     def __str__(self):
         return f"Answer to '{self.question.question}': '{self.answer}'"
