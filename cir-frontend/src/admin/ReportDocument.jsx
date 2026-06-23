@@ -131,7 +131,7 @@ const ReportDocument = ({ data }) => {
         <View style={styles.header}>
           <View>
             <Text style={styles.headerTitle}>Damage Assessment Report</Text>
-            <Text style={styles.headerSubtitle}>Report ID: {data.id}</Text>
+            <Text style={styles.headerSubtitle}>Report ID: {data?.id || ""}</Text>
           </View>
           <View style={{ alignItems: "flex-end" }}>
             <Text style={styles.headerSubtitle}>
@@ -147,12 +147,12 @@ const ReportDocument = ({ data }) => {
           <View style={styles.row}>
             <Text style={styles.label}>Reported By:</Text>
             <Text style={styles.value}>
-              {data.reported_by.user} (ID: {data.reported_by.id})
+              {data?.reported_by?.user || ""} (ID: {data?.reported_by?.id || ""})
             </Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Damage Occurred:</Text>
-            <Text style={styles.value}>{formatDate(data.damage_datetime)}</Text>
+            <Text style={styles.value}>{formatDate(data?.damage_datetime)}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Report Created:</Text>
@@ -165,40 +165,40 @@ const ReportDocument = ({ data }) => {
           <Text style={styles.sectionTitle}>Infrastructure Information</Text>
           <View style={styles.row}>
             <Text style={styles.label}>Facility Name:</Text>
-            <Text style={styles.value}>{data.infrastructure_name}</Text>
+            <Text style={styles.value}>{data?.infrastructure_name || ""}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Facility Type:</Text>
-            <Text style={styles.value}>{data.infrastructure_type}</Text>
+            <Text style={styles.value}>{data?.infrastructure_type || ""}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Damage Severity:</Text>
-            <Text style={styles.value}>{data.damage_severity}</Text>
+            <Text style={styles.value}>{data?.damage_severity || ""}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Debris Present:</Text>
-            <Text style={styles.value}>{data.debris ? "Yes" : "No"}</Text>
+            <Text style={styles.value}>{data?.debris ? "Yes" : "No"}</Text>
           </View>
 
           <View style={styles.row}>
             <Text style={styles.label}>Electricty Condition:</Text>
-            <Text style={styles.value}>{data.electricity_condition}</Text>
+            <Text style={styles.value}>{data?.electricity_condition || ""}</Text>
           </View>
 
           <View style={styles.row}>
             <Text style={styles.label}>Health Service:</Text>
-            <Text style={styles.value}>{data.health_services_rating}</Text>
+            <Text style={styles.value}>{data.health_services_rating || ""}</Text>
           </View>
 
           <View style={styles.row}>
             <Text style={styles.label}>Pressing Need:</Text>
-            <Text style={styles.value}>{data.pressing_need}</Text>
+            <Text style={styles.value}>{data?.pressing_need || ""}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Coordinates:</Text>
             <Text style={styles.value}>
-              Lat: {data.location.infrastructure_latitude.toFixed(6)}, Lng:{" "}
-              {data.location.infrastructure_longitude.toFixed(6)}
+              Lat: {data?.location?.infrastructure_latitude?.toFixed(6) || ""},
+              Lan:{data?.location?.infrastructure_longitude?.toFixed(6) || ""}
             </Text>
           </View>
         </View>
@@ -206,7 +206,7 @@ const ReportDocument = ({ data }) => {
         {/* DESCRIPTION */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Reporter's Damage description</Text>
-          <Text style={styles.descriptionBox}>{data.description}</Text>
+          <Text style={styles.descriptionBox}>{data?.description || ""}</Text>
         </View>
 
         {/* PHOTOS SECTION */}
@@ -221,7 +221,7 @@ const ReportDocument = ({ data }) => {
                   style={styles.photo}
                 />
                 <Text style={styles.photoCaption}>
-                  {photo.description
+                  {photo?.description
                     ? `Description: ${photo.description}`
                     : `Image ID: ${photo.id.split("-")[0]}`}
                 </Text>

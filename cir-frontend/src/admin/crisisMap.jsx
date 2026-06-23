@@ -50,9 +50,8 @@ const createNumberedIcon = (number = null, isSelected = false) => {
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40" z-index="9999">
       <path fill="${fillColor}" d="M 24 10 C 17.5 10 13 15 13 20.5 C 13 27 24 36 24 36 C 24 36 35 27 35 20.5 C 35 15 30.5 10 24 10 Z" />
       <circle cx="24" cy="19" r="4" fill="white" />
-      ${
-        number
-          ? `
+      ${number
+      ? `
             <circle
               cx="28"
               cy="12"
@@ -74,8 +73,8 @@ const createNumberedIcon = (number = null, isSelected = false) => {
               ${number}
             </text>
           `
-          : ""
-      }
+      : ""
+    }
     </svg>
   `;
 
@@ -239,7 +238,7 @@ export function CrisisMapPage() {
                   <ReportMarker
                     report={selectedReport}
                     index={"SE"}
-                    // latlng={[37.359, 11.604]}
+                  // latlng={[37.359, 11.604]}
                   />
                 </React.Fragment>
               )}
@@ -342,7 +341,7 @@ export function CrisisMapPage() {
                         {categorizedReports && (
                           <Stack>
                             {!categorizedReports[selectedMatchGroup] ||
-                            categorizedReports[selectedMatchGroup].length ===
+                              categorizedReports[selectedMatchGroup].length ===
                               0 ? (
                               <></>
                             ) : (
@@ -374,7 +373,7 @@ export function CrisisMapPage() {
                     </ScrollArea>
                   )}
 
-                  {selectedReport && (
+                  {selectedReport !== null && (
                     <ScrollArea type="auto" h={"80vh"}>
                       <ReportDetailsView report={selectedReport} />
                     </ScrollArea>

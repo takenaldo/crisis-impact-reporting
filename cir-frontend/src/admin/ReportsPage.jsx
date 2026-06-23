@@ -458,7 +458,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                       <Text size="xs" fw={700} c="dimmed" tt="uppercase">Reported By</Text>
                     </Group>
                     <Text size="sm" fw={600}>
-                      {safeString(selectedReport?.reported_by.user)}
+                      {safeString(selectedReport?.reported_by?.user || "")}
                     </Text>
                     <Text size="xs" c="dimmed" mt={4}>
                       {selectedReport?.organization || "UNDP Local Team"}
@@ -472,7 +472,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                       <Box>
                         <Text size="xs" c="dimmed" fw={700} mb={6}>Damage Description</Text>
                         <Text size="sm" style={{ lineHeight: 1.6 }}>
-                          {selectedReport.damage_description}
+                          {selectedReport?.damage_description || ""}
                         </Text>
                       </Box>
                     )}
@@ -480,7 +480,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                       <Box>
                         <Text size="xs" c="dimmed" fw={700} mb={6}>Impact Notes</Text>
                         <Text size="sm" style={{ lineHeight: 1.6 }}>
-                          {selectedReport.impact_notes}
+                          {selectedReport?.impact_notes || ""}
                         </Text>
                       </Box>
                     )}
@@ -489,7 +489,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                         <Box>
                           <Text size="xs" c="dimmed" fw={700}>Affected Population</Text>
                           <Text size="lg" fw={700} c={COLORS.darkBlue}>
-                            {selectedReport.affected_population}
+                            {selectedReport?.affected_population || ""}
                           </Text>
                         </Box>
                       )}
@@ -497,7 +497,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                         <Box>
                           <Text size="xs" c="dimmed" fw={700}>Estimated Cost</Text>
                           <Text size="lg" fw={700} c={COLORS.darkBlue}>
-                            ${selectedReport.estimated_cost}
+                            ${selectedReport?.estimated_cost || ""}
                           </Text>
                         </Box>
                       )}
@@ -527,7 +527,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                       <Group justify="space-between" align="flex-start">
                         <Text size="sm" c="dimmed">Incident Point</Text>
                         <Text size="sm" style={{ fontFamily: "monospace", textAlign: "right" }}>
-                          {JSON.stringify(selectedReport.annotations.incident_point.geometry.coordinates)}
+                          {JSON.stringify(selectedReport?.annotations?.incident_point?.geometry?.coordinates || [])}
                         </Text>
                       </Group>
                     )}
