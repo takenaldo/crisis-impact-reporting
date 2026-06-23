@@ -163,10 +163,7 @@ export function ReportDataTablePage({ crisesReportList }) {
     if (typeof value === "string") return value;
     if (typeof value === "number") return value.toString();
     if (typeof value === "object") {
-      if (value?.user?.full_name) return value.user.full_name;
-      if (value?.name) return value.name;
-      if (value?.username) return value.username;
-      if (value?.full_name) return value.full_name;
+      if (value?.user) return value.user;
       return JSON.stringify(value);
     }
     return String(value);
@@ -192,12 +189,24 @@ export function ReportDataTablePage({ crisesReportList }) {
   );
 
   const filteredData = (crisesReportList || []).filter((row) => {
-    const matchesSeverity = selectedSeverity ? row?.damage_severity?.toLowerCase() === selectedSeverity.toLowerCase() : true;
-    const matchesRegion = selectedRegion ? row?.location?.city?.toLowerCase() === selectedRegion.toLowerCase() : true;
+    const matchesSeverity = selectedSeverity
+      ? row?.damage_severity?.toLowerCase() === selectedSeverity.toLowerCase()
+      : true;
+    const matchesRegion = selectedRegion
+      ? row?.location?.city?.toLowerCase() === selectedRegion.toLowerCase()
+      : true;
     return matchesSeverity && matchesRegion;
   });
 
-  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE) || 1;
+
+  // Fix pagination when filters change or data updates
+  useEffect(() => {
+    if (activePage > totalPages && totalPages > 0) {
+      setActivePage(1);
+    }
+  }, [filteredData.length, totalPages, activePage]);
+
   const startIndex = (activePage - 1) * ITEMS_PER_PAGE;
   const paginatedData = filteredData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
@@ -210,7 +219,10 @@ export function ReportDataTablePage({ crisesReportList }) {
             placeholder="All severities"
             data={dynamicSeverities}
             value={selectedSeverity}
-            onChange={(v) => { setSelectedSeverity(v); setActivePage(1); }}
+            onChange={(v) => {
+              setSelectedSeverity(v);
+              setActivePage(1);
+            }}
             clearable
             w={160}
             radius="md"
@@ -220,7 +232,10 @@ export function ReportDataTablePage({ crisesReportList }) {
             placeholder="All regions"
             data={dynamicRegions}
             value={selectedRegion}
-            onChange={(v) => { setSelectedRegion(v); setActivePage(1); }}
+            onChange={(v) => {
+              setSelectedRegion(v);
+              setActivePage(1);
+            }}
             clearable
             w={160}
             radius="md"
@@ -388,7 +403,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                       <Text size="xs" fw={700} c="dimmed" tt="uppercase">Reported By</Text>
                     </Group>
                     <Text size="sm" fw={600}>
-                      {safeString(selectedReport?.reported_by.user)}
+                      {safeString(selectedReport?.reported_by?.user || "")}
                     </Text>
                     <Text size="xs" c="dimmed" mt={4}>
                       {selectedReport?.organization || "UNDP Local Team"}
