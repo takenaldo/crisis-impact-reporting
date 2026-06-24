@@ -1,6 +1,6 @@
 {
-  "name": "cir-frontend",
   "homepage": ".",
+  "name": "cir-frontend",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
