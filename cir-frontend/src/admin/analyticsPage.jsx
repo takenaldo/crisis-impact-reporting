@@ -73,9 +73,8 @@ export function AnalyticsPage() {
           damage_severity: incomingData.damage_severity || {},
           infrastructure_type: incomingData.infrastructure_type || {}
         });
-        console.log("Fetched analytics:", incomingData);
+     
       } catch (error) {
-        console.error("Error fetching analytics data:", error);
         setAnalyticsData({ total_reports: 0, damage_severity: {}, infrastructure_type: {} });
       }
     };

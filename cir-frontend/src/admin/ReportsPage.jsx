@@ -73,7 +73,7 @@ const resolveCityName = (row) => {
     const result = getNearestCity(parsedLng, parsedLat);
     return result?.cityName || row?.location?.city || "Unknown Region";
   } catch (e) {
-    console.error("S2 processing failure skipped gracefully:", e);
+   
     return row?.location?.city || "Unknown Region";
   }
 };
@@ -107,7 +107,7 @@ export function ReportsPage() {
 
         setCrisesReportList(incomingData);
       } catch (error) {
-        console.error("Error fetching crises:", error);
+   
         setCrisesReportList([]);
       }
     };

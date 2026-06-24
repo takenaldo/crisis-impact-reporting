@@ -103,9 +103,9 @@ export function DashboardPage() {
           : response.data?.results || [];
 
         setCrisesReports(incomingData);
-        console.log("Fetched crises:", incomingData);
+   
       } catch (error) {
-        console.error("Error fetching crises:", error);
+  
         setCrisesReports([]);
       }
     };
@@ -120,9 +120,7 @@ export function DashboardPage() {
           urls.getReportsByDate + selectedDateRange
         );
         setCrisesReportList(response.data);
-        console.log("Fetched crises:", response.data);
       } catch (error) {
-        console.error("Error fetching crises:", error);
       }
     };
 
@@ -158,7 +156,7 @@ export function DashboardPage() {
                 data={formattedData}
                 onChange={(value) => {
                   setSelectedDateRange(value);
-                  console.log("Selected date range:", value);
+            
                 }}
                 rightSection={<IconChevronDown size={14} />}
                 radius="md"
@@ -308,11 +306,11 @@ export function HeaderCardPage({ selectedDateRange }) {
         const response = await api.get(
           urls.getReportsByDate + selectedDateRange
         );
-        console.log("+++++++++++++++++++++" + response.data);
+   
         setCrisesReportList(response.data);
-        console.log("Fetched crises:", response.data);
+    
       } catch (error) {
-        console.error("Error fetching crises:", error);
+     
       }
     };
 

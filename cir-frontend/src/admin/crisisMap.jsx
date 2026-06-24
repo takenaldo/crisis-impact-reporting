@@ -193,7 +193,7 @@ export function CrisisMapPage() {
         setReportsList(response.data);
         setCategorizedreports(getCategorizeReports([...response.data]));
       } catch (error) {
-        console.error("Error fetching crises:", error);
+      
       }
     };
 
