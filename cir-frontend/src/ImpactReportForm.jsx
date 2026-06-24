@@ -365,13 +365,14 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
               minZoom={mapBounds.minZoom}
             />
           </Box>
+          {/* 
           <Divider
             label="Or provide address metrics"
             labelPosition="center"
             my="xs"
             ff="Poppins"
           />
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
               label="Country"
               placeholder="e.g., United States"
@@ -396,7 +397,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
               ff="Poppins"
               {...form.getInputProps("street_address")}
             />
-          </SimpleGrid>
+          </SimpleGrid> */}
         </Stack>
       ),
     },
