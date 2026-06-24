@@ -17,6 +17,7 @@ import {
   Badge,
   Title,
   SimpleGrid,
+  Menu,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
@@ -29,6 +30,8 @@ import {
   IconInfoCircle,
   IconUser,
   IconAlertTriangle,
+  IconFileText,
+  IconWorld,
 } from "@tabler/icons-react";
 import { getNearestCity } from "offline-geocode-city";
 import { COLORS, SEVERITY_CONFIG, timeAgo } from "../utils";
@@ -72,6 +75,43 @@ export function ReportsPage() {
     fetchCrises();
   }, []);
 
+  // --- Safe Location String Calculation Utility ---
+  const getCityName = (row) => {
+    const coords = row?.annotations?.incident_point?.geometry?.coordinates;
+    let lng = undefined;
+    let lat = undefined;
+
+    // GeoJSON coordinates array is standard [longitude, latitude]
+    if (Array.isArray(coords) && coords.length >= 2) {
+      lng = coords[0];
+      lat = coords[1];
+    } else {
+      lat = row?.location?.latitude ?? row?.latitude;
+      lng = row?.location?.longitude ?? row?.longitude;
+    }
+
+    const parsedLat = parseFloat(lat);
+    const parsedLng = parseFloat(lng);
+
+    // Guard rails to prevent S2 library internal stack recursion loop crashes
+    if (
+      isNaN(parsedLat) ||
+      isNaN(parsedLng) ||
+      parsedLat < -90.0 ||
+      parsedLat > 90.0 ||
+      parsedLng < -180.0 ||
+      parsedLng > 180.0
+    ) {
+      const DEFAULT_LAT = 8.9806;
+      const DEFAULT_LNG = 38.7578;
+      const fallbackResult = getNearestCity(DEFAULT_LNG, DEFAULT_LAT);
+      return fallbackResult?.cityName || "Addis Ababa (Default)";
+    }
+
+    const result = getNearestCity(parsedLng, parsedLat);
+    return result?.cityName || row?.location?.city || "Unknown Region";
+  };
+
   // --- CSV Export ---
   const handleExportCSV = () => {
     if (!crisesReportList || crisesReportList.length === 0) {
@@ -89,7 +129,7 @@ export function ReportsPage() {
     const rows = crisesReportList.map((row) => [
       row?.infrastructure_name || "N/A",
       row?.infrastructure_type || "N/A",
-      row?.location?.city || "N/A",
+      getCityName(row),
       row?.damage_severity || "Low",
       row?.damage_datetime
         ? `${displayDate(row.damage_datetime)} at ${displayTime(
@@ -99,8 +139,7 @@ export function ReportsPage() {
     ]);
 
     const escapeCSVField = (value) => {
-      const stringValue =
-        value === null || value === undefined ? "" : String(value);
+      const stringValue = value === null || value === undefined ? "" : String(value);
       if (
         stringValue.includes(",") ||
         stringValue.includes('"') ||
@@ -122,14 +161,152 @@ export function ReportsPage() {
     });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    const filename = `UNDP_Crisis_Report_${new Date().toISOString().split("T")[0]
-      }.csv`;
+    const filename = `UNDP_Crisis_Report_${new Date().toISOString().split("T")[0]}.csv`;
     link.setAttribute("href", url);
     link.setAttribute("download", filename);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // --- GeoJSON Export ---
+  const handleExportGeoJSON = () => {
+    if (!crisesReportList || crisesReportList.length === 0) {
+      alert("No data available to export");
+      return;
+    }
+
+    const features = crisesReportList.map((row) => {
+      const coords = row?.annotations?.incident_point?.geometry?.coordinates;
+      let lng = undefined;
+      let lat = undefined;
+
+      if (Array.isArray(coords) && coords.length >= 2) {
+        lng = coords[0];
+        lat = coords[1];
+      } else {
+        lat = row?.location?.latitude ?? row?.latitude;
+        lng = row?.location?.longitude ?? row?.longitude;
+      }
+
+      const validLng = isNaN(parseFloat(lng)) ? 38.7578 : parseFloat(lng);
+      const validLat = isNaN(parseFloat(lat)) ? 8.9806 : parseFloat(lat);
+
+      return {
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [validLng, validLat],
+        },
+        properties: {
+          id: row?.id || "",
+          infrastructure_name: row?.infrastructure_name || "N/A",
+          infrastructure_type: row?.infrastructure_type || "N/A",
+          city_resolved: getCityName(row),
+          damage_severity: row?.damage_severity || "Unknown",
+          damage_datetime: row?.damage_datetime || "N/A",
+          status: row?.status || "N/A",
+          affected_population: row?.affected_population || 0,
+          estimated_cost: row?.estimated_cost || 0,
+        },
+      };
+    });
+
+    const geojsonData = {
+      type: "FeatureCollection",
+      crs: {
+        type: "name",
+        properties: {
+          name: "urn:ogc:def:crs:OGC:1.3:CRS84",
+        },
+      },
+      features,
+    };
+
+    const blob = new Blob([JSON.stringify(geojsonData, null, 2)], {
+      type: "application/geo+json;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const filename = `UNDP_Crisis_Spatial_${new Date().toISOString().split("T")[0]}.geojson`;
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // --- PDF Export via Print Isolation Context Window ---
+  const handleExportPDF = () => {
+    if (!crisesReportList || crisesReportList.length === 0) {
+      alert("No data available to export");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert("Pop-up blocker is preventing export. Please allow popups.");
+      return;
+    }
+
+    const rowsHtml = crisesReportList
+      .map(
+        (row) => `
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600;">${row?.infrastructure_name || "N/A"}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #4a5568;">${row?.infrastructure_type || "N/A"}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 13px;">${getCityName(row)}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 13px;"><span style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background-color: #edf2f7;">${row?.damage_severity || "Unknown"}</span></td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px; text-align: right; color: #718096;">${row?.damage_datetime ? new Date(row.damage_datetime).toLocaleDateString() : "N/A"}</td>
+      </tr>
+    `
+      )
+      .join("");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>UNDP Crisis Impact Reports</title>
+          <style>
+            body { font-family: 'Inter', sans-serif; color: #1a202c; padding: 40px; margin: 0; }
+            .header { margin-bottom: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; }
+            .title { font-size: 24px; font-weight: 700; color: #1e3a8a; margin: 0; }
+            .subtitle { font-size: 12px; color: #718096; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+            .meta { font-size: 12px; color: #a0aec0; text-align: right; float: right; margin-top: -40px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th { text-align: left; padding: 12px 10px; background-color: #f7fafc; color: #718096; font-size: 11px; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+            @media print { body { padding: 0; } .no-print { display: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="subtitle">United Nations Development Programme</div>
+            <div class="title">Crisis Impact Executive Summary</div>
+            <div class="meta">Generated on: ${new Date().toLocaleDateString()}</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Infrastructure</th>
+                <th>Type</th>
+                <th>Location</th>
+                <th>Severity</th>
+                <th style="text-align: right;">Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   return (
@@ -156,14 +333,34 @@ export function ReportsPage() {
                 w={160}
                 size="sm"
               />
-              <Button
-                bg={COLORS.primaryTeal}
-                leftSection={<IconDownload size={16} />}
-                radius="md"
-                size="sm"
-              >
-                Export Reports
-              </Button>
+
+              <Menu shadow="md" width={180} radius="md" position="bottom-end">
+                <Menu.Target>
+                  <Button
+                    bg={COLORS.primaryTeal}
+                    leftSection={<IconDownload size={16} />}
+                    rightSection={<IconChevronDown size={14} />}
+                    radius="md"
+                    size="sm"
+                  >
+                    Export Reports
+                  </Button>
+                </Menu.Target>
+
+                <Menu.Dropdown>
+                  <Menu.Label>Format Options</Menu.Label>
+                  <Menu.Item leftSection={<IconFileText size={16} />} onClick={handleExportCSV}>
+                    Export as CSV
+                  </Menu.Item>
+                  <Menu.Item leftSection={<IconWorld size={16} />} onClick={handleExportGeoJSON}>
+                    Export as GeoJSON
+                  </Menu.Item>
+                  <Menu.Item leftSection={<IconInfoCircle size={16} />} onClick={handleExportPDF}>
+                    Export as PDF
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+
               <ActionIcon variant="default" size="lg" radius="md">
                 <IconBell size={18} stroke={1.5} />
               </ActionIcon>
@@ -180,13 +377,13 @@ export function ReportsPage() {
         </Card>
 
         <HeaderCardPage />
-        <ReportDataTablePage crisesReportList={crisesReportList} />
+        <ReportDataTablePage crisesReportList={crisesReportList} getCityName={getCityName} />
       </Container>
     </Box>
   );
 }
 
-export function ReportDataTablePage({ crisesReportList }) {
+export function ReportDataTablePage({ crisesReportList, getCityName }) {
   const [activePage, setActivePage] = useState(1);
   const [selectedSeverity, setSelectedSeverity] = useState(null);
   const [selectedRegion, setSelectedRegion] = useState(null);
@@ -198,41 +395,12 @@ export function ReportDataTablePage({ crisesReportList }) {
   const ITEMS_PER_PAGE = 10;
 
   const renderValidatedCity = (report) => {
-    const coords = report?.annotations?.incident_point?.geometry?.coordinates;
-    let lng = coords?.[1];
-    let lat = coords?.[0];
-
-    if (lat === undefined || lng === undefined) {
-      lat = report?.location?.latitude ?? report?.latitude;
-      lng = report?.location?.longitude ?? report?.longitude;
-    }
-
-    const parsedLat = parseFloat(lat);
-    const parsedLng = parseFloat(lng);
-
-    if (
-      isNaN(parsedLat) ||
-      isNaN(parsedLng) ||
-      parsedLat < -90 ||
-      parsedLat > 90 ||
-      parsedLng < -180 ||
-      parsedLng > 180
-    ) {
-      const DEFAULT_LAT = 8.9806;
-      const DEFAULT_LNG = 38.7578;
-      const fallbackResult = getNearestCity(DEFAULT_LNG, DEFAULT_LAT);
-      return fallbackResult?.cityName || "Addis Ababa (Default)";
-    }
-    const result = getNearestCity(parsedLng, parsedLat);
-    return result?.cityName || "Unknown Region";
+    return getCityName ? getCityName(report) : "Unknown Region";
   };
+
   const safeString = (value) => {
-    console.log("=============log====================");
-    console.log(value);
-    console.log("=============log====================");
     if (value == null) return "";
     if (typeof value === "string") return value;
-
     return String(value);
   };
 
@@ -396,7 +564,8 @@ export function ReportDataTablePage({ crisesReportList }) {
             size="sm"
           />
         </Group>
-      )} <Drawer
+      )}
+      <Drawer
         opened={drawerOpened}
         onClose={closeDrawer}
         position="right"
@@ -557,6 +726,7 @@ export function ReportDataTablePage({ crisesReportList }) {
     </Card>
   );
 }
+
 const displayDate = (d) =>
   d
     ? new Date(d).toLocaleDateString("en-US", {
@@ -565,6 +735,7 @@ const displayDate = (d) =>
       year: "numeric",
     })
     : "";
+
 const displayTime = (d) =>
   d
     ? new Date(d).toLocaleTimeString("en-US", {
