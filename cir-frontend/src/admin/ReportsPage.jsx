@@ -448,7 +448,7 @@ export function ReportDataTablePage({ crisesReportList }) {
     <Card padding="xl"  >
       <Group justify="space-between" mb="xl">
         <Title order={4} fw={700} c={COLORS.darkBlue}>Recent Reports</Title>
-        <Group gap="sm">
+        <Group gap="sm">  
           <Select
             placeholder="All severities"
             data={dynamicSeverities}
