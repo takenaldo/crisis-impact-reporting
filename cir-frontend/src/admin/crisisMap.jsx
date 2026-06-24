@@ -307,7 +307,6 @@ export function CrisisMapPage() {
                 <MapRecenter center={[center_lat, center_lng]} zoom={zoom} />
               )}
             </MapContainer>
-
             {(selectedMatchGroup || selectedReport) && (
               <Paper
                 shadow="md"

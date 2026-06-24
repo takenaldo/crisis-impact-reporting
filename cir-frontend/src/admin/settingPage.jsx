@@ -11,12 +11,19 @@ import {
   Select,
   Box,
   Container,
+  Center,
+  Flex,
 } from "@mantine/core";
 
 import { COLORS } from "../utils";
 
 export function SettingsPage() {
   return (
-    <Box bg={COLORS.lightBackground} minHeight="100vh" py="md" px="lg"></Box>
+
+
+    <Center h={"100vh"}>
+      <Text fw={600} >Settings Page Coming Soon...</Text>
+    </Center>
+
   );
 }

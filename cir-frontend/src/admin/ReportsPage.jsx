@@ -324,7 +324,7 @@ export function ReportsPage() {
             </Group>
 
             <Group gap="md">
-              <Select
+              {/* <Select
                 placeholder="Select date range"
                 defaultValue={selectedDateRange}
                 data={formattedData}
@@ -333,7 +333,7 @@ export function ReportsPage() {
                 radius="md"
                 w={160}
                 size="sm"
-              />
+              /> */}
 
               <Menu shadow="md" width={180} radius="md" position="bottom-end">
                 <Menu.Target>
