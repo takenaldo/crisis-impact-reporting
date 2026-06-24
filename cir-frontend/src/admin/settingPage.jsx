@@ -19,11 +19,8 @@ import { COLORS } from "../utils";
 
 export function SettingsPage() {
   return (
-
-
     <Center h={"100vh"}>
-      <Text fw={600} >Settings Page Coming Soon...</Text>
+      <Text fw={600}>Settings Page Coming Soon...</Text>
     </Center>
-
   );
 }
