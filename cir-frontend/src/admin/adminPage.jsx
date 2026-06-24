@@ -140,12 +140,7 @@ export function DashboardPage() {
     <Box bg={COLORS.lightBackground} minHeight="100vh" py="md" px="lg">
       <Container size="xl">
         {/* Header */}
-        <header
-          style={{
-            background: "white",
-            borderBottom: "1px solid #e2e8f0",
-            padding: "12px 28px",
-          }}
+        <Card
         >
           <Group justify="space-between" align="center">
             <Group align="center">
@@ -204,7 +199,7 @@ export function DashboardPage() {
               </Group>
             </Group>
           </Group>
-        </header>
+        </Card>
 
         <Container size="xl" py={28}>
           {/* Top Metrics Cards */}

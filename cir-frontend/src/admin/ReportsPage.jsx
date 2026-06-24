@@ -314,7 +314,7 @@ export function ReportsPage() {
   return (
     <Box bg={COLORS.lightBackground} style={{ minHeight: "100vh" }} py="md" px="lg">
       <Container size="xl">
-        <Card shadow="sm" withBorder radius="lg" mb="xl" p="lg">
+        <Card >
           <Group justify="space-between" align="center">
             <Group>
               <Text size="xs" c="dimmed" fw={700} lts={1}>UNDP</Text>
@@ -445,7 +445,7 @@ export function ReportDataTablePage({ crisesReportList }) {
   );
 
   return (
-    <Card padding="xl" radius="lg" shadow="sm" withBorder>
+    <Card padding="xl"  >
       <Group justify="space-between" mb="xl">
         <Title order={4} fw={700} c={COLORS.darkBlue}>Recent Reports</Title>
         <Group gap="sm">
