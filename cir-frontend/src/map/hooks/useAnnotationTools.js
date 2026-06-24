@@ -10,7 +10,7 @@ const TOOLS = {
 };
 
 export default function useAnnotationTools() {
-  const [activeTool, setActiveTool] = useState(TOOLS.NONE);
+  const [activeTool, setActiveTool] = useState(TOOLS.POINT);
 
   const [incidentPolygon, setIncidentPolygon] = useState(null);
   const [effectRadius, setEffectRadius] = useState(null);

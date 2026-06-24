@@ -46,7 +46,7 @@ const CachingLayer = L.TileLayer.extend({
       .then((cached) => {
         if (cached) {
           const objUrl = URL.createObjectURL(
-            new Blob([cached], { type: "image/png" })
+            new Blob([cached], { type: "image/png" }),
           );
           img.onload = () => {
             URL.revokeObjectURL(objUrl);
@@ -66,7 +66,7 @@ const CachingLayer = L.TileLayer.extend({
             .then((buf) => {
               cacheTile(url, buf).catch(() => {}); // fire-and-forget
               const objUrl = URL.createObjectURL(
-                new Blob([buf], { type: "image/png" })
+                new Blob([buf], { type: "image/png" }),
               );
               img.onload = () => {
                 URL.revokeObjectURL(objUrl);
@@ -99,7 +99,7 @@ const CachedTileLayer = createTileLayerComponent(
   }),
   (instance, props, prevProps) => {
     if (props.url !== prevProps.url) instance.setUrl(props.url);
-  }
+  },
 );
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -188,13 +188,13 @@ function destinationPoint(lat, lng, bearing, distanceMeters) {
   const d = distanceMeters / R;
   const lat2 = Math.asin(
     Math.sin(lat1) * Math.cos(d) +
-      Math.cos(lat1) * Math.sin(d) * Math.cos(bearRad)
+      Math.cos(lat1) * Math.sin(d) * Math.cos(bearRad),
   );
   const lon2 =
     lon1 +
     Math.atan2(
       Math.sin(bearRad) * Math.sin(d) * Math.cos(lat1),
-      Math.cos(d) - Math.sin(lat1) * Math.sin(lat2)
+      Math.cos(d) - Math.sin(lat1) * Math.sin(lat2),
     );
   return [(lat2 * 180) / Math.PI, (lon2 * 180) / Math.PI];
 }
@@ -544,7 +544,7 @@ function AnnotationLayer({
       drop("previewLine");
       lr.current.previewLine = L.polyline(
         [...polygonVertices.current, [e.latlng.lat, e.latlng.lng]],
-        { color: COLORS.polygon, weight: 2, dashArray: "6 4" }
+        { color: COLORS.polygon, weight: 2, dashArray: "6 4" },
       ).addTo(map);
     };
 
@@ -689,7 +689,7 @@ function AnnotationLayer({
       const el = lr.current.dirLine.getElement();
       if (el)
         el.querySelectorAll("path").forEach((p) =>
-          p.classList.add("cir-dir-animated")
+          p.classList.add("cir-dir-animated"),
         );
       lr.current.dirHead = L.marker(to, {
         icon: arrowHeadIcon(bearing),
@@ -762,7 +762,7 @@ function AnnotationLayer({
     if (!userLocation || lr.current.posMarker) return;
     lr.current.posMarker = L.marker(
       [userLocation.latitude, userLocation.longitude],
-      { icon: tealPulsingIcon(), draggable: false, zIndexOffset: 200 }
+      { icon: tealPulsingIcon(), draggable: false, zIndexOffset: 200 },
     )
       .addTo(map)
       .bindPopup("You are here", {
@@ -795,7 +795,7 @@ function AnnotationDisplay({ annotations, userLocation }) {
 
     if (incident_polygon?.geometry?.coordinates?.[0]) {
       const latlngs = incident_polygon.geometry.coordinates[0].map(
-        ([lng, lat]) => [lat, lng]
+        ([lng, lat]) => [lat, lng],
       );
       layers.push(
         L.polygon(latlngs, {
@@ -804,7 +804,7 @@ function AnnotationDisplay({ annotations, userLocation }) {
           fillOpacity: 0.25,
           weight: 2.5,
           interactive: false,
-        }).addTo(map)
+        }).addTo(map),
       );
     }
 
@@ -817,7 +817,7 @@ function AnnotationDisplay({ annotations, userLocation }) {
           fillOpacity: 0.18,
           weight: 2.5,
           interactive: false,
-        }).addTo(map)
+        }).addTo(map),
       );
     }
 
@@ -831,7 +831,7 @@ function AnnotationDisplay({ annotations, userLocation }) {
           fillColor: COLORS.point,
           fillOpacity: 1,
           interactive: false,
-        }).addTo(map)
+        }).addTo(map),
       );
     }
 
@@ -839,14 +839,14 @@ function AnnotationDisplay({ annotations, userLocation }) {
       const origin = corrected_position
         ? [corrected_position.latitude, corrected_position.longitude]
         : userLocation
-        ? [userLocation.latitude, userLocation.longitude]
-        : null;
+          ? [userLocation.latitude, userLocation.longitude]
+          : null;
       if (origin) {
         const dest = destinationPoint(
           origin[0],
           origin[1],
           direction_bearing,
-          500
+          500,
         );
         layers.push(
           L.polyline([origin, dest], {
@@ -854,14 +854,14 @@ function AnnotationDisplay({ annotations, userLocation }) {
             weight: 3,
             dashArray: "6 4",
             interactive: false,
-          }).addTo(map)
+          }).addTo(map),
         );
         layers.push(
           L.marker(dest, {
             icon: arrowHeadIcon(direction_bearing),
             interactive: false,
             zIndexOffset: 100,
-          }).addTo(map)
+          }).addTo(map),
         );
       }
     }
@@ -874,7 +874,7 @@ function AnnotationDisplay({ annotations, userLocation }) {
           interactive: false,
         })
           .addTo(map)
-          .bindPopup("Reported position", { className: "cir-here-popup" })
+          .bindPopup("Reported position", { className: "cir-here-popup" }),
       );
     }
 
@@ -961,7 +961,7 @@ export default function CirMap({
       setLocatedUser(loc);
       if (onLocated) onLocated(loc, fromGPS);
     },
-    [onLocated]
+    [onLocated],
   );
 
   // Notify parent of annotation changes
@@ -982,6 +982,14 @@ export default function CirMap({
 
   const toolButtons = [
     {
+      tool: TOOLS.POINT,
+      icon: <IconMapPin size={18} />,
+      label: "Incident Point",
+      color: COLORS.point,
+      tip: "Click to place exact location",
+    },
+
+    {
       tool: TOOLS.POLYGON,
       icon: <IconPolygon size={18} />,
       label: "Incident Area",
@@ -990,13 +998,6 @@ export default function CirMap({
     },
 
     // { tool: TOOLS.RADIUS, icon: <IconCircle size={18} />, label: "Effect Radius", color: COLORS.radius, tip: "Click center, then click edge" },
-    {
-      tool: TOOLS.POINT,
-      icon: <IconMapPin size={18} />,
-      label: "Incident Point",
-      color: COLORS.point,
-      tip: "Click to place exact location",
-    },
     // { tool: TOOLS.DIRECTION, icon: <IconNavigation size={18} />,      label: 'Direction',       color: COLORS.direction, tip: 'Click toward the incident' },
     {
       tool: TOOLS.POSITION,
@@ -1207,7 +1208,7 @@ export default function CirMap({
                     effectiveUserLocation.longitude,
                   ],
                   mapRef.current.getZoom(),
-                  { duration: 0.8 }
+                  { duration: 0.8 },
                 );
               }
             }}
