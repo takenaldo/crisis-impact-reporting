@@ -22,6 +22,7 @@ import CIRAuthChecker from './CIRAuthChecker';
 import { SplashScreen } from './SplashScreen';
 import MobileContainer from './MobileContainer';
 import { CrisisImpactAdminDashboard } from './admin/admidDashboard';
+import { LocationProvider } from './LocationProvider';
 
 
 function App() {
@@ -47,29 +48,32 @@ function App() {
 
 
   return (
-    <MantineProvider withGlobalStyles withNormalizeCSS>
-      <style>
-        {`
+    <LocationProvider>
+
+      <MantineProvider withGlobalStyles withNormalizeCSS>
+        <style>
+          {`
           @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@400;500;600&display=swap');
         `}
-      </style>
+        </style>
 
 
-      {/* <MobileContainer> */}
+        {/* <MobileContainer> */}
 
 
-      <Notifications
-        styles={{
-          notification: {
-            height: 'auto',
-            alignItems: 'flex-start'
-          }
-        }}
-      />
+        <Notifications
+          styles={{
+            notification: {
+              height: 'auto',
+              alignItems: 'flex-start'
+            }
+          }}
+        />
 
-      <RouterProvider router={router} />
-      {/* </MobileContainer> */}
-    </MantineProvider>
+        <RouterProvider router={router} />
+        {/* </MobileContainer> */}
+      </MantineProvider>
+    </LocationProvider>
   );
 }
 

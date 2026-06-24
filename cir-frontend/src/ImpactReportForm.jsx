@@ -359,6 +359,7 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
               }
               zoom={userLocation ? 15 : 2}
               showAnnotationTools
+              autoLocate
               userLocation={userLocation}
               onAnnotationChange={(a) => form.setFieldValue("annotations", a)}
               maxBounds={mapBounds.maxBounds}

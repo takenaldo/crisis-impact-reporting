@@ -23,6 +23,7 @@ import Profile from "./Profile";
 import Header from "./Header";
 import api from "./api";
 import { getUserDetails } from "./utils";
+import { useLocation } from "./LocationProvider";
 
 // Design System Colors
 const COLORS = {
@@ -69,15 +70,9 @@ export default function CrisisReportingAppPublic() {
     fetchUserDetails();
   }, []);
 
+  const { permissionState, location, requestLocation } = useLocation();
   return (
-    <MantineProvider theme={theme}>
-      {/* Import Fonts */}
-      <style>
-        {`
-          @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@400;500;600&display=swap');
-        `}
-      </style>
-
+    <>
       <Flex
         direction="column"
         h="100dvh"
@@ -141,7 +136,7 @@ export default function CrisisReportingAppPublic() {
         opened={showReportForm}
         onClose={() => setShowReportForm(false)}
       />
-    </MantineProvider>
+    </>
   );
 }
 

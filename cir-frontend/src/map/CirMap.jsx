@@ -988,7 +988,7 @@ export default function CirMap({
       color: COLORS.polygon,
       tip: "Click vertices, double-click to close",
     },
-    
+
     // { tool: TOOLS.RADIUS, icon: <IconCircle size={18} />, label: "Effect Radius", color: COLORS.radius, tip: "Click center, then click edge" },
     {
       tool: TOOLS.POINT,
@@ -1053,7 +1053,13 @@ export default function CirMap({
           <UserLocationMarker userLocation={effectiveUserLocation} />
         )}
 
-        {locationPicker && selectEnabled && <LocationPicker form={form} onPinChanged={onPinChanged} initialPin={initialPin} />}
+        {locationPicker && selectEnabled && (
+          <LocationPicker
+            form={form}
+            onPinChanged={onPinChanged}
+            initialPin={initialPin}
+          />
+        )}
 
         {reports && <ReportMarkers reports={reports} />}
 

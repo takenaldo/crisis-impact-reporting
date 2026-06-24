@@ -53,7 +53,7 @@ export default function Home({ setActiveContent }) {
       const { min_lng, min_lat, max_lng, max_lat } = res.data.bbox;
       const lngSpan = max_lng - min_lng;
       const minZoom = Math.ceil(
-        Math.log2(((window.innerWidth || 400) * 360) / (256 * lngSpan))
+        Math.log2(((window.innerWidth || 400) * 360) / (256 * lngSpan)),
       );
       setMapBounds({
         maxBounds: [
@@ -70,32 +70,6 @@ export default function Home({ setActiveContent }) {
   const [crisesList, setCrisesList] = useState([]);
   const [reports, setReports] = useState([]);
 
-  // useEffect(() => {
-  //   const fetchCrises = async () => {
-  //     try {
-  //       const response = await api.get("/crises/");
-  //       setCrisesList(response.data);
-  //       console.log("Fetched crises:", response.data);
-  //     } catch (error) {
-  //       console.error("Error fetching crises:", error);
-  //     }
-  //   };
-
-  //   const fetchUnmappedImppactReports = async () => {
-  //     //
-  //     try {
-  //       const response = await api.get(
-  //         "/impact-reports/get_unmapped_imapct_reports/",
-  //       );
-  //       setReports(response.data);
-  //     } catch (error) {
-  //       console.error("Error fetching reports:", error);
-  //     }
-  //   };
-  //   fetchCrises();
-  //   fetchUnmappedImppactReports();
-  // }, []);
-
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
@@ -105,13 +79,13 @@ export default function Home({ setActiveContent }) {
           setReports(response.data);
         } else {
           const reportIDs = JSON.parse(
-            localStorage.getItem("report_ids") || "[]"
+            localStorage.getItem("report_ids") || "[]",
           );
           const response = await api.post(
             "impact-reports/get_reports_by_stored_ids/",
             {
               report_ids: reportIDs,
-            }
+            },
           );
           setReports(response.data);
         }
