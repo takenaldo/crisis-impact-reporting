@@ -26,10 +26,8 @@ import {
   IconMapPin,
   IconChevronDown,
   IconPlus,
-  IconCalendar,
-  IconInfoCircle,
   IconUser,
-  IconAlertTriangle,
+  IconInfoCircle,
   IconFileText,
   IconWorld,
 } from "@tabler/icons-react";
@@ -38,6 +36,47 @@ import { COLORS, SEVERITY_CONFIG, timeAgo } from "../utils";
 import { HeaderCardPage } from "./adminPage";
 import api from "../api";
 import { QuestionGroupModal } from "../QuestionGroupModal";
+
+// --- Completely Sanitized Global Geocoding Engine ---
+const resolveCityName = (row) => {
+  if (!row) return "Unknown Region";
+
+  const coords = row?.annotations?.incident_point?.geometry?.coordinates;
+  let lng = undefined;
+  let lat = undefined;
+
+  // GeoJSON coordinates array is standard [longitude, latitude]
+  if (Array.isArray(coords) && coords.length >= 2) {
+    lng = coords[0];
+    lat = coords[1];
+  } else {
+    lat = row?.location?.latitude ?? row?.latitude;
+    lng = row?.location?.longitude ?? row?.longitude;
+  }
+
+  const parsedLat = parseFloat(lat);
+  const parsedLng = parseFloat(lng);
+
+  // Hard Bounds Validation Check to completely prevent recursive S2 stack exhaustion
+  if (
+    isNaN(parsedLat) ||
+    isNaN(parsedLng) ||
+    parsedLat < -90.0 ||
+    parsedLat > 90.0 ||
+    parsedLng < -180.0 ||
+    parsedLng > 180.0
+  ) {
+    return row?.location?.city || "Unknown Region";
+  }
+
+  try {
+    const result = getNearestCity(parsedLng, parsedLat);
+    return result?.cityName || row?.location?.city || "Unknown Region";
+  } catch (e) {
+    console.error("S2 processing failure skipped gracefully:", e);
+    return row?.location?.city || "Unknown Region";
+  }
+};
 
 export function ReportsPage() {
   const dateOptions = [
@@ -75,43 +114,6 @@ export function ReportsPage() {
     fetchCrises();
   }, []);
 
-  // --- Safe Location String Calculation Utility ---
-  const getCityName = (row) => {
-    const coords = row?.annotations?.incident_point?.geometry?.coordinates;
-    let lng = undefined;
-    let lat = undefined;
-
-    // GeoJSON coordinates array is standard [longitude, latitude]
-    if (Array.isArray(coords) && coords.length >= 2) {
-      lng = coords[0];
-      lat = coords[1];
-    } else {
-      lat = row?.location?.latitude ?? row?.latitude;
-      lng = row?.location?.longitude ?? row?.longitude;
-    }
-
-    const parsedLat = parseFloat(lat);
-    const parsedLng = parseFloat(lng);
-
-    // Guard rails to prevent S2 library internal stack recursion loop crashes
-    if (
-      isNaN(parsedLat) ||
-      isNaN(parsedLng) ||
-      parsedLat < -90.0 ||
-      parsedLat > 90.0 ||
-      parsedLng < -180.0 ||
-      parsedLng > 180.0
-    ) {
-      const DEFAULT_LAT = 8.9806;
-      const DEFAULT_LNG = 38.7578;
-      const fallbackResult = getNearestCity(DEFAULT_LNG, DEFAULT_LAT);
-      return fallbackResult?.cityName || "Addis Ababa (Default)";
-    }
-
-    const result = getNearestCity(parsedLng, parsedLat);
-    return result?.cityName || row?.location?.city || "Unknown Region";
-  };
-
   // --- CSV Export ---
   const handleExportCSV = () => {
     if (!crisesReportList || crisesReportList.length === 0) {
@@ -129,7 +131,7 @@ export function ReportsPage() {
     const rows = crisesReportList.map((row) => [
       row?.infrastructure_name || "N/A",
       row?.infrastructure_type || "N/A",
-      getCityName(row),
+      resolveCityName(row),
       row?.damage_severity || "Low",
       row?.damage_datetime
         ? `${displayDate(row.damage_datetime)} at ${displayTime(
@@ -203,7 +205,7 @@ export function ReportsPage() {
           id: row?.id || "",
           infrastructure_name: row?.infrastructure_name || "N/A",
           infrastructure_type: row?.infrastructure_type || "N/A",
-          city_resolved: getCityName(row),
+          city_resolved: resolveCityName(row),
           damage_severity: row?.damage_severity || "Unknown",
           damage_datetime: row?.damage_datetime || "N/A",
           status: row?.status || "N/A",
@@ -238,7 +240,7 @@ export function ReportsPage() {
     document.body.removeChild(link);
   };
 
-  // --- PDF Export via Print Isolation Context Window ---
+  // --- PDF Export ---
   const handleExportPDF = () => {
     if (!crisesReportList || crisesReportList.length === 0) {
       alert("No data available to export");
@@ -257,7 +259,7 @@ export function ReportsPage() {
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600;">${row?.infrastructure_name || "N/A"}</td>
         <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #4a5568;">${row?.infrastructure_type || "N/A"}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 13px;">${getCityName(row)}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 13px;">${resolveCityName(row)}</td>
         <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 13px;"><span style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background-color: #edf2f7;">${row?.damage_severity || "Unknown"}</span></td>
         <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px; text-align: right; color: #718096;">${row?.damage_datetime ? new Date(row.damage_datetime).toLocaleDateString() : "N/A"}</td>
       </tr>
@@ -312,7 +314,6 @@ export function ReportsPage() {
   return (
     <Box bg={COLORS.lightBackground} style={{ minHeight: "100vh" }} py="md" px="lg">
       <Container size="xl">
-        {/* Professional Top Header */}
         <Card shadow="sm" withBorder radius="lg" mb="xl" p="lg">
           <Group justify="space-between" align="center">
             <Group>
@@ -377,13 +378,13 @@ export function ReportsPage() {
         </Card>
 
         <HeaderCardPage />
-        <ReportDataTablePage crisesReportList={crisesReportList} getCityName={getCityName} />
+        <ReportDataTablePage crisesReportList={crisesReportList} />
       </Container>
     </Box>
   );
 }
 
-export function ReportDataTablePage({ crisesReportList, getCityName }) {
+export function ReportDataTablePage({ crisesReportList }) {
   const [activePage, setActivePage] = useState(1);
   const [selectedSeverity, setSelectedSeverity] = useState(null);
   const [selectedRegion, setSelectedRegion] = useState(null);
@@ -393,10 +394,6 @@ export function ReportDataTablePage({ crisesReportList, getCityName }) {
   const [selectedReport, setSelectedReport] = useState(null);
 
   const ITEMS_PER_PAGE = 10;
-
-  const renderValidatedCity = (report) => {
-    return getCityName ? getCityName(report) : "Unknown Region";
-  };
 
   const safeString = (value) => {
     if (value == null) return "";
@@ -425,8 +422,8 @@ export function ReportDataTablePage({ crisesReportList, getCityName }) {
   const dynamicRegions = Array.from(
     new Set(
       (crisesReportList || [])
-        .map((row) => (row?.location?.city == null ? "" : row?.location?.city))
-        .filter(Boolean)
+        .map((row) => resolveCityName(row))
+        .filter((city) => city && city !== "Unknown Region")
     )
   );
 
@@ -435,7 +432,7 @@ export function ReportDataTablePage({ crisesReportList, getCityName }) {
       ? row?.damage_severity?.toLowerCase() === selectedSeverity.toLowerCase()
       : true;
     const matchesRegion = selectedRegion
-      ? row?.location?.city?.toLowerCase() === selectedRegion.toLowerCase()
+      ? resolveCityName(row).toLowerCase() === selectedRegion.toLowerCase()
       : true;
     return matchesSeverity && matchesRegion;
   });
@@ -509,7 +506,7 @@ export function ReportDataTablePage({ crisesReportList, getCityName }) {
                   <Table.Td>
                     <Group gap={6} wrap="nowrap">
                       <IconMapPin size={16} color="#64748b" />
-                      <Text size="sm">{renderValidatedCity(report)}</Text>
+                      <Text size="sm">{resolveCityName(report)}</Text>
                     </Group>
                   </Table.Td>
                   <Table.Td>
@@ -575,7 +572,6 @@ export function ReportDataTablePage({ crisesReportList, getCityName }) {
       >
         {selectedReport && (
           <Box style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-            {/* Header */}
             <Box p="xl" style={{ borderBottom: "1px solid #e2e8f0", backgroundColor: "#fff" }}>
               <Group justify="space-between" align="center">
                 <Box>
@@ -595,7 +591,6 @@ export function ReportDataTablePage({ crisesReportList, getCityName }) {
             </Box>
             <Box p="xl" style={{ flex: 1, overflow: "auto" }}>
               <Stack gap="xl">
-                {/* Infrastructure */}
                 <Card withBorder radius="md" padding="lg" bg="#f8fafc">
                   <Text size="xs" c="dimmed" fw={700} tt="uppercase" mb={8}>Infrastructure Asset</Text>
                   <Text size="xl" fw={700} c={COLORS.darkBlue}>
@@ -606,21 +601,19 @@ export function ReportDataTablePage({ crisesReportList, getCityName }) {
                   </Text>
                 </Card>
                 <SimpleGrid cols={2} spacing="lg">
-                  {/* Location */}
                   <Card withBorder radius="md" padding="lg">
                     <Group gap={8} mb={12}>
                       <IconMapPin size={20} color="#64748b" />
                       <Text size="xs" fw={700} c="dimmed" tt="uppercase">Location</Text>
                     </Group>
                     <Text size="lg" fw={600} mb={6}>
-                      {renderValidatedCity(selectedReport)}
+                      {resolveCityName(selectedReport)}
                     </Text>
                     <Text size="sm" style={{ fontFamily: "monospace", color: "#475569" }}>
                       {selectedReport?.annotations?.incident_point?.geometry?.coordinates?.[0]?.toFixed(4) || "—"},&nbsp;
                       {selectedReport?.annotations?.incident_point?.geometry?.coordinates?.[1]?.toFixed(4) || "—"}
                     </Text>
                   </Card>
-                  {/* Reported By */}
                   <Card withBorder radius="md" padding="lg">
                     <Group gap={8} mb={12}>
                       <IconUser size={20} color="#64748b" />
@@ -634,7 +627,8 @@ export function ReportDataTablePage({ crisesReportList, getCityName }) {
                     </Text>
                   </Card>
                 </SimpleGrid>
-                <Divider />  <Box>
+                <Divider />
+                <Box>
                   <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="md">Impact Assessment</Text>
                   <Stack gap="md">
                     {selectedReport?.damage_description && (
@@ -674,7 +668,6 @@ export function ReportDataTablePage({ crisesReportList, getCityName }) {
                   </Stack>
                 </Box>
                 <Divider />
-                {/* Technical Details */}
                 <Box>
                   <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="md">Technical Details</Text>
                   <Stack gap="xs">
