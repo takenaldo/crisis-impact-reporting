@@ -10,8 +10,28 @@ import {
   Button,
 } from "@mantine/core";
 import { IconMapPin, IconCheck } from "@tabler/icons-react";
+import { useEffect } from "react";
 
 export function LocationPermissionRequest({ onActivate }) {
+  useEffect(() => {
+    handleGetLocation();
+  }, []);
+
+  const handleGetLocation = async () => {
+    try {
+      // The execution pauses here until the position is found or rejected
+      const coords = await onActivate;
+      console.log("Successfully got coordinates:", coords);
+      // Do something with coords here (e.g., fetch weather, update map)
+    } catch (err) {
+      // This catches the rejected promise from the Context file
+      // setError(err.message);
+      // console.error("Location error:", err.message);
+    } finally {
+      // setLoading(false);
+    }
+  };
+
   return (
     <Box
       style={{
@@ -130,7 +150,7 @@ export function LocationPermissionRequest({ onActivate }) {
                 },
               },
             }}
-            onClick={onActivate}
+            onClick={handleGetLocation()}
           >
             Share My Device Location
           </Button>
