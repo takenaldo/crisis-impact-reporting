@@ -27,17 +27,17 @@ SECRET_KEY = 'django-insecure-s#@*ox-p6&w(j+ff2#who#021!-1)@m5tcpdxo&6f4t!=$qp7j
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-CORS_ALLOW_ALL_ORIGINS = True
-
 # settings.py
 
-CORS_ALLOW_ALL_ORIGINS = True
 
-ALLOWED_HOSTS = ['192.168.0.133', 'localhost', '127.0.0.1']
+
+ALLOWED_HOSTS = ['192.168.0.133', 'localhost', '127.0.0.1', 'undp-damage-reporting.com','www.undp-damage-reporting.com']
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'undp-damage-reporting.com',
+    'www.undp-damage-reporting.com'
 ]
 # Application definition
 
@@ -206,8 +206,11 @@ SIMPLE_JWT = {
     'TOKEN_TYPE_CLAIM': 'token_type',
 }
 
+CORS_ALLOW_ALL_ORIGINS = True
+
 
 AUTH_USER_MODEL = 'api.CIRUser'
+FORCE_SCRIPT_NAME = '/backend'
 
 
 # email related configs

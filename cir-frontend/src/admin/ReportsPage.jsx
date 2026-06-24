@@ -17,6 +17,7 @@ import {
   Badge,
   Title,
   SimpleGrid,
+  Menu,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
@@ -25,16 +26,57 @@ import {
   IconMapPin,
   IconChevronDown,
   IconPlus,
-  IconCalendar,
-  IconInfoCircle,
   IconUser,
-  IconAlertTriangle,
+  IconInfoCircle,
+  IconFileText,
+  IconWorld,
 } from "@tabler/icons-react";
 import { getNearestCity } from "offline-geocode-city";
 import { COLORS, SEVERITY_CONFIG, timeAgo } from "../utils";
 import { HeaderCardPage } from "./adminPage";
 import api from "../api";
 import { QuestionGroupModal } from "../QuestionGroupModal";
+
+// --- Completely Sanitized Global Geocoding Engine ---
+const resolveCityName = (row) => {
+  if (!row) return "Unknown Region";
+
+  const coords = row?.annotations?.incident_point?.geometry?.coordinates;
+  let lng = undefined;
+  let lat = undefined;
+
+  // GeoJSON coordinates array is standard [longitude, latitude]
+  if (Array.isArray(coords) && coords.length >= 2) {
+    lng = coords[0];
+    lat = coords[1];
+  } else {
+    lat = row?.location?.latitude ?? row?.latitude;
+    lng = row?.location?.longitude ?? row?.longitude;
+  }
+
+  const parsedLat = parseFloat(lat);
+  const parsedLng = parseFloat(lng);
+
+  // Hard Bounds Validation Check to completely prevent recursive S2 stack exhaustion
+  if (
+    isNaN(parsedLat) ||
+    isNaN(parsedLng) ||
+    parsedLat < -90.0 ||
+    parsedLat > 90.0 ||
+    parsedLng < -180.0 ||
+    parsedLng > 180.0
+  ) {
+    return row?.location?.city || "Unknown Region";
+  }
+
+  try {
+    const result = getNearestCity(parsedLng, parsedLat);
+    return result?.cityName || row?.location?.city || "Unknown Region";
+  } catch (e) {
+    console.error("S2 processing failure skipped gracefully:", e);
+    return row?.location?.city || "Unknown Region";
+  }
+};
 
 export function ReportsPage() {
   const dateOptions = [
@@ -89,7 +131,7 @@ export function ReportsPage() {
     const rows = crisesReportList.map((row) => [
       row?.infrastructure_name || "N/A",
       row?.infrastructure_type || "N/A",
-      row?.location?.city || "N/A",
+      resolveCityName(row),
       row?.damage_severity || "Low",
       row?.damage_datetime
         ? `${displayDate(row.damage_datetime)} at ${displayTime(
@@ -99,8 +141,7 @@ export function ReportsPage() {
     ]);
 
     const escapeCSVField = (value) => {
-      const stringValue =
-        value === null || value === undefined ? "" : String(value);
+      const stringValue = value === null || value === undefined ? "" : String(value);
       if (
         stringValue.includes(",") ||
         stringValue.includes('"') ||
@@ -122,8 +163,7 @@ export function ReportsPage() {
     });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    const filename = `UNDP_Crisis_Report_${new Date().toISOString().split("T")[0]
-      }.csv`;
+    const filename = `UNDP_Crisis_Report_${new Date().toISOString().split("T")[0]}.csv`;
     link.setAttribute("href", url);
     link.setAttribute("download", filename);
     link.style.visibility = "hidden";
@@ -132,11 +172,149 @@ export function ReportsPage() {
     document.body.removeChild(link);
   };
 
+  // --- GeoJSON Export ---
+  const handleExportGeoJSON = () => {
+    if (!crisesReportList || crisesReportList.length === 0) {
+      alert("No data available to export");
+      return;
+    }
+
+    const features = crisesReportList.map((row) => {
+      const coords = row?.annotations?.incident_point?.geometry?.coordinates;
+      let lng = undefined;
+      let lat = undefined;
+
+      if (Array.isArray(coords) && coords.length >= 2) {
+        lng = coords[0];
+        lat = coords[1];
+      } else {
+        lat = row?.location?.latitude ?? row?.latitude;
+        lng = row?.location?.longitude ?? row?.longitude;
+      }
+
+      const validLng = isNaN(parseFloat(lng)) ? 38.7578 : parseFloat(lng);
+      const validLat = isNaN(parseFloat(lat)) ? 8.9806 : parseFloat(lat);
+
+      return {
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [validLng, validLat],
+        },
+        properties: {
+          id: row?.id || "",
+          infrastructure_name: row?.infrastructure_name || "N/A",
+          infrastructure_type: row?.infrastructure_type || "N/A",
+          city_resolved: resolveCityName(row),
+          damage_severity: row?.damage_severity || "Unknown",
+          damage_datetime: row?.damage_datetime || "N/A",
+          status: row?.status || "N/A",
+          affected_population: row?.affected_population || 0,
+          estimated_cost: row?.estimated_cost || 0,
+        },
+      };
+    });
+
+    const geojsonData = {
+      type: "FeatureCollection",
+      crs: {
+        type: "name",
+        properties: {
+          name: "urn:ogc:def:crs:OGC:1.3:CRS84",
+        },
+      },
+      features,
+    };
+
+    const blob = new Blob([JSON.stringify(geojsonData, null, 2)], {
+      type: "application/geo+json;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const filename = `UNDP_Crisis_Spatial_${new Date().toISOString().split("T")[0]}.geojson`;
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // --- PDF Export ---
+  const handleExportPDF = () => {
+    if (!crisesReportList || crisesReportList.length === 0) {
+      alert("No data available to export");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert("Pop-up blocker is preventing export. Please allow popups.");
+      return;
+    }
+
+    const rowsHtml = crisesReportList
+      .map(
+        (row) => `
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600;">${row?.infrastructure_name || "N/A"}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #4a5568;">${row?.infrastructure_type || "N/A"}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 13px;">${resolveCityName(row)}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 13px;"><span style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; background-color: #edf2f7;">${row?.damage_severity || "Unknown"}</span></td>
+        <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px; text-align: right; color: #718096;">${row?.damage_datetime ? new Date(row.damage_datetime).toLocaleDateString() : "N/A"}</td>
+      </tr>
+    `
+      )
+      .join("");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>UNDP Crisis Impact Reports</title>
+          <style>
+            body { font-family: 'Inter', sans-serif; color: #1a202c; padding: 40px; margin: 0; }
+            .header { margin-bottom: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; }
+            .title { font-size: 24px; font-weight: 700; color: #1e3a8a; margin: 0; }
+            .subtitle { font-size: 12px; color: #718096; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+            .meta { font-size: 12px; color: #a0aec0; text-align: right; float: right; margin-top: -40px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th { text-align: left; padding: 12px 10px; background-color: #f7fafc; color: #718096; font-size: 11px; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+            @media print { body { padding: 0; } .no-print { display: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="subtitle">United Nations Development Programme</div>
+            <div class="title">Crisis Impact Executive Summary</div>
+            <div class="meta">Generated on: ${new Date().toLocaleDateString()}</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Infrastructure</th>
+                <th>Type</th>
+                <th>Location</th>
+                <th>Severity</th>
+                <th style="text-align: right;">Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   return (
     <Box bg={COLORS.lightBackground} style={{ minHeight: "100vh" }} py="md" px="lg">
       <Container size="xl">
-        {/* Professional Top Header */}
-        <Card shadow="sm" withBorder radius="lg" mb="xl" p="lg">
+        <Card >
           <Group justify="space-between" align="center">
             <Group>
               <Text size="xs" c="dimmed" fw={700} lts={1}>UNDP</Text>
@@ -156,14 +334,34 @@ export function ReportsPage() {
                 w={160}
                 size="sm"
               />
-              <Button
-                bg={COLORS.primaryTeal}
-                leftSection={<IconDownload size={16} />}
-                radius="md"
-                size="sm"
-              >
-                Export Reports
-              </Button>
+
+              <Menu shadow="md" width={180} radius="md" position="bottom-end">
+                <Menu.Target>
+                  <Button
+                    bg={COLORS.primaryTeal}
+                    leftSection={<IconDownload size={16} />}
+                    rightSection={<IconChevronDown size={14} />}
+                    radius="md"
+                    size="sm"
+                  >
+                    Export Reports
+                  </Button>
+                </Menu.Target>
+
+                <Menu.Dropdown>
+                  <Menu.Label>Format Options</Menu.Label>
+                  <Menu.Item leftSection={<IconFileText size={16} />} onClick={handleExportCSV}>
+                    Export as CSV
+                  </Menu.Item>
+                  <Menu.Item leftSection={<IconWorld size={16} />} onClick={handleExportGeoJSON}>
+                    Export as GeoJSON
+                  </Menu.Item>
+                  <Menu.Item leftSection={<IconInfoCircle size={16} />} onClick={handleExportPDF}>
+                    Export as PDF
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+
               <ActionIcon variant="default" size="lg" radius="md">
                 <IconBell size={18} stroke={1.5} />
               </ActionIcon>
@@ -197,42 +395,9 @@ export function ReportDataTablePage({ crisesReportList }) {
 
   const ITEMS_PER_PAGE = 10;
 
-  const renderValidatedCity = (report) => {
-    const coords = report?.annotations?.incident_point?.geometry?.coordinates;
-    let lng = coords?.[1];
-    let lat = coords?.[0];
-
-    if (lat === undefined || lng === undefined) {
-      lat = report?.location?.latitude ?? report?.latitude;
-      lng = report?.location?.longitude ?? report?.longitude;
-    }
-
-    const parsedLat = parseFloat(lat);
-    const parsedLng = parseFloat(lng);
-
-    if (
-      isNaN(parsedLat) ||
-      isNaN(parsedLng) ||
-      parsedLat < -90 ||
-      parsedLat > 90 ||
-      parsedLng < -180 ||
-      parsedLng > 180
-    ) {
-      const DEFAULT_LAT = 8.9806;
-      const DEFAULT_LNG = 38.7578;
-      const fallbackResult = getNearestCity(DEFAULT_LNG, DEFAULT_LAT);
-      return fallbackResult?.cityName || "Addis Ababa (Default)";
-    }
-    const result = getNearestCity(parsedLng, parsedLat);
-    return result?.cityName || "Unknown Region";
-  };
   const safeString = (value) => {
-    console.log("=============log====================");
-    console.log(value);
-    console.log("=============log====================");
     if (value == null) return "";
     if (typeof value === "string") return value;
-
     return String(value);
   };
 
@@ -257,8 +422,8 @@ export function ReportDataTablePage({ crisesReportList }) {
   const dynamicRegions = Array.from(
     new Set(
       (crisesReportList || [])
-        .map((row) => (row?.location?.city == null ? "" : row?.location?.city))
-        .filter(Boolean)
+        .map((row) => resolveCityName(row))
+        .filter((city) => city && city !== "Unknown Region")
     )
   );
 
@@ -267,7 +432,7 @@ export function ReportDataTablePage({ crisesReportList }) {
       ? row?.damage_severity?.toLowerCase() === selectedSeverity.toLowerCase()
       : true;
     const matchesRegion = selectedRegion
-      ? row?.location?.city?.toLowerCase() === selectedRegion.toLowerCase()
+      ? resolveCityName(row).toLowerCase() === selectedRegion.toLowerCase()
       : true;
     return matchesSeverity && matchesRegion;
   });
@@ -280,10 +445,10 @@ export function ReportDataTablePage({ crisesReportList }) {
   );
 
   return (
-    <Card padding="xl" radius="lg" shadow="sm" withBorder>
+    <Card padding="xl"  >
       <Group justify="space-between" mb="xl">
         <Title order={4} fw={700} c={COLORS.darkBlue}>Recent Reports</Title>
-        <Group gap="sm">
+        <Group gap="sm">  
           <Select
             placeholder="All severities"
             data={dynamicSeverities}
@@ -341,7 +506,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                   <Table.Td>
                     <Group gap={6} wrap="nowrap">
                       <IconMapPin size={16} color="#64748b" />
-                      <Text size="sm">{renderValidatedCity(report)}</Text>
+                      <Text size="sm">{resolveCityName(report)}</Text>
                     </Group>
                   </Table.Td>
                   <Table.Td>
@@ -396,7 +561,8 @@ export function ReportDataTablePage({ crisesReportList }) {
             size="sm"
           />
         </Group>
-      )} <Drawer
+      )}
+      <Drawer
         opened={drawerOpened}
         onClose={closeDrawer}
         position="right"
@@ -406,7 +572,6 @@ export function ReportDataTablePage({ crisesReportList }) {
       >
         {selectedReport && (
           <Box style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-            {/* Header */}
             <Box p="xl" style={{ borderBottom: "1px solid #e2e8f0", backgroundColor: "#fff" }}>
               <Group justify="space-between" align="center">
                 <Box>
@@ -426,7 +591,6 @@ export function ReportDataTablePage({ crisesReportList }) {
             </Box>
             <Box p="xl" style={{ flex: 1, overflow: "auto" }}>
               <Stack gap="xl">
-                {/* Infrastructure */}
                 <Card withBorder radius="md" padding="lg" bg="#f8fafc">
                   <Text size="xs" c="dimmed" fw={700} tt="uppercase" mb={8}>Infrastructure Asset</Text>
                   <Text size="xl" fw={700} c={COLORS.darkBlue}>
@@ -437,42 +601,41 @@ export function ReportDataTablePage({ crisesReportList }) {
                   </Text>
                 </Card>
                 <SimpleGrid cols={2} spacing="lg">
-                  {/* Location */}
                   <Card withBorder radius="md" padding="lg">
                     <Group gap={8} mb={12}>
                       <IconMapPin size={20} color="#64748b" />
                       <Text size="xs" fw={700} c="dimmed" tt="uppercase">Location</Text>
                     </Group>
                     <Text size="lg" fw={600} mb={6}>
-                      {renderValidatedCity(selectedReport)}
+                      {resolveCityName(selectedReport)}
                     </Text>
                     <Text size="sm" style={{ fontFamily: "monospace", color: "#475569" }}>
                       {selectedReport?.annotations?.incident_point?.geometry?.coordinates?.[0]?.toFixed(4) || "—"},&nbsp;
                       {selectedReport?.annotations?.incident_point?.geometry?.coordinates?.[1]?.toFixed(4) || "—"}
                     </Text>
                   </Card>
-                  {/* Reported By */}
                   <Card withBorder radius="md" padding="lg">
                     <Group gap={8} mb={12}>
                       <IconUser size={20} color="#64748b" />
                       <Text size="xs" fw={700} c="dimmed" tt="uppercase">Reported By</Text>
                     </Group>
                     <Text size="sm" fw={600}>
-                      {safeString(selectedReport?.reported_by.user)}
+                      {safeString(selectedReport?.reported_by?.user || "")}
                     </Text>
                     <Text size="xs" c="dimmed" mt={4}>
                       {selectedReport?.organization || "UNDP Local Team"}
                     </Text>
                   </Card>
                 </SimpleGrid>
-                <Divider />  <Box>
+                <Divider />
+                <Box>
                   <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="md">Impact Assessment</Text>
                   <Stack gap="md">
                     {selectedReport?.damage_description && (
                       <Box>
                         <Text size="xs" c="dimmed" fw={700} mb={6}>Damage Description</Text>
                         <Text size="sm" style={{ lineHeight: 1.6 }}>
-                          {selectedReport.damage_description}
+                          {selectedReport?.damage_description || ""}
                         </Text>
                       </Box>
                     )}
@@ -480,7 +643,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                       <Box>
                         <Text size="xs" c="dimmed" fw={700} mb={6}>Impact Notes</Text>
                         <Text size="sm" style={{ lineHeight: 1.6 }}>
-                          {selectedReport.impact_notes}
+                          {selectedReport?.impact_notes || ""}
                         </Text>
                       </Box>
                     )}
@@ -489,7 +652,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                         <Box>
                           <Text size="xs" c="dimmed" fw={700}>Affected Population</Text>
                           <Text size="lg" fw={700} c={COLORS.darkBlue}>
-                            {selectedReport.affected_population}
+                            {selectedReport?.affected_population || ""}
                           </Text>
                         </Box>
                       )}
@@ -497,7 +660,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                         <Box>
                           <Text size="xs" c="dimmed" fw={700}>Estimated Cost</Text>
                           <Text size="lg" fw={700} c={COLORS.darkBlue}>
-                            ${selectedReport.estimated_cost}
+                            ${selectedReport?.estimated_cost || ""}
                           </Text>
                         </Box>
                       )}
@@ -505,7 +668,6 @@ export function ReportDataTablePage({ crisesReportList }) {
                   </Stack>
                 </Box>
                 <Divider />
-                {/* Technical Details */}
                 <Box>
                   <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb="md">Technical Details</Text>
                   <Stack gap="xs">
@@ -527,7 +689,7 @@ export function ReportDataTablePage({ crisesReportList }) {
                       <Group justify="space-between" align="flex-start">
                         <Text size="sm" c="dimmed">Incident Point</Text>
                         <Text size="sm" style={{ fontFamily: "monospace", textAlign: "right" }}>
-                          {JSON.stringify(selectedReport.annotations.incident_point.geometry.coordinates)}
+                          {JSON.stringify(selectedReport?.annotations?.incident_point?.geometry?.coordinates || [])}
                         </Text>
                       </Group>
                     )}
@@ -557,6 +719,7 @@ export function ReportDataTablePage({ crisesReportList }) {
     </Card>
   );
 }
+
 const displayDate = (d) =>
   d
     ? new Date(d).toLocaleDateString("en-US", {
@@ -565,6 +728,7 @@ const displayDate = (d) =>
       year: "numeric",
     })
     : "";
+
 const displayTime = (d) =>
   d
     ? new Date(d).toLocaleTimeString("en-US", {

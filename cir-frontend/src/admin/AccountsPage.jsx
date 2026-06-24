@@ -37,22 +37,24 @@ const PAGE_SIZE = 10;
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function userDisplayName(user) {
+  if (!user) return "";
   const full = [user.first_name, user.last_name].filter(Boolean).join(" ");
-  return full || user.username || user.email;
+  return full || user.username || user.email || "";
 }
 
 function userInitials(user) {
+  if (!user) return "?";
   const f = user.first_name?.[0] ?? "";
   const l = user.last_name?.[0] ?? "";
   return (f + l).toUpperCase() || user.username?.[0]?.toUpperCase() || "?";
 }
 
 function userCountry(user) {
-  return user.location?.country ?? null;
+  return user?.location?.country ?? null;
 }
 
 function userCity(user) {
-  return user.location?.city ?? null;
+  return user?.location?.city ?? null;
 }
 
 // ── Avatar ─────────────────────────────────────────────────────────────────
@@ -81,7 +83,7 @@ function UserAvatar({ user }) {
 // ── Accounts table ─────────────────────────────────────────────────────────
 
 function AccountsTable({ users, onViewReports, onToggleActive }) {
-  if (users.length === 0) {
+  if (!users || users.length === 0) {
     return (
       <Text c="dimmed" ta="center" py="xl">
         No accounts match the current filters.
@@ -105,7 +107,7 @@ function AccountsTable({ users, onViewReports, onToggleActive }) {
       </Table.Thead>
       <Table.Tbody>
         {users.map((user) => (
-          <Table.Tr key={user.id}>
+          <Table.Tr key={user?.id}>
             <Table.Td>
               <Group gap="sm" wrap="nowrap">
                 <UserAvatar user={user} />
@@ -114,21 +116,21 @@ function AccountsTable({ users, onViewReports, onToggleActive }) {
                     {userDisplayName(user)}
                   </Text>
                   <Text size="xs" c="dimmed">
-                    {user.pseudonym ?? ""}
+                    {user?.pseudonym ?? ""}
                   </Text>
                 </Stack>
               </Group>
             </Table.Td>
 
             <Table.Td>
-              <Text size="sm">{user.email}</Text>
+              <Text size="sm">{user?.email}</Text>
             </Table.Td>
 
             <Table.Td>
               <Stack gap={0}>
-                <Text size="sm">{user.job_title || "—"}</Text>
+                <Text size="sm">{user?.job_title || "—"}</Text>
                 <Text size="xs" c="dimmed">
-                  {user.organization || ""}
+                  {user?.organization || ""}
                 </Text>
               </Stack>
             </Table.Td>
@@ -151,15 +153,15 @@ function AccountsTable({ users, onViewReports, onToggleActive }) {
             <Table.Td ta="center">
               <Badge
                 variant="light"
-                color={user.report_count > 0 ? "teal" : "gray"}
+                color={user?.report_count > 0 ? "teal" : "gray"}
               >
-                {user.report_count}
+                {user?.report_count || 0}
               </Badge>
             </Table.Td>
 
             <Table.Td>
               <Switch
-                checked={user.is_active}
+                checked={!!user?.is_active}
                 color="teal"
                 size="sm"
                 onChange={() => onToggleActive(user)}
@@ -168,9 +170,11 @@ function AccountsTable({ users, onViewReports, onToggleActive }) {
 
             <Table.Td>
               <Stack gap={0}>
-                <Text size="xs">{new Date(user.date_joined).toLocaleDateString()}</Text>
+                <Text size="xs">
+                  {user?.date_joined ? new Date(user.date_joined).toLocaleDateString() : "—"}
+                </Text>
                 <Text size="xs" c="dimmed">
-                  {user.last_login ? timeAgo(user.last_login) : "Never logged in"}
+                  {user?.last_login ? timeAgo(user.last_login) : "Never logged in"}
                 </Text>
               </Stack>
             </Table.Td>
@@ -182,7 +186,7 @@ function AccountsTable({ users, onViewReports, onToggleActive }) {
                 color="blue"
                 leftSection={<IconFileText size={13} />}
                 onClick={() => onViewReports(user)}
-                disabled={user.report_count === 0}
+                disabled={!user || !user.report_count || user.report_count === 0}
               >
                 Reports
               </Button>
@@ -264,6 +268,7 @@ function FiltersBar({ filters, setFilters, organizations, countries }) {
           onChange={(v) => setFilters((f) => ({ ...f, hasReports: v ?? "all" }))}
           clearable={false}
           w={160}
+
         />
 
         <Select
@@ -326,17 +331,29 @@ function UserReportsList({ user, onViewDetail, onBack }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Fallback safeguard helper to map dirty or legacy severity text to standard lowercase keys
+  const cleanSeverity = (sev) => {
+    if (!sev) return "low";
+    const normalized = String(sev).toLowerCase().trim();
+    // Maps standard expected keys. If unmatched, it gracefully falls back to a standard key to prevent utility crashes
+    if (["low", "medium", "high", "critical"].includes(normalized)) {
+      return normalized;
+    }
+    return "low";
+  };
+
   useEffect(() => {
+    if (!user?.id) return;
     setLoading(true);
     setError(null);
     api
       .get(`impact-reports/get_reports_by_user_id/`, {
         params: { user_id: user.id },
       })
-      .then((res) => setReports(res.data))
+      .then((res) => setReports(res.data || []))
       .catch(() => setError("Failed to load reports."))
       .finally(() => setLoading(false));
-  }, [user.id]);
+  }, [user?.id]);
 
   return (
     <Stack gap="md">
@@ -387,24 +404,25 @@ function UserReportsList({ user, onViewDetail, onBack }) {
           </Table.Thead>
           <Table.Tbody>
             {reports.map((report) => (
-              <Table.Tr key={report.id}>
+              <Table.Tr key={report?.id}>
                 <Table.Td>
                   <Text size="sm" fw={500}>
-                    {report.infrastructure_name || "—"}
+                    {report?.infrastructure_name || "—"}
                   </Text>
                 </Table.Td>
                 <Table.Td>
-                  <Text size="sm">{report.infrastructure_type || "—"}</Text>
+                  <Text size="sm">{report?.infrastructure_type || "—"}</Text>
                 </Table.Td>
                 <Table.Td>
-                  {report.damage_severity ? (
-                    <SeverityBadge severity={report.damage_severity} />
+                  {report?.damage_severity ? (
+                    /* Injects runtime sanitization directly into the prop boundary */
+                    <SeverityBadge severity={cleanSeverity(report.damage_severity)} />
                   ) : (
                     <Text size="sm" c="dimmed">—</Text>
                   )}
                 </Table.Td>
                 <Table.Td>
-                  <Text size="xs">{timeAgo(report.created_at)}</Text>
+                  <Text size="xs">{timeAgo(report?.created_at)}</Text>
                 </Table.Td>
                 <Table.Td>
                   <Button
@@ -458,13 +476,14 @@ export function AccountsPage() {
   useEffect(() => {
     api
       .get("user/user_list_for_admin/")
-      .then((res) => setAllUsers(res.data))
+      .then((res) => setAllUsers(res.data || []))
       .catch(() => setError("Failed to load accounts."))
       .finally(() => setLoading(false));
   }, []);
 
   // ── Toggle active (optimistic) ──────────────────────────────────────────
   const handleToggleActive = useCallback((user) => {
+    if (!user?.id) return;
     const next = !user.is_active;
     setAllUsers((prev) =>
       prev.map((u) => (u.id === user.id ? { ...u, is_active: next } : u))
@@ -482,7 +501,7 @@ export function AccountsPage() {
   // ── Dynamic dropdown options ─────────────────────────────────────────────
   const organizations = useMemo(
     () =>
-      [...new Set(allUsers.map((u) => u.organization).filter(Boolean))].sort(),
+      [...new Set(allUsers.map((u) => u?.organization).filter(Boolean))].sort(),
     [allUsers]
   );
 
@@ -490,7 +509,7 @@ export function AccountsPage() {
     () =>
       [
         ...new Set(
-          allUsers.map((u) => u.location?.country).filter(Boolean)
+          allUsers.map((u) => u?.location?.country).filter(Boolean)
         ),
       ].sort(),
     [allUsers]
@@ -504,6 +523,7 @@ export function AccountsPage() {
     const q = filters.search.toLowerCase();
 
     return allUsers.filter((u) => {
+      if (!u) return false;
       if (q) {
         const haystack = [
           userDisplayName(u),
@@ -558,11 +578,13 @@ export function AccountsPage() {
 
   // ── Navigation handlers ──────────────────────────────────────────────────
   const goToUserReports = (user) => {
+    if (!user) return;
     setSelectedUser(user);
     setView("user-reports");
   };
 
   const goToReportDetail = (report) => {
+    if (!report) return;
     setSelectedReport(report);
     setView("report-detail");
   };
@@ -585,23 +607,23 @@ export function AccountsPage() {
     </Anchor>,
     ...(selectedUser
       ? [
-          <Anchor
-            key="user"
-            size="sm"
-            onClick={view === "report-detail" ? goBackToUserReports : undefined}
-            style={{ cursor: view === "report-detail" ? "pointer" : "default" }}
-            c={view === "report-detail" ? undefined : "dimmed"}
-          >
-            {userDisplayName(selectedUser)}
-          </Anchor>,
-        ]
+        <Anchor
+          key="user"
+          size="sm"
+          onClick={view === "report-detail" ? goBackToUserReports : undefined}
+          style={{ cursor: view === "report-detail" ? "pointer" : "default" }}
+          c={view === "report-detail" ? undefined : "dimmed"}
+        >
+          {userDisplayName(selectedUser)}
+        </Anchor>,
+      ]
       : []),
     ...(selectedReport
       ? [
-          <Text key="report" size="sm" c="dimmed">
-            Report Detail
-          </Text>,
-        ]
+        <Text key="report" size="sm" c="dimmed">
+          Report Detail
+        </Text>,
+      ]
       : []),
   ];
 
@@ -620,11 +642,6 @@ export function AccountsPage() {
                 Manage user accounts, status, and their submitted reports.
               </Text>
             </Stack>
-            {/* {!loading && (
-              <Badge variant="light" color="teal" size="lg">
-                {allUsers.length} total
-              </Badge>
-            )} */}
           </Group>
 
           {/* Breadcrumb (only when drilling in) */}
