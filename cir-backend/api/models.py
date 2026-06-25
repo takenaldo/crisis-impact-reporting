@@ -176,6 +176,10 @@ class ImpactReport(models.Model):
     )
 
     quality_score = models.IntegerField(default=0, blank=True, null=True)
+    
+    impact_reference_point_lat = models.FloatField(blank=True, null=True)
+    impact_reference_point_lon = models.FloatField(blank=True, null=True)
+
 
     def __str__(self):
         return "Impact Report " + str(self.infrastructure_name) + str(self.infrastructure_type) + "--> "

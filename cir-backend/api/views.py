@@ -20,7 +20,7 @@ from .serializers import AnswerMinimalSerializer
 from .serializers import AnswerSerializer
 from .serializers import QuestionGroupSerializer
 
-from .utils import generate_pseudonym, extract_exif_metadata
+from .utils import generate_pseudonym, extract_exif_metadata, polygon_centroid
 from .utils import send_invitation_email
 
 
@@ -101,23 +101,15 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
         report: ImpactReport = ser.save()
         
         
-        # 1. Grab the annotations safely
-        annotations = report.annotations or {}
-
-        incident_point = annotations.get("incident_point") or {}
-        geometry = incident_point.get("geometry") or {}
-        coords = geometry.get("coordinates")
-
-        if coords and isinstance(coords, list) and len(coords) == 2:
-            # 2. Perform the swap
-            geometry["coordinates"] = [coords[1], coords[0]]
-            
-            # 3. REASSIGN the modified dict back to the report object
-            report.annotations = annotations
-            
-            # 4. Save the object
-            # report.save()
-            report.save(update_fields=['annotations'])
+        # report.annotations is null here and this block never executes.
+        # annotations = report.annotations or {}
+        # incident_point = annotations.get("incident_point") or {}
+        # geometry = incident_point.get("geometry") or {}
+        # coords = geometry.get("coordinates")
+        # if coords and isinstance(coords, list) and len(coords) == 2:
+        #     geometry["coordinates"] = [coords[1], coords[0]]
+        #     report.annotations = annotations
+        #     report.save(update_fields=['annotations'])
 
 
         if annotations_raw:
@@ -126,7 +118,32 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
                 ser.instance.save(update_fields=['annotations'])
             except (json.JSONDecodeError, TypeError):
                 pass
-        
+
+        # Extract reference point from annotations.
+        # incident_point coords are stored as [lat, lng] (frontend swaps before submit).
+        # incident_polygon ring coords are stored as [lng, lat] (GeoJSON standard, no swap).
+        # Point takes priority over polygon.
+        saved_annotations = report.annotations or {}
+        ref_lat = None
+        ref_lon = None
+
+        ip = saved_annotations.get('incident_point') or {}
+        ip_coords = (ip.get('geometry') or {}).get('coordinates')
+        if ip_coords and isinstance(ip_coords, list) and len(ip_coords) == 2:
+            ref_lat = ip_coords[0]
+            ref_lon = ip_coords[1]
+        else:
+            poly = saved_annotations.get('incident_polygon') or {}
+            ring = ((poly.get('geometry') or {}).get('coordinates') or [[]])[0]
+            if isinstance(ring, list) and len(ring) >= 3:
+                centroid_lng, centroid_lat = polygon_centroid(ring)
+                ref_lat = centroid_lat
+                ref_lon = centroid_lng
+
+        if ref_lat is not None and ref_lon is not None:
+            report.impact_reference_point_lat = ref_lat
+            report.impact_reference_point_lon = ref_lon
+
         # get_report_quality_score(report)
         score = 0
         score += (report.photos.count() * 3)  # 3 points for each photo
@@ -141,7 +158,7 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
         score +=(1 if report.health_services_rating is not HealthServicesRatingLevel.UNKNOWN else 0)
         
         
-        # send survey invitation mai;l for users in the surrounding of the impact
+        # send survey invitation mail for users in the surrounding of the impact
         users_to_receive_survey_email = []
         for user in User.objects.all():
             try:
@@ -151,21 +168,18 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
                     if not user.location.latitude or not user.location.longitude:
                         continue
                                 
-                    try:
-                        # TODO: lat lng are swapped by mistake, 
-                        report_lat = report.annotations['incident_point']['geometry']['coordinates'][1]; 
-                        report_lng = report.annotations['incident_point']['geometry']['coordinates'][0];
+                    if report.impact_reference_point_lat is not None and report.impact_reference_point_lon is not None:
+                        report_lat = report.impact_reference_point_lat
+                        report_lng = report.impact_reference_point_lon
+                    elif (report.location and
+                          report.location.infrastructure_latitude is not None and
+                          report.location.infrastructure_longitude is not None):
+                        report_lat = report.location.infrastructure_latitude
+                        report_lng = report.location.infrastructure_longitude
+                    else:
+                        continue
 
-                        
-                    except Exception as e:
-                        continue
-                    
-                    distance_threshold_in_km = 100 # KM
-                    
-                    # TODO: change this to annotation latlng
-                    # Skip if missing necessary geospatial data
-                    if report_lat is None or report_lng is None or distance_threshold_in_km is None:
-                        continue
+                    distance_threshold_in_km = 100  # KM
                     
                         
                     # Convert degrees to radians
