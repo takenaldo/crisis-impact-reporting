@@ -41,3 +41,5 @@ djangorestframework
 djangorestframework-simplejwt
 drf-spectacular
 Pillow
+channels>=4.0
+daphne>=4.0

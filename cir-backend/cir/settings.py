@@ -33,15 +33,16 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['192.168.0.133', 'localhost', '127.0.0.1', 'undp-damage-reporting.com','www.undp-damage-reporting.com']
 ALLOWED_HOSTS = ['*']
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'undp-damage-reporting.com',
-    'www.undp-damage-reporting.com'
-]
+# CSRF_TRUSTED_ORIGINS = [
+#     'http://localhost:3000',
+#     'http://127.0.0.1:3000',
+#     'undp-damage-reporting.com',
+#     'www.undp-damage-reporting.com'
+# ]
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -50,9 +51,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'corsheaders',
+    'channels',
 
     'rest_framework',
-    'rest_framework_simplejwt.token_blacklist', # 👈 Add this line
+    'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',  # For API schema generation
 
     'api',
@@ -224,3 +226,11 @@ EMAIL_PORT=465
 EMAIL_USE_SSL=True
 EMAIL_USE_TLS=False
 DEBUG_EMAIL_ADDRESS="takelearega2017@gmail.com"
+
+ASGI_APPLICATION = 'cir.asgi.application'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
