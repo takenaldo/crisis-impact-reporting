@@ -30,7 +30,6 @@ CIR is built for use in the field during natural disasters, industrial accidents
 crisis-impact-reporting/
 ├── cir-frontend/     # React 19 SPA
 ├── cir-backend/      # Django 5 + DRF + Django Channels
-└── map-service/      # Spatial API (PostGIS / tile service)
 ```
 
 ### Frontend
