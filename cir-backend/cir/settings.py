@@ -33,12 +33,12 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['192.168.0.133', 'localhost', '127.0.0.1', 'undp-damage-reporting.com','www.undp-damage-reporting.com']
 ALLOWED_HOSTS = ['*']
-# CSRF_TRUSTED_ORIGINS = [
-#     'http://localhost:3000',
-#     'http://127.0.0.1:3000',
-#     'undp-damage-reporting.com',
-#     'www.undp-damage-reporting.com'
-# ]
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'undp-damage-reporting.com',
+    'www.undp-damage-reporting.com'
+]
 # Application definition
 
 INSTALLED_APPS = [
