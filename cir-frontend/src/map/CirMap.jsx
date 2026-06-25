@@ -307,7 +307,7 @@ function MapController({
 const YOU_ARE_HERE = "📍 You are here";
 
 // ── AutoLocate: GPS on mount; falls back to draggable pin if GPS unavailable ─
-function AutoLocate({ onLocated }) {
+function AutoLocate({ onLocated, hideMarker = false }) {
   const map = useMap();
   const [gpsPin, setGpsPin] = useState(null);
   const [draggable, setDraggable] = useState(false);
@@ -351,7 +351,8 @@ function AutoLocate({ onLocated }) {
       markerRef.current.openPopup();
   }, [gpsPin, draggable]);
 
-  if (!gpsPin) return null;
+  // When annotation tools are active, AnnotationLayer owns the position marker
+  if (!gpsPin || hideMarker) return null;
 
   return (
     <Marker
@@ -721,6 +722,7 @@ function AnnotationLayer({
     map.getContainer().style.cursor = "grab";
 
     const origin = [userLocation.latitude, userLocation.longitude];
+    let committed = false;
 
     // Ensure position marker exists
     if (!lr.current.posMarker) {
@@ -741,6 +743,7 @@ function AnnotationLayer({
         lr.current.posMarker.setLatLng(origin);
         return;
       }
+      committed = true;
       setCorrectedPosition({ latitude: pos.lat, longitude: pos.lng });
       map.getContainer().style.cursor = "";
       onToolDone();
@@ -753,6 +756,14 @@ function AnnotationLayer({
       markerAtSetup?.options && (markerAtSetup.options.draggable = false);
       markerAtSetup?.dragging?.disable();
       map.getContainer().style.cursor = "";
+      // Button pressed again without dragging = cancel → reset to original GPS
+      if (!committed) {
+        const loc = userLocationRef.current;
+        if (markerAtSetup && loc) {
+          markerAtSetup.setLatLng([loc.latitude, loc.longitude]);
+        }
+        setCorrectedPosition(null);
+      }
     };
   }, [activeTool]); // eslint-disable-line
 
@@ -1048,7 +1059,7 @@ export default function CirMap({
           onRecenter={onRecenter}
         />
 
-        {autoLocate && <AutoLocate onLocated={handleLocated} />}
+        {autoLocate && <AutoLocate onLocated={handleLocated} hideMarker={showAnnotationTools} />}
 
         {!autoLocate && !showAnnotationTools && (
           <UserLocationMarker userLocation={effectiveUserLocation} />

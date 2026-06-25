@@ -131,6 +131,32 @@ def extract_exif_metadata(photo_file):
 
 
 
+def polygon_centroid(ring):
+    """
+    Computes the centroid of an irregular polygon using the signed-area formula.
+    ring: list of [lng, lat] pairs (GeoJSON order). Returns (lng, lat).
+    """
+    n = len(ring)
+    area = 0.0
+    cx = 0.0
+    cy = 0.0
+    for i in range(n):
+        x0, y0 = ring[i][0], ring[i][1]
+        x1, y1 = ring[(i + 1) % n][0], ring[(i + 1) % n][1]
+        cross = x0 * y1 - x1 * y0
+        area += cross
+        cx += (x0 + x1) * cross
+        cy += (y0 + y1) * cross
+    area *= 0.5
+    if area == 0:
+        # Degenerate polygon: fall back to vertex average
+        cx = sum(v[0] for v in ring) / n
+        cy = sum(v[1] for v in ring) / n
+        return cx, cy
+    factor = 1.0 / (6.0 * area)
+    return cx * factor, cy * factor
+
+
 def generate_pseudonym() -> str:
     """
     Generates a human-readable, crisis-safe pseudonym.

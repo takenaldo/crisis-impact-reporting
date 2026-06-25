@@ -150,7 +150,7 @@ export function LocationPermissionRequest({ onActivate }) {
                 },
               },
             }}
-            onClick={handleGetLocation()}
+            onClick={async () => await handleGetLocation()}
           >
             Share My Device Location
           </Button>

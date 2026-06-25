@@ -461,7 +461,11 @@ export default function ReportDetailsDrawer({ opened, onClose, report }) {
             zoom={15}
             height="500px"
             annotations={swapAnnotationPointCoords(report?.annotations)}
-            userLocation={{ latitude: location[0], longitude: location[1] }}
+            userLocation={
+              report?.annotations?.corrected_position
+                ? undefined
+                : { latitude: location[0], longitude: location[1] }
+            }
           />
         )}
       </MyDrawer>

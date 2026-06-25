@@ -1,70 +1,169 @@
-# Getting Started with Create React App
+# Crisis Impact Reporting (CIR)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A field-ready web application for reporting and mapping infrastructure damage during crisis events. Reporters can submit geo-located damage assessments with photos, map annotations, and structured severity data. A live dashboard shows all reports on an interactive map for situational awareness.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## Overview
 
-### `npm start`
+CIR is built for use in the field during natural disasters, industrial accidents, and human-made crises. It supports both authenticated and anonymous reporting, works on mobile browsers, and is available in 7 languages.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+**Crisis categories supported:**
+- Natural Hazards
+- Technological / Industrial Hazards
+- Human-Made Crisis
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+**Infrastructure damage fields:**
+- Damage severity (None / Minimal / Partial / Complete)
+- Electricity condition
+- Health services status
+- Debris presence
+- Pressing needs (free text)
+- Photos with EXIF data
+- GeoJSON map annotations (polygon, radius, point, direction)
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Architecture
 
-### `npm run build`
+```
+crisis-impact-reporting/
+├── cir-frontend/     # React 19 SPA
+├── cir-backend/      # Django 5 + DRF + Django Channels
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Frontend
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+| Technology | Purpose |
+|---|---|
+| React 19 | UI framework |
+| Mantine v9 | Component library |
+| React Leaflet + Leaflet | Interactive maps |
+| react-i18next | Internationalization |
+| Axios | HTTP client |
+| Recharts | Data visualizations |
+| @react-pdf/renderer | PDF report export |
+| react-webcam | In-browser photo capture |
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Backend
 
-### `npm run eject`
+| Technology | Purpose |
+|---|---|
+| Django 5.2 | Web framework |
+| Django REST Framework | REST API |
+| Django Channels + Daphne | WebSocket / ASGI server |
+| SimpleJWT | JWT authentication |
+| drf_spectacular | OpenAPI schema generation |
+| SQLite | Database (development) |
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+---
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Features
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+- **Interactive map dashboard** — browse all submitted impact reports on a Leaflet map with clustering and filtering
+- **Impact report form** — structured form with GPS auto-detection, manual pin placement, and damage fields
+- **Map annotations** — draw polygons, radii, points, and direction indicators directly on the map and attach them to a report
+- **Photo capture** — upload images or use the device camera; EXIF data is preserved
+- **Anonymous reporting** — users without an account get an auto-generated pseudonym
+- **Real-time updates** — WebSocket channel pushes new reports to connected dashboards instantly
+- **Survey/questions system** — location-aware follow-up questions linked to impact reports
+- **Admin dashboard** — internal view for managing reports, users, and question groups
+- **PDF export** — generate a printable summary of any impact report
+- **Multi-language** — English, Arabic (ar), Amharic (am), Chinese (ch), Spanish (es), French (fr), Russian (ru)
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+---
 
-## Learn More
+## Getting Started
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Prerequisites
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- Node.js 18+
+- Python 3.11+
+- pip / virtualenv
 
-### Code Splitting
+### Backend
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+```bash
+cd cir-backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
 
-### Analyzing the Bundle Size
+The backend runs on `http://localhost:8000`. Django admin is at `/backend/admin/`.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Frontend
 
-### Making a Progressive Web App
+```bash
+cd cir-frontend
+npm install
+npm start
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+The frontend runs on `http://localhost:3000`.
 
-### Advanced Configuration
+To point the frontend at a different backend, edit [cir-frontend/src/constants.js](cir-frontend/src/constants.js):
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```js
+export const SERVER_IP = "http://localhost:8000"
+```
 
-### Deployment
+### Docker (frontend only)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+```bash
+docker-compose up
+```
 
-### `npm run build` fails to minify
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## API Reference
+
+The backend exposes a REST API under `/backend/api/` and an auto-generated OpenAPI schema.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/login/` | Obtain JWT access + refresh tokens |
+| POST | `/api/token/refresh/` | Refresh an access token |
+| CRUD | `/api/impact-reports/` | Impact reports |
+| CRUD | `/api/user/` | User management |
+| CRUD | `/api/questions/` | Survey questions |
+| CRUD | `/api/answers/` | Survey answers |
+| GET | `/api/map/bbox/` | Reports within a bounding box |
+
+Interactive API docs (Swagger UI) are available at `/backend/api/schema/swagger-ui/`.
+
+### WebSocket
+
+The backend uses Django Channels. Clients connect to receive real-time report updates pushed to the group channel layer.
+
+---
+
+## Frontend Routes
+
+| Path | Component | Description |
+|---|---|---|
+| `/` | SplashScreen | Landing / entry point |
+| `/home` | CrisisReportingApp | Map dashboard with all reports |
+| `/add-report/:id?/:name?` | ImpactReportForm | Submit or edit an impact report |
+| `/login/` | LoginPage | Authentication |
+| `/admin` | CrisisImpactAdminDashboard | Internal admin UI |
+| `/auth_check/` | CIRAuthChecker | Auth validation redirect |
+
+---
+
+## Data Model (key entities)
+
+- **ImpactReport** — core report: infrastructure details, damage severity, electricity/health status, debris, photos, GeoJSON annotations, quality score
+- **InfrastructureLocation** — dual-location model: where the reporter was standing vs. where the damaged infrastructure is, with distance and bearing
+- **CIRUser** — extended Django user with job title, organization, and auto-generated pseudonym for anonymous display
+- **QuestionGroup** — location + time-bounded set of survey questions auto-assigned to nearby reporters
+- **Photo** — uploaded image with EXIF data
+
+---
+
+## Internationalization
+
+Translation files live in [cir-frontend/src/locales/](cir-frontend/src/locales/). Each subdirectory is an ISO 639-1 language code (`en`, `ar`, `am`, `ch`, `es`, `fr`, `ru`). Add a new language by copying the `en` folder and translating the JSON values.
