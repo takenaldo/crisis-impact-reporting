@@ -44,6 +44,7 @@ import api from "./api";
 import { savePendingReport } from "./map/utils/pendingReports";
 import { swapAnnotationPointCoords } from "./utils";
 import { DamageDateSelector } from "./DamageDateSelector";
+import { useLocation as useGPSLocation } from "./LocationProvider";
 
 const NATURE_OF_CRISIS_OPTIONS = [
   { value: "flood", label: "Flood" },
@@ -70,6 +71,7 @@ const DAMAGE_SEVERITIES = [
 export default function ImpactReportForm({ opened, onClose, userLocation }) {
   const { id, name } = useParams();
   const navigate = useNavigate();
+  const { location: gpsLocation } = useGPSLocation();
 
   const [active, setActive] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,8 +93,6 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
     };
     return mapping[label];
   }
-
-  userLocation = null;
 
   const form = useForm({
     initialValues: {
@@ -279,6 +279,10 @@ export default function ImpactReportForm({ opened, onClose, userLocation }) {
       "infrastructure_longitude",
       values.infrastructure_longitude
     );
+    if (gpsLocation?.lat != null) {
+      formData.append("submit_location_latitude", gpsLocation.lat);
+      formData.append("submit_location_longitude", gpsLocation.lng);
+    }
     formData.append("street_address", values.street_address);
     formData.append("city", values.city);
     formData.append("state_province", values.state_province);
