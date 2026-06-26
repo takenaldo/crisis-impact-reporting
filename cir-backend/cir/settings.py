@@ -212,7 +212,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 
 AUTH_USER_MODEL = 'api.CIRUser'
-FORCE_SCRIPT_NAME = '/backend'
+FORCE_SCRIPT_NAME = os.environ.get('FORCE_SCRIPT_NAME', '/backend')
 
 
 # email related configs

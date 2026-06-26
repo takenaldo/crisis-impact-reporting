@@ -23,6 +23,7 @@ import { SplashScreen } from './SplashScreen';
 import MobileContainer from './MobileContainer';
 import { CrisisImpactAdminDashboard } from './admin/admidDashboard';
 import { LocationProvider } from './LocationProvider';
+import WsTestPage from './WsTestPage';
 
 
 function App() {
@@ -40,6 +41,7 @@ function App() {
 
 
     { path: '/auth_check/', element: <CIRAuthChecker /> },
+    { path: '/ws-test', element: <WsTestPage /> },
 
 
 

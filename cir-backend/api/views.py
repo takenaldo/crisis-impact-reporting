@@ -22,6 +22,7 @@ from .serializers import QuestionGroupSerializer
 
 from .utils import generate_pseudonym, extract_exif_metadata, polygon_centroid
 from .utils import send_invitation_email
+from .ws_helpers import broadcast
 
 
 from rest_framework import viewsets
@@ -208,9 +209,19 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
         
         report.quality_score = score
         report.save()
-        
-        
-        
+
+        broadcast('reports', {
+            'type': 'new_report',
+            'id': report.id,
+            'infrastructure_name': report.infrastructure_name,
+            'infrastructure_type': report.infrastructure_type,
+            'damage_severity': report.damage_severity,
+            'city': report.location.city if report.location else None,
+            'country': report.location.country if report.location else None,
+            'lat': report.impact_reference_point_lat,
+            'lon': report.impact_reference_point_lon,
+        })
+
         return Response(ser.data, status=status.HTTP_201_CREATED)
 
 
@@ -379,6 +390,14 @@ class ImpactReportViewSet(viewsets.ModelViewSet):
                 instance=report, data=data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+
+            broadcast('reports', {
+                'type': 'report_updated',
+                'id': report.id,
+                'infrastructure_name': report.infrastructure_name,
+                'infrastructure_type': report.infrastructure_type,
+                'damage_severity': report.damage_severity,
+            })
 
             return Response(serializer.data)
 
